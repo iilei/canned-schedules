@@ -38,17 +38,23 @@ depends = ['render-time-scale --offset {{ usage.offset }}']
 usage = '''
 flag "-r --ruler" help="Enable ruler"
 flag "-l --legend" help="Enable legend"
+flag "-m --markdown" help="Wrap the rendered table in a Markdown document"
 flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler and schedule indentation in spaces"
 '''
 
 description = '''
 Display every configured stage as a capacity timetable using its Unicode symbols.
 Use -r to include time annotations and the ruler; use -l to include the capacity legend.
+Use -m to wrap the output in Markdown with a preset index and a fenced text drawing.
 TIME_SCALE_OFFSET controls ruler and schedule indentation (default: 0).
 Reuses render-time-scale and forwards --offset.
-Example: mise run render-time-table -r -l --offset 2
+Example: mise run render-time-table --markdown -r -l --offset 2
 '''
 
-run = [
-    'gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl',
-]
+run = '''
+if [ "{{ usage.markdown }}" = "true" ]; then
+  gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -t time-table=time-table.tmpl -f time-table-markdown.tmpl
+else
+  gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl
+fi
+'''

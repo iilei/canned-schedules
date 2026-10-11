@@ -1,0 +1,14 @@
+# Capacity Schedules
+
+## Configured Schedules
+
+{{ range $stage, $_ := .capacity_schedules }}- `{{ $stage }}`
+{{ end }}
+
+## Weekly Schedule Drawings
+
+Configured schedule patterns, rendered in 30-minute slots.
+
+~~~text
+{{ tmpl.Exec "time-table" . }}
+~~~

@@ -5,10 +5,10 @@ more specialized configurations. Start with a preconfigured schedule, inspect it
 daily pattern visually, and select what fits. When necessary, compose a different
 pattern while retaining the same validation rules.
 
-[test.cue](./test.cue) contains the example configuration and derived display
-data. [schedule-schema.cue](./schedule-schema.cue) defines the reusable weekly
-schedule contract. CUE validates and exports; gomplate only renders the resulting
-JSON.
+[schedules.cue](./schedules.cue) is the authoring file: add a stage and set its
+MON-SUN day strings there. The model, shared tiers, legend, and derived display
+data stay in [test.cue](./test.cue) and [schedule-schema.cue](./schedule-schema.cue).
+CUE validates and exports; gomplate only renders the resulting JSON.
 
 ## Quick start
 
@@ -22,17 +22,34 @@ mise run check
 mise run render-time-table
 mise run render-time-table -r -l
 mise run render-time-table -r -l --offset 2
+mise run render-time-table --markdown -r -l --offset 2
 ```
 
+- Edit [schedules.cue](./schedules.cue) to create or change schedules.
 - `mise run check` validates schedules, checks the exported snapshot, exercises
   invalid contract cases, and smoke-tests rendering.
 - Each configured stage appears as a separate section, with MON-SUN rows in order.
 - `-r` / `--ruler` adds time annotations and the ruler.
 - `-l` / `--legend` adds the ordered capacity legend.
+- `-m` / `--markdown` wraps the table in a Markdown document with a preset index
+  and a `~~~text` fenced drawing. It can be combined with the ruler, legend, and
+  offset options.
 - `-o` / `--offset` sets non-negative indentation for the ruler and schedule rows.
   It defaults to `TIME_SCALE_OFFSET` when set, otherwise `0`.
 - Annotation text stays at its original position; the same offset padding is
   appended to that row. An offset of `2` aligns ruler markers with HH:MM colons.
+
+### Markdown output
+
+Use `--markdown` to generate a Markdown report with a schedule index and the
+rendered table inside a `~~~text` code fence. Redirect it to save a document:
+
+```powershell
+mise run render-time-table --markdown -r -l --offset 2 > schedules.md
+```
+
+The ruler, legend, and offset remain optional and work the same as in plain-text
+mode. Without `--markdown`, the task continues to print the plain table.
 
 The table task reuses `render-time-scale`, passing through the offset. That task
 exports the root CUE package to `schedule.json` and generates `time-scale.txt`;
@@ -74,52 +91,46 @@ Rendering multiple stages together makes their daily and weekly patterns easy to
 compare. The renderer is an inspection tool, not an interactive schedule selector:
 choosing a schedule means referencing or editing the configuration.
 
-## Reuse first, specialize when necessary
+## Create a schedule
 
-CUE can describe values with expressions, reusable definitions, and comprehensions
-instead of requiring every daily string to be handwritten.
+The six reusable weekly presets live under `_base_schedules` in
+[schedules.cue](./schedules.cue): `standard`, `weekday_maximum`,
+`weekday_medium`, `all_medium`, `weekend_medium`, and `minimum`. The exported
+`capacity_schedules` is generated from those presets, so all six appear in the
+rendered table. `all_off` is an additional generated schedule.
 
-The existing building blocks include:
+To create another preset, copy one of the entries in `_base_schedules`, give it
+a new name, and edit its MON-SUN values. Each week has exactly seven day keys;
+each quoted day value is 48 Unicode symbols, one per half-hour starting at
+midnight. The model generates the all-off week by assigning `_all_off` to every
+day in a comprehension.
 
-- `_day_maximum`: a composed daily capacity pattern.
-- `_day_Medium`: a different daily pattern.
-- `_all_off`: the off symbol repeated for the whole day.
-- `#base`: a reusable weekly schedule definition.
+Use only symbols from the shared legend:
 
-For example, add another stage inside `capacity_schedules`:
+| Symbol | Tier |
+| ------ | ---- |
+| ░ | Off |
+| ▒ | Minimum |
+| ▓ | Medium |
+| █ | Maximum |
 
-```cue
-capacity_schedules: {
-    prod: #base
-}
+Then validate and preview:
+
+```powershell
+mise run check
+mise run render-time-table -r -l
 ```
 
-That stage gets the existing base week and the map-wide daily length constraints.
-It appears alongside `int` when rendered.
+The check rejects missing or unknown days, values with the wrong number of
+symbols, and symbols that are not in the legend. Tier values and symbol meanings
+are shared defaults; change them only in the model files.
 
-To specialize one day, construct a new week rather than trying to overwrite a
-concrete value in the base:
+Use the shared pattern definitions such as `#base`, `_day_medium`, and
+`_all_off` when building reusable schedules. Authors can keep to literal day
+strings if they prefer; the weekly and symbol constraints are checked either way.
 
-```cue
-capacity_schedules: {
-    weekend_enabled: {
-        for day in _days
-        if day != "SUN" {
-            "\(day)": #base[day]
-        }
-        SUN: _day_Medium
-    }
-}
-```
-
-These snippets can be incorporated into [test.cue](./test.cue). If put in a
-separate root-level CUE file, use `package schedules`; the Mise tasks load the
-root package, including [schedule-schema.cue](./schedule-schema.cue).
-
-**CUE combines constraints; it does not use last-write-wins overrides.**
-For example, `#base & {SUN: _day_Medium}` conflicts with the base's concrete
-all-off Sunday. Design reusable definitions with configurable fields when more
-variation is needed, or compose only the unchanged days as above.
+Keep the file in the root `schedules` package. Root-level CUE files are combined
+and validated together; CUE constraints do not work as last-write-wins overrides.
 
 ## JSON and CUE should share the validation boundary
 
@@ -127,26 +138,26 @@ JSON is useful for consumers that prefer explicit values; CUE is useful for
 authors who want composition and reuse. Both should be checked against the same
 CUE constraints before rendering or downstream use.
 
-The shared weekly structure and legend contract can validate an independent JSON
-input:
+The shared weekly structure and legend contract can also validate an independent
+JSON input:
 
 ```powershell
 mise exec -- cue vet -d '#schedule_contract' schedule-schema.cue input.json
 ```
 
 This checks the weekly keys, daily slot lengths, legend symbols and tiers, and
-that schedule symbols are declared. The full preset's tier value relationships
-remain in [test.cue](./test.cue). For that concrete configuration, use:
+that schedule symbols are declared. The full root package, including
+[schedules.cue](./schedules.cue), can be checked and exported with:
 
 ```powershell
 mise exec -- cue vet .
 mise exec -- cue export . --outfile validated-schedule.json
 ```
 
-Combining additional JSON with the root package also intersects it with the
-concrete `int` preset; it does not replace that preset. The schema-only check
-does not derive the time ruler or annotations, so it is not yet a general
-render-ready JSON input mode.
+Combining additional JSON with the root package intersects it with the schedules
+already defined there; it does not replace them. The schema-only check does not
+derive the time ruler or annotations, so it is not yet a general render-ready
+JSON input mode.
 
 Render that validated JSON directly:
 

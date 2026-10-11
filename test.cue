@@ -29,6 +29,7 @@ _t3: "\u2588" // █
 _days: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 _day_maximum: _t1*10 + _t2*4 + _t3*20 + _t2*4 + _t1*10
 _day_medium:  _t1*10 + _t2*28 + _t1*10
+_day_minimum: _t1 * _slots
 _all_off:     _t0 * _slots
 
 #base: {
@@ -122,16 +123,3 @@ time_scale_annotations: [
 		], "")
 	}
 ]
-
-// ----------------------------------------------------------------------------------------------------------------------------
-capacity_schedules: {
-	[string]: #weekly_schedule
-	int: {
-		for day in _days
-		if !list.Contains(["SAT", "SUN"], day) {
-			"\(day)": _day_maximum
-		}
-		"SAT": _day_medium
-		"SUN": _all_off
-	}
-}
