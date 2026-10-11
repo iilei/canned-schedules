@@ -57,28 +57,40 @@ capacity_tiers: {
 		min:     0 & <=desired
 		desired: 0 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
-		color:   "#e0e0e0"
+		color: {
+			light: "#A7DCC840"
+			dark:  "#B9A5FF40"
+		}
 	}
 
 	Minimum: {
 		min:     1 & <=desired
 		desired: 2 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
-		color:   "#90ee90"
+		color: {
+			light: "#B8E8D9D9"
+			dark:  "#B9A5FFD9"
+		}
 	}
 
 	Medium: {
 		min:     1 & <=desired
 		desired: 2 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
-		color:   "#228b22"
+		color: {
+			light: "#54C6A5D9"
+			dark:  "#9D82EAD9"
+		}
 	}
 
 	Maximum: {
 		min:     4 & <=desired
 		desired: 4 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
-		color:   "#006400"
+		color: {
+			light: "#087E6BD9"
+			dark:  "#7048D6D9"
+		}
 	}
 }
 capacity_legend: [
@@ -88,8 +100,14 @@ capacity_legend: [
 	{symbol: _t3, tier: "Maximum"},
 ]
 schedule_theme: {
-	background: "#1a1a2e"
-	label:      "#cccccc"
+	light: {
+		background: "#ffffff"
+		label:      "#222222"
+	}
+	dark: {
+		background: "#1a1a2e"
+		label:      "#cccccc"
+	}
 }
 
 _schedule_validation: #schedule_contract & {
@@ -101,6 +119,11 @@ _schedule_validation: #schedule_contract & {
 _symbol_tiers: {
 	for entry in capacity_legend {
 		"\(entry.symbol)": entry.tier
+	}
+}
+_day_indexes: {
+	for index, day in _days {
+		"\(day)": index
 	}
 }
 
@@ -135,6 +158,9 @@ aws_cron: {
 					}
 				]
 				if day == matching_days[0]
+				let first_day = matching_days[0]
+				let last_day = matching_days[len(matching_days)-1]
+				let contiguous = _day_indexes[last_day]-_day_indexes[first_day]+1 == len(matching_days)
 				let joined_days = strings.Join(matching_days, ",") {
 					minute:      mod(slot_index*_slot_minutes, 60)
 					hour:        div(slot_index*_slot_minutes, 60)
@@ -142,18 +168,10 @@ aws_cron: {
 					from_tier:   previous_tier
 					to_tier:     current_tier
 					day_of_week: string
-					if joined_days == "MON,TUE,WED,THU,FRI" {
-						day_of_week: "MON-FRI"
+					if contiguous && len(matching_days) > 1 {
+						day_of_week: "\(first_day)-\(last_day)"
 					}
-					if joined_days == "SAT,SUN" {
-						day_of_week: "SAT-SUN"
-					}
-					if joined_days == "MON,TUE,WED,THU,FRI,SAT,SUN" {
-						day_of_week: "MON-SUN"
-					}
-					if joined_days != "MON,TUE,WED,THU,FRI" &&
-						joined_days != "SAT,SUN" &&
-						joined_days != "MON,TUE,WED,THU,FRI,SAT,SUN" {
+					if !contiguous || len(matching_days) == 1 {
 						day_of_week: joined_days
 					}
 					cron: "\(mod(slot_index*_slot_minutes, 60)) \(div(slot_index*_slot_minutes, 60)) ? * \(day_of_week) *"

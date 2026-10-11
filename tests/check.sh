@@ -16,9 +16,10 @@ jq -e '(.capacity_schedules | keys | map(select(. != "all_off")) | length) == 6'
 jq -e 'has("_base_schedules") | not' "$tmpdir/schedule.json" > /dev/null
 jq -e '.capacity_schedules.all_off | length == 7 and all(.[]; length == 48 and (split("") | all(. == "░")))' "$tmpdir/schedule.json" > /dev/null
 jq -e '.aws_cron.timezone == "UTC"' "$tmpdir/schedule.json" > /dev/null
+jq -e 'all(.capacity_tiers[]; (.color.light | test("^#[0-9A-Fa-f]{8}$")) and (.color.dark | test("^#[0-9A-Fa-f]{8}$")))' "$tmpdir/schedule.json" > /dev/null
 jq -e '.aws_cron.schedules.all_off == []' "$tmpdir/schedule.json" > /dev/null
 jq -e 'all(.aws_cron.schedules[]; all(.[]; has("cron")))' "$tmpdir/schedule.json" > /dev/null
-jq -e 'any(.aws_cron.schedules.standard[]; .cron == "0 5 ? * MON,TUE,WED,THU,FRI,SAT *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
+jq -e 'any(.aws_cron.schedules.standard[]; .cron == "0 5 ? * MON-SAT *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
 jq -e 'any(.aws_cron.schedules.standard[]; .cron == "0 0 ? * MON *" and .from_tier == "Off" and .to_tier == "Minimum")' "$tmpdir/schedule.json" > /dev/null
 jq -e 'any(.aws_cron.schedules.weekday_maximum[]; .cron == "0 5 ? * MON-FRI *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
 
@@ -30,6 +31,20 @@ while IFS= read -r schedule; do
 done < "$tmpdir/schedule-names.txt"
 [ "$(find "$tmpdir" -maxdepth 1 -name 'schedule-*.svg' | wc -l | tr -d ' ')" -eq "$(wc -l < "$tmpdir/schedule-names.txt" | tr -d ' ')" ]
 grep -Fq '0 0 ? * MON *' "$tmpdir/schedule-standard.svg"
+grep -Eq '<text class="schedule-label" x="40" y="[0-9]+" font-size="18" font-family="Ubuntu Mono, .*Courier, monospace" font-style="italic" font-weight="bold">standard</text>' "$tmpdir/schedule-standard.svg"
+grep -Fq '@media (prefers-color-scheme: dark)' "$tmpdir/schedule-standard.svg"
+grep -Fq 'fill: var(--tier-color-dark)' "$tmpdir/schedule-standard.svg"
+grep -Fq 'AWS Cron (UTC)' "$tmpdir/schedule-standard.svg"
+grep -Eq '<line class="schedule-divider" x1="40" y1="[0-9]+" x2="[0-9]+" y2="[0-9]+"/>' "$tmpdir/schedule-standard.svg"
+grep -Eq '<rect class="schedule-tier schedule-tier-0" x="40" y="[0-9]+" width="20" height="16"' "$tmpdir/schedule-standard.svg"
+grep -Fq '>Off</text>' "$tmpdir/schedule-standard.svg"
+grep -Fq '>Maximum</text>' "$tmpdir/schedule-standard.svg"
+test "$(grep -o -- '--tier-color-light:' "$tmpdir/schedule-standard.svg" | wc -l | tr -d ' ')" -eq 4
+test "$(grep -o -- '--tier-color-dark:' "$tmpdir/schedule-standard.svg" | wc -l | tr -d ' ')" -eq 4
+if grep -Fq 'style="--tier-color-' "$tmpdir/schedule-standard.svg"; then
+	printf 'SVG tier colors should be declared once in the style header.\n' >&2
+	exit 1
+fi
 grep -Fq '<title>Schedule: cron(0 0 ? * MON *)&#10;Set tier: Minimum</title>' "$tmpdir/schedule-standard.svg"
 
 cue vet -d '#schedule_contract' schedule-schema.cue test.cue.json

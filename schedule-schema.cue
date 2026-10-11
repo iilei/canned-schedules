@@ -24,7 +24,10 @@ _slot_minutes: div(24*60, _slots)
 			min:     int
 			desired: int
 			max:     int
-			color:   =~"^#[0-9A-Fa-f]{6}$"
+			color: {
+				light: =~"^#[0-9A-Fa-f]{8}$"
+				dark:  =~"^#[0-9A-Fa-f]{8}$"
+			}
 		}
 	}
 	capacity_legend: list.MinItems(1) & [...{
@@ -32,8 +35,14 @@ _slot_minutes: div(24*60, _slots)
 		tier:   string
 	}]
 	schedule_theme: {
-		background: =~"^#[0-9A-Fa-f]{6}$"
-		label:      =~"^#[0-9A-Fa-f]{6}$"
+		light: {
+			background: =~"^#[0-9A-Fa-f]{6}$"
+			label:      =~"^#[0-9A-Fa-f]{6}$"
+		}
+		dark: {
+			background: =~"^#[0-9A-Fa-f]{6}$"
+			label:      =~"^#[0-9A-Fa-f]{6}$"
+		}
 	}
 	capacity_schedules: {
 		[string]: #weekly_schedule

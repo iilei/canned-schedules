@@ -119,25 +119,37 @@
             "min": 0,
             "desired": 0,
             "max": 0,
-            "color": "#e0e0e0"
+            "color": {
+                "light": "#A7DCC840",
+                "dark": "#B9A5FF40"
+            }
         },
         "Minimum": {
             "min": 1,
             "desired": 2,
             "max": 4,
-            "color": "#90ee90"
+            "color": {
+                "light": "#B8E8D9D9",
+                "dark": "#B9A5FFD9"
+            }
         },
         "Medium": {
             "min": 1,
             "desired": 2,
             "max": 4,
-            "color": "#228b22"
+            "color": {
+                "light": "#54C6A5D9",
+                "dark": "#9D82EAD9"
+            }
         },
         "Maximum": {
             "min": 4,
             "desired": 4,
             "max": 8,
-            "color": "#006400"
+            "color": {
+                "light": "#087E6BD9",
+                "dark": "#7048D6D9"
+            }
         }
     },
     "capacity_legend": [
@@ -159,8 +171,14 @@
         }
     ],
     "schedule_theme": {
-        "background": "#1a1a2e",
-        "label": "#cccccc"
+        "light": {
+            "background": "#ffffff",
+            "label": "#222222"
+        },
+        "dark": {
+            "background": "#1a1a2e",
+            "label": "#cccccc"
+        }
     },
     "aws_cron": {
         "timezone": "UTC",
@@ -179,7 +197,7 @@
                     "cron": "0 0 ? * MON *"
                 },
                 {
-                    "day_of_week": "MON,TUE,WED,THU,FRI,SAT",
+                    "day_of_week": "MON-SAT",
                     "minute": 0,
                     "hour": 5,
                     "days": [
@@ -192,7 +210,7 @@
                     ],
                     "from_tier": "Minimum",
                     "to_tier": "Medium",
-                    "cron": "0 5 ? * MON,TUE,WED,THU,FRI,SAT *"
+                    "cron": "0 5 ? * MON-SAT *"
                 },
                 {
                     "day_of_week": "MON-FRI",
@@ -225,7 +243,7 @@
                     "cron": "0 17 ? * MON-FRI *"
                 },
                 {
-                    "day_of_week": "MON,TUE,WED,THU,FRI,SAT",
+                    "day_of_week": "MON-SAT",
                     "minute": 0,
                     "hour": 19,
                     "days": [
@@ -238,7 +256,7 @@
                     ],
                     "from_tier": "Medium",
                     "to_tier": "Minimum",
-                    "cron": "0 19 ? * MON,TUE,WED,THU,FRI,SAT *"
+                    "cron": "0 19 ? * MON-SAT *"
                 },
                 {
                     "day_of_week": "SUN",

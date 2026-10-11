@@ -79,7 +79,27 @@ Without `--markdown`, it contains one `time-table-<name>.txt` per schedule. Use
 `mise run render-schedule-svg` to generate only the SVG files. Each SVG contains
 one schedule, uses tier colors from `capacity_tiers`, and derives its width from
 `time_brackets`. Hovering a slot shows the cron expression that set its tier,
-active until the next transition. Ruler, legend, and offset work in both modes.
+active until the next transition. The SVG places the weekly slot grid left, its
+cron transitions right, and a one-line tier-color legend across the bottom.
+The legend has a text-colored divider above it and starts at the first slot
+column; adjust `$legendPaddingRight` in `schedule.svg.tpl` to change the spacing
+between legend entries. The schedule name sits in a full-width title row above
+both columns; SVG labels use Ubuntu Mono with a monospace fallback.
+Ruler, legend, and offset work in both modes.
+
+The SVG contains light and dark CSS palettes and switches with
+`prefers-color-scheme`, so one asset can be used in either theme. The embedding
+page can set `color-scheme` to communicate its active application mode:
+
+```css
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+```
+
+Capacity tiers use teal/green RGBA colors in light mode and lavender/purple/pink
+in dark mode. Active tiers use about 85% opacity; Off uses about 25% so the
+background shows through more clearly. The tier palettes are declared once in
+the SVG's CSS header and referenced by each slot, rather than repeated inline.
 
 Every render task exports the root CUE package and writes `schedule.json` and
 `time-scale.txt` alongside its output in a retained temporary directory under
@@ -138,6 +158,9 @@ from Sunday's final slot. Such a boundary creates a transition at Monday 00:00
 in the generated cron data. Consumers should use the transition list to apply
 changes; the cron expressions do not independently establish an initial tier
 when a consumer starts.
+
+Cron day-of-week fields use a range for every contiguous group, such as
+`MON-FRI`, `MON-SAT`, or `SAT-SUN`; separated days remain a comma list.
 
 The plain-text timetable and SVG both show these UTC cron expressions beneath
 each schedule. Schedules with no tier changes are marked accordingly.
