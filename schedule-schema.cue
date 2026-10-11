@@ -71,3 +71,22 @@ _slot_minutes: div(24*60, _slots)
 		}
 	]
 }
+
+#aws_cron_transition: {
+	minute: int & >=0 & <60
+	hour:   int & >=0 & <24
+	days: [...("MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN")]
+	from_tier:   string
+	to_tier:     string
+	day_of_week: =~"^(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?(,(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?)*$"
+	cron:        "\(minute) \(hour) ? * \(day_of_week) *"
+
+	_slot_aligned: mod(hour*60+minute, _slot_minutes) == 0
+}
+
+#aws_cron_contract: {
+	timezone: "UTC"
+	schedules: {
+		[string]: [...#aws_cron_transition]
+	}
+}

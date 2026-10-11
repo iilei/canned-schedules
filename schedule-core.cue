@@ -180,6 +180,9 @@ aws_cron: {
 		}
 	}
 }
+
+_aws_cron_validation: #aws_cron_contract & aws_cron
+
 // rendered output:
 // $ cue export . > test.cue.json
 // ------------------------------------------------------------------------------
