@@ -314,3 +314,5 @@ choices; the shared schema currently validates tier shape and legend references.
 Gomplate validates the presentation offset separately: empty, negative,
 non-integer, and overflowing offsets fail explicitly. Presentation settings do
 not change schedule capacity values.
+
+
