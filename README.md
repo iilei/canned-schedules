@@ -5,20 +5,27 @@ more specialized configurations. Start with a preconfigured schedule, inspect it
 daily pattern visually, and select what fits. When necessary, compose a different
 pattern while retaining the same validation rules.
 
-[test.cue](./test.cue) currently combines reusable building blocks, validation
-constraints, example configuration, and derived display data. CUE is responsible
-for configuration and validation; gomplate only renders the resulting JSON.
+[test.cue](./test.cue) contains the example configuration and derived display
+data. [schedule-schema.cue](./schedule-schema.cue) defines the reusable weekly
+schedule contract. CUE validates and exports; gomplate only renders the resulting
+JSON.
 
 ## Quick start
 
 With mise and the tools configured in [mise.toml](./mise.toml) available:
 
+The checked CUE, gomplate, and jq versions are pinned in Mise. Update them there
+and rerun `mise run check` when changing tool versions.
+
 ```powershell
+mise run check
 mise run render-time-table
 mise run render-time-table -r -l
 mise run render-time-table -r -l --offset 2
 ```
 
+- `mise run check` validates schedules, checks the exported snapshot, exercises
+  invalid contract cases, and smoke-tests rendering.
 - Each configured stage appears as a separate section, with MON-SUN rows in order.
 - `-r` / `--ruler` adds time annotations and the ruler.
 - `-l` / `--legend` adds the ordered capacity legend.
@@ -28,8 +35,9 @@ mise run render-time-table -r -l --offset 2
   appended to that row. An offset of `2` aligns ruler markers with HH:MM colons.
 
 The table task reuses `render-time-scale`, passing through the offset. That task
-exports CUE to `schedule.json` and generates `time-scale.txt`; the table itself is
-printed to standard output.
+exports the root CUE package to `schedule.json` and generates `time-scale.txt`;
+the table itself is printed to standard output. The check task uses temporary
+files instead of writing these artifacts into the project directory.
 
 The scale can also be rendered independently:
 
@@ -105,8 +113,8 @@ capacity_schedules: {
 ```
 
 These snippets can be incorporated into [test.cue](./test.cue). If put in a
-separate CUE file, use `package schedules` and explicitly include that file in
-validation/export commands; the current mise tasks export only `test.cue`.
+separate root-level CUE file, use `package schedules`; the Mise tasks load the
+root package, including [schedule-schema.cue](./schedule-schema.cue).
 
 **CUE combines constraints; it does not use last-write-wins overrides.**
 For example, `#base & {SUN: _day_Medium}` conflicts with the base's concrete
@@ -119,16 +127,26 @@ JSON is useful for consumers that prefer explicit values; CUE is useful for
 authors who want composition and reuse. Both should be checked against the same
 CUE constraints before rendering or downstream use.
 
-For the current combined configuration, a JSON input can be checked and exported
-together with the CUE file:
+The shared weekly structure and legend contract can validate an independent JSON
+input:
 
 ```powershell
-mise exec -- cue vet test.cue input.json
-mise exec -- cue export test.cue input.json --outfile validated-schedule.json
+mise exec -- cue vet -d '#schedule_contract' schedule-schema.cue input.json
 ```
 
-Run the export only if validation succeeds. Export also fails when constraints
-conflict or required output values are incomplete.
+This checks the weekly keys, daily slot lengths, legend symbols and tiers, and
+that schedule symbols are declared. The full preset's tier value relationships
+remain in [test.cue](./test.cue). For that concrete configuration, use:
+
+```powershell
+mise exec -- cue vet .
+mise exec -- cue export . --outfile validated-schedule.json
+```
+
+Combining additional JSON with the root package also intersects it with the
+concrete `int` preset; it does not replace that preset. The schema-only check
+does not derive the time ruler or annotations, so it is not yet a general
+render-ready JSON input mode.
 
 Render that validated JSON directly:
 
@@ -136,25 +154,19 @@ Render that validated JSON directly:
 mise exec -- gomplate -c .=validated-schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl
 ```
 
-This direct invocation shows schedule rows only. The current mise tasks always
-regenerate `schedule.json` from `test.cue`; they do not accept an external JSON
-input. Sending JSON directly to gomplate bypasses CUE validation.
-
-Because `test.cue` includes concrete example values, combining it with JSON also
-requires agreement with those values. It is **not** currently a generic schema
-that lets JSON replace the configured `int` schedule or tier values.
-
-For a general JSON-or-CUE configuration interface, separate reusable schema
-constraints from presets and concrete instance data. Validate either input format
-against that schema, then export the validated instance to the same rendering
-format. That separation is the intended direction, not an implemented input mode.
+This direct invocation shows schedule rows only. The current Mise rendering tasks
+always regenerate `schedule.json` from the root CUE package; they do not accept an
+external JSON input. Sending JSON directly to gomplate bypasses CUE validation.
 
 ## Current sanity checks and their boundaries
 
 The current CUE configuration enforces:
 
+- Exactly the seven weekday keys MON through SUN for every schedule.
 - Exactly `_slots` Unicode runes for every daily value under every stage in
   `capacity_schedules`, including newly added stages.
+- Every schedule symbol appears in the legend; legend symbols are single-rune
+  and unique, and each legend tier exists in `capacity_tiers`.
 - Exactly `_slots` time brackets, with integer minutes in `[0, 1440)`.
 - Exactly `_slots` runes in the generated ruler.
 - The constraints written on `min`, `desired`, and `max` in each capacity tier.
@@ -162,19 +174,18 @@ The current CUE configuration enforces:
 Use:
 
 ```powershell
-mise exec -- cue vet test.cue
-mise exec -- cue export test.cue
+mise run check
+mise exec -- cue vet .
+mise exec -- cue export .
 ```
 
 These checks apply to the final composed values, not just to how they were
 authored. Changing the slot count also requires updating any fixed-length preset
 patterns; validation exposes inconsistencies instead of silently resampling them.
 
-The current model does **not** yet enforce a complete seven-day week, restrict day
-names, or ensure every schedule character appears in the legend. It also does not
-establish a timezone/DST policy or a general tier schema for new tier names.
-Those rules should be added at the shared CUE validation boundary if required,
-so they apply equally to plain JSON and composed CUE configurations.
+The model does not establish a timezone/DST policy or general min/desired/max
+relationships for newly added tier names. Those policies remain open design
+choices; the shared schema currently validates tier shape and legend references.
 
 Gomplate validates the presentation offset separately: empty, negative,
 non-integer, and overflowing offsets fail explicitly. Presentation settings do

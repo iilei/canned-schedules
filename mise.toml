@@ -1,13 +1,18 @@
 [tools]
-cue = "latest"
-gomplate = "latest"
+cue = "0.17.1"
+gomplate = "5.2.0"
+jq = "1.8.1"
 
 [tasks.fmt]
 run = "cue fmt ./..."
 
+[tasks.check]
+description = "Validate schedule contracts, snapshot consistency, and renderer behavior."
+run = "sh tests/check.sh"
+
 [tasks.render-time-scale]
 run = [
-    'cue export test.cue > ./schedule.json',
+  'cue export . > ./schedule.json',
     'gomplate -c .=schedule.json -f time-scale.tmpl > time-scale.txt',
 ]
 usage = '''

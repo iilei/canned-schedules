@@ -26,11 +26,9 @@ _t1: "\u2592" // ▒
 _t2: "\u2593" // ▓
 _t3: "\u2588" // █
 
-// 24 h divided in 30 minut slots
-_slots: 48
 _days: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 _day_maximum: _t1*10 + _t2*4 + _t3*20 + _t2*4 + _t1*10
-_day_Medium:  _t1*10 + _t2*28 + _t1*10
+_day_medium:  _t1*10 + _t2*28 + _t1*10
 _all_off:     _t0 * _slots
 
 #base: {
@@ -39,7 +37,7 @@ _all_off:     _t0 * _slots
 	WED: _day_maximum
 	THU: _day_maximum
 	FRI: _day_maximum
-	SAT: _day_Medium
+	SAT: _day_medium
 	SUN: _all_off
 	...
 }
@@ -84,23 +82,15 @@ capacity_legend: [
 	{symbol: _t2, tier: "Medium"},
 	{symbol: _t3, tier: "Maximum"},
 ]
-// rendered output:
-// $ cue export test.cue > test.cue.json
-// ------------------------------------------------------------------------------
 
-capacity_schedules: {
-	[string]: {
-		[string]: strings.MinRunes(_slots) & strings.MaxRunes(_slots)
-	}
-	int: {
-		for day in _days
-		if !list.Contains(["SAT", "SUN"], day) {
-			"\(day)": _day_maximum
-		}
-		"SAT": _day_Medium
-		"SUN": _all_off
-	}
+_schedule_validation: #schedule_contract & {
+	capacity_tiers:     capacity_tiers
+	capacity_legend:    capacity_legend
+	capacity_schedules: capacity_schedules
 }
+// rendered output:
+// $ cue export . > test.cue.json
+// ------------------------------------------------------------------------------
 
 time_scale_ruler: strings.MinRunes(_slots) & strings.MaxRunes(_slots) & strings.Join([
 	for slot in list.Range(0, _slots, 1) {
@@ -132,3 +122,16 @@ time_scale_annotations: [
 		], "")
 	}
 ]
+
+// ----------------------------------------------------------------------------------------------------------------------------
+capacity_schedules: {
+	[string]: #weekly_schedule
+	int: {
+		for day in _days
+		if !list.Contains(["SAT", "SUN"], day) {
+			"\(day)": _day_maximum
+		}
+		"SAT": _day_medium
+		"SUN": _all_off
+	}
+}
