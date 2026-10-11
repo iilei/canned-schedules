@@ -73,7 +73,7 @@ jq -r '
 		| [range(0; 7) | {key: $days[.], value: ($rows[.] | tojson)}] | from_entries
 	   else .schedule_cue end) as $schedule
 	| "package schedules\n\n_base_schedules: {\n  \(.name | tojson): {",
-	  ($days[] as $day | "    \($day): \($schedule[$day])"),
+	  ($days[] as $day | "    \($day | tojson): \($schedule[$day])"),
 	  "  }\n}"
 ' "$tmpdir/proposal.json" > "$tmpdir/model/proposal.cue"
 printf 'package schedules\n\ncapacity_schedules: _base_schedules\n' > "$tmpdir/model/catalog.cue"

@@ -8,6 +8,10 @@ trap 'rm -rf "$tmpdir"' EXIT HUP INT TERM
 
 sh proposal.sh demo/a_issue_example_visually.md "$tmpdir/visual"
 sh proposal.sh demo/b_issue_example_cue.md "$tmpdir/cue"
+for day in MON TUE WED THU FRI SAT SUN; do
+	grep -Eq "^\\+[[:space:]]+\"$day\":" "$tmpdir/cue/b_issue_example_cue.generated.patch"
+	grep -Eq "^\\+[[:space:]]+\"$day\":" "$tmpdir/visual/a_issue_example_visually.generated.patch"
+done
 jq -e '
 	(.capacity_schedules | keys) == ["occassional_load_a"]
 	and (.capacity_schedules.occassional_load_a | length == 7 and all(.[]; length == 48))
