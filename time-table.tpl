@@ -24,12 +24,12 @@
   {{- end -}}
   {{- $transitions := index $.aws_cron.schedules $stage | default (coll.Slice) -}}
   {{- if gt (len $transitions) 0 -}}
-    {{- printf "AWS Cron (UTC):\n" -}}
+    {{- printf "AWS Cron:\n" -}}
     {{- range $transitions -}}
       {{- printf "  %s  %s -> %s\n" .cron .from_tier .to_tier -}}
     {{- end -}}
   {{- else -}}
-    {{- printf "AWS Cron (UTC): no tier transitions\n" -}}
+    {{- printf "AWS Cron: no tier transitions\n" -}}
   {{- end -}}
   {{- printf "\n" -}}
 {{- end -}}

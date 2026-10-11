@@ -119,7 +119,7 @@ grep -Fq '# Capacity Schedules' "$tmpdir/preview.md"
 grep -Fq '### occassional_load_b' "$tmpdir/preview.md"
 grep -Fq '00:00' "$tmpdir/preview.md"
 grep -Fq 'Legend:' "$tmpdir/preview.md"
-grep -Fq 'AWS Cron (UTC):' "$tmpdir/preview.md"
+grep -Fq 'AWS Cron:' "$tmpdir/preview.md"
 if grep -Fq '### standard' "$tmpdir/preview.md"; then
 	printf 'Proposal preview unexpectedly includes the catalog.\n' >&2
 	exit 1

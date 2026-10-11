@@ -24,8 +24,7 @@
 {{- $blockH := 24 -}}
 {{- $labelW := 40 -}}
 {{- $headerH := 30 -}}
-{{- $stageTitleH := 28 -}}
-{{- $stageY := add $headerH $stageTitleH -}}
+{{- $stageY := $headerH -}}
 {{- $stageH := 24 -}}
 {{- if $showRuler -}}
   {{- $stageH = 44 -}}
@@ -35,13 +34,26 @@
 {{- $cronLineH := 18 -}}
 {{- $scheduleW := add $labelW (mul $slotCount $blockW) -}}
 {{- $columnGap := 28 -}}
-{{- $cronW := 315 -}}
 {{- $cronX := add $scheduleW $columnGap -}}
-{{- $cronTextX := add $cronX 6 -}}
-{{- $transitionDividerX := add $cronX 165 -}}
-{{- $transitionX := add $transitionDividerX 6 -}}
+{{- $transitionX := add $cronX 6 -}}
+{{- $transitionW := mul (len "Transition") 9 -}}
+{{- $cronTextW := mul (len "AWS Cron Expression") 9 -}}
+{{- range $event := $events -}}
+  {{- $transitionLabel := printf "%s -> %s" $event.from_tier $event.to_tier -}}
+  {{- $transitionLabelW := mul (len (strings.Split "" $transitionLabel)) 8 -}}
+  {{- if gt $transitionLabelW $transitionW -}}{{- $transitionW = $transitionLabelW -}}{{- end -}}
+  {{- $expressionW := mul (len (strings.Split "" $event.cron)) 8 -}}
+  {{- if gt $expressionW $cronTextW -}}{{- $cronTextW = $expressionW -}}{{- end -}}
+{{- end -}}
+{{- if eq (len $events) 0 -}}
+  {{- $transitionW = mul (len "No tier transitions") 8 -}}
+{{- end -}}
+{{- $cronColumnPadding := 18 -}}
+{{- $cronTextX := add $transitionX (add $transitionW $cronColumnPadding) -}}
 {{- $legendPaddingRight := 32 -}}
-{{- $totalW := add $cronX $cronW -}}
+{{- $totalW := add $cronTextX (add $cronTextW 12) -}}
+{{- $titleRight := add $transitionX (add (mul (len (strings.Split "" $scheduleName)) 12) 12) -}}
+{{- if gt $titleRight $totalW -}}{{- $totalW = $titleRight -}}{{- end -}}
 {{- $cronLineCount := add 1 (len $events) -}}
 {{- if eq (len $events) 0 -}}
   {{- $cronLineCount = 2 -}}
@@ -72,7 +84,7 @@
   </style>
   <rect class="schedule-background" width="100%" height="100%"/>
   <line class="schedule-divider" x1="{{ add $scheduleW (div $columnGap 2) }}" y1="{{ $stageY }}" x2="{{ add $scheduleW (div $columnGap 2) }}" y2="{{ add $stageY $contentH }}"/>
-  <text class="schedule-label" x="{{ $labelW }}" y="{{ add $headerH 19 }}" font-size="18" font-family="{{ $fontFamilyHeading }}" font-style="italic" font-weight="bold">{{ $scheduleName }}</text>
+  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add $stageY 17 }}" font-size="18" font-family="{{ $fontFamilyHeading }}" font-style="italic" font-weight="bold">{{ $scheduleName }}</text>
   {{- if $showRuler }}
   <g class="schedule-ruler">
   {{- range $slot, $marker := strings.Split "" $data.time_scale_ruler }}
@@ -123,14 +135,14 @@
   {{- end }}
   {{- end }}
   {{- $cronY := add $stageY $stageH }}
-  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add $cronY 18 }}" font-size="14" font-family="{{ $fontFamily }}">AWS Cron Expression</text>
   <text class="schedule-label" x="{{ $transitionX }}" y="{{ add $cronY 18 }}" font-size="14" font-family="{{ $fontFamily }}">Transition</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add $cronY 18 }}" font-size="14" font-family="{{ $fontFamily }}">AWS Cron Expression</text>
   {{- if eq (len $events) 0 }}
-  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $cronY $cronLineH) 18 }}" font-size="12" font-family="{{ $fontFamily }}">No tier transitions</text>
+  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add (add $cronY $cronLineH) 18 }}" font-size="12" font-family="{{ $fontFamily }}">No tier transitions</text>
   {{- else }}
   {{- range $eventIndex, $event := $events }}
-  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $cronY (mul (add $eventIndex 1) $cronLineH)) 18 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.cron }}</text>
   <text class="schedule-label" x="{{ $transitionX }}" y="{{ add (add $cronY (mul (add $eventIndex 1) $cronLineH)) 18 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.from_tier }} -&gt; {{ $event.to_tier }}</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $cronY (mul (add $eventIndex 1) $cronLineH)) 18 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.cron }}</text>
   {{- end }}
   {{- end }}
   {{- $legendY := add $stageY $contentH }}

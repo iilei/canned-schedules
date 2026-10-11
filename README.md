@@ -177,37 +177,12 @@ mise run render-time-table --markdown --svg -ruler --legend --offset 2 --target-
 
 This creates `output/SCHEDULES.md` alongside `output/schedule-<name>.svg` files.
 Without `--markdown`, it contains one `time-table-<name>.txt` per schedule. Use
-`mise run render-schedule-svg` to generate only the SVG files. Each SVG contains
-one schedule, uses tier colors from `capacity_tiers`, and derives its width from
-`time_brackets`. Hovering a slot shows the cron expression that set its tier,
-active until the next transition. The SVG places the weekly slot grid left, its
-cron transitions right, and a one-line tier-color legend across the bottom.
-The legend has a text-colored divider above it and starts at the first slot
-column; adjust `$legendPaddingRight` in `schedule.svg.tpl` to change the spacing
-between legend entries. The schedule name sits in a full-width title row above
-both columns; SVG labels use Ubuntu Mono with a monospace fallback.
-With `--ruler`, SVGs show HH:MM annotations and major/minor ticks above the
-weekly grid, aligned to slot starts using the exported time scale. This works
-with both `render-schedule-svg --ruler` and `render-time-table --markdown --svg
---ruler`; without the flag, the SVG layout is unchanged. The SVG legend is
-always shown. `--legend` controls text output only. For SVGs, `--offset N` moves
-timestamp labels left by N font-character widths while keeping ticks and the
-slot grid fixed; `--offset 2` places the HH:MM colon approximately over its tick.
-The default is `TIME_SCALE_OFFSET` or `0`, and an explicit argument takes precedence.
+`mise run render-schedule-svg` to generate only the SVG files.
 
-The SVG contains light and dark CSS palettes and switches with
-`prefers-color-scheme`, so one asset can be used in either theme. The embedding
-page can set `color-scheme` to communicate its active application mode:
-
-```css
-html[data-theme="light"] { color-scheme: light; }
-html[data-theme="dark"] { color-scheme: dark; }
-```
-
-Capacity tiers use teal/green RGBA colors in light mode and lavender/purple/pink
-in dark mode. Active tiers use about 85% opacity; Off uses about 25% so the
-background shows through more clearly. The tier palettes are declared once in
-the SVG's CSS header and referenced by each slot, rather than repeated inline.
+Each SVG shows the weekly pattern, tier legend, and transitions with their AWS
+cron expressions. Hovering a slot shows the transition that set its tier.
+SVGs adapt to light and dark themes. Add `--ruler` for time labels; the SVG
+legend is always included (`--legend` controls text output only).
 
 Every render task exports the root CUE package and writes `schedule.json` and
 `time-scale.txt` alongside its output in a retained temporary directory under

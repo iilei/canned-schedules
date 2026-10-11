@@ -34,30 +34,30 @@ if grep -Fq 'class="schedule-ruler"' "$tmpdir/schedule-standard.svg"; then
 	printf 'Default SVG unexpectedly includes a ruler.\n' >&2
 	exit 1
 fi
-grep -Fq 'height="350" viewBox="0 0 959 350"' "$tmpdir/schedule-standard.svg"
-grep -Fq 'x="40" y="82" width="12"' "$tmpdir/schedule-standard.svg"
-grep -Eq 'y="100".*>MON</text>' "$tmpdir/schedule-standard.svg"
-grep -Eq 'y="100".*>AWS Cron Expression</text>' "$tmpdir/schedule-standard.svg"
-grep -Eq 'y="100".*>Transition</text>' "$tmpdir/schedule-standard.svg"
+grep -Fq 'height="322" viewBox="0 0 987 322"' "$tmpdir/schedule-standard.svg"
+grep -Fq 'x="40" y="54" width="12"' "$tmpdir/schedule-standard.svg"
+grep -Eq 'y="72".*>MON</text>' "$tmpdir/schedule-standard.svg"
+grep -Eq 'y="72".*>AWS Cron Expression</text>' "$tmpdir/schedule-standard.svg"
+grep -Eq 'y="72".*>Transition</text>' "$tmpdir/schedule-standard.svg"
 SCHEDULE_NAME=standard usage_ruler=true usage_offset=0 gomplate -d "data=$tmpdir/schedule.json" -f schedule.svg.tpl > "$tmpdir/ruler.svg"
 grep -Fq 'class="schedule-ruler"' "$tmpdir/ruler.svg"
-grep -Fq 'height="370" viewBox="0 0 959 370"' "$tmpdir/ruler.svg"
-grep -Fq 'x="40" y="102" width="12"' "$tmpdir/ruler.svg"
-grep -Eq 'y="120".*>MON</text>' "$tmpdir/ruler.svg"
-grep -Eq 'y="120".*>AWS Cron Expression</text>' "$tmpdir/ruler.svg"
-grep -Eq 'y="120".*>Transition</text>' "$tmpdir/ruler.svg"
-grep -Eq 'y="138".*>0 0 \? \* MON \*</text>' "$tmpdir/ruler.svg"
-grep -Eq 'x="40" dx="0ch" y="75".*text-anchor="start">00:00</text>' "$tmpdir/ruler.svg"
-grep -Eq 'x="184" dx="0ch" y="75".*text-anchor="start">06:00</text>' "$tmpdir/ruler.svg"
-grep -Eq 'x="328" dx="0ch" y="75".*text-anchor="start">12:00</text>' "$tmpdir/ruler.svg"
-grep -Eq 'x="472" dx="0ch" y="75".*text-anchor="start">18:00</text>' "$tmpdir/ruler.svg"
-grep -Fq 'x1="40" y1="82" x2="40" y2="94"' "$tmpdir/ruler.svg"
-grep -Fq 'x1="112" y1="90" x2="112" y2="94"' "$tmpdir/ruler.svg"
-grep -Fq 'x1="184" y1="86" x2="184" y2="94"' "$tmpdir/ruler.svg"
+grep -Fq 'height="342" viewBox="0 0 987 342"' "$tmpdir/ruler.svg"
+grep -Fq 'x="40" y="74" width="12"' "$tmpdir/ruler.svg"
+grep -Eq 'y="92".*>MON</text>' "$tmpdir/ruler.svg"
+grep -Eq 'y="92".*>AWS Cron Expression</text>' "$tmpdir/ruler.svg"
+grep -Eq 'y="92".*>Transition</text>' "$tmpdir/ruler.svg"
+grep -Eq 'y="110".*>0 0 \? \* MON \*</text>' "$tmpdir/ruler.svg"
+grep -Eq 'x="40" dx="0ch" y="47".*text-anchor="start">00:00</text>' "$tmpdir/ruler.svg"
+grep -Eq 'x="184" dx="0ch" y="47".*text-anchor="start">06:00</text>' "$tmpdir/ruler.svg"
+grep -Eq 'x="328" dx="0ch" y="47".*text-anchor="start">12:00</text>' "$tmpdir/ruler.svg"
+grep -Eq 'x="472" dx="0ch" y="47".*text-anchor="start">18:00</text>' "$tmpdir/ruler.svg"
+grep -Fq 'x1="40" y1="54" x2="40" y2="66"' "$tmpdir/ruler.svg"
+grep -Fq 'x1="112" y1="62" x2="112" y2="66"' "$tmpdir/ruler.svg"
+grep -Fq 'x1="184" y1="58" x2="184" y2="66"' "$tmpdir/ruler.svg"
 SCHEDULE_NAME=standard usage_ruler=true usage_offset=2 TIME_SCALE_OFFSET=4 gomplate -d "data=$tmpdir/schedule.json" -f schedule.svg.tpl > "$tmpdir/ruler-offset.svg"
 [ "$(grep -c 'dx="-2ch"' "$tmpdir/ruler-offset.svg")" -eq 4 ]
-grep -Fq 'x1="40" y1="82" x2="40" y2="94"' "$tmpdir/ruler-offset.svg"
-grep -Fq 'x="40" y="102" width="12"' "$tmpdir/ruler-offset.svg"
+grep -Fq 'x1="40" y1="54" x2="40" y2="66"' "$tmpdir/ruler-offset.svg"
+grep -Fq 'x="40" y="74" width="12"' "$tmpdir/ruler-offset.svg"
 (
 	unset usage_offset
 	SCHEDULE_NAME=standard usage_ruler=true TIME_SCALE_OFFSET=3 gomplate -d "data=$tmpdir/schedule.json" -f schedule.svg.tpl > "$tmpdir/ruler-env.svg"
@@ -70,10 +70,10 @@ for invalid_offset in '' -1 1.5 abc 999999999999999999999999999999; do
 	fi
 done
 grep -Fq '0 0 ? * MON *' "$tmpdir/schedule-standard.svg"
-grep -Eq '<text class="schedule-label" x="40" y="[0-9]+" font-size="18" font-family="Ubuntu Mono, .*Courier, monospace" font-style="italic" font-weight="bold">standard</text>' "$tmpdir/schedule-standard.svg"
+grep -Eq '<text class="schedule-label" x="650" y="47" font-size="18" font-family="Ubuntu Mono, .*Courier, monospace" font-style="italic" font-weight="bold">standard</text>' "$tmpdir/schedule-standard.svg"
 grep -Fq '@media (prefers-color-scheme: dark)' "$tmpdir/schedule-standard.svg"
 grep -Fq 'fill: var(--tier-color-dark)' "$tmpdir/schedule-standard.svg"
-grep -Fq 'AWS Cron (UTC)' "$tmpdir/schedule-standard.svg"
+grep -Fq 'AWS Cron' "$tmpdir/schedule-standard.svg"
 grep -Fq '>Transition</text>' "$tmpdir/schedule-standard.svg"
 grep -Fq '>0 0 ? * MON *</text>' "$tmpdir/schedule-standard.svg"
 grep -Fq '>Off -&gt; Minimum</text>' "$tmpdir/schedule-standard.svg"
@@ -197,6 +197,7 @@ if env -u usage_offset TIME_SCALE_OFFSET=-1 gomplate -c ".=$tmpdir/schedule.json
 	exit 1
 fi
 
+sh tests/check-svg-layout.sh
 sh tests/check-proposals.sh
 
 printf 'Schedule validation, snapshot, and render checks passed.\n'
