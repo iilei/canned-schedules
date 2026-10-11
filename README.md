@@ -26,6 +26,8 @@ mise run render-time-table -ruler --legend --offset 2
 mise run render-time-table --markdown -ruler --legend --offset 2
 mise run render-time-table --markdown --svg -ruler --legend --offset 2
 mise run render-schedule-svg
+mise run render-schedule-svg --ruler
+mise run render-schedule-svg --ruler --offset 2
 ```
 
 - Edit the reusable presets under `_base_schedules` in
@@ -41,7 +43,8 @@ mise run render-schedule-svg
 - `-l` / `--legend` adds the ordered capacity legend.
 - `-m` / `--markdown` writes a Markdown document with one schedule per section;
   it embeds inline ASCII by default. Combine with `--svg` to embed SVG files.
-- `-o` / `--offset` sets non-negative indentation for the ruler and schedule rows.
+- `-o` / `--offset` sets non-negative indentation for text ruler and schedule rows,
+  or shifts SVG timestamps left in font-character widths without moving ticks or slots.
   It defaults to `TIME_SCALE_OFFSET` when set, otherwise `0`.
 - Annotation text stays at its original position; the same offset padding is
   appended to that row. An offset of `2` aligns ruler markers with HH:MM colons.
@@ -88,7 +91,14 @@ The legend has a text-colored divider above it and starts at the first slot
 column; adjust `$legendPaddingRight` in `schedule.svg.tpl` to change the spacing
 between legend entries. The schedule name sits in a full-width title row above
 both columns; SVG labels use Ubuntu Mono with a monospace fallback.
-Ruler, legend, and offset work in both modes.
+With `--ruler`, SVGs show HH:MM annotations and major/minor ticks above the
+weekly grid, aligned to slot starts using the exported time scale. This works
+with both `render-schedule-svg --ruler` and `render-time-table --markdown --svg
+--ruler`; without the flag, the SVG layout is unchanged. The SVG legend is
+always shown. `--legend` controls text output only. For SVGs, `--offset N` moves
+timestamp labels left by N font-character widths while keeping ticks and the
+slot grid fixed; `--offset 2` places the HH:MM colon approximately over its tick.
+The default is `TIME_SCALE_OFFSET` or `0`, and an explicit argument takes precedence.
 
 The SVG contains light and dark CSS palettes and switches with
 `prefers-color-scheme`, so one asset can be used in either theme. The embedding
@@ -315,4 +325,6 @@ Gomplate validates the presentation offset separately: empty, negative,
 non-integer, and overflowing offsets fail explicitly. Presentation settings do
 not change schedule capacity values.
 
+## Example output
 
+![standard capacity schedule](output/schedule-standard.svg)

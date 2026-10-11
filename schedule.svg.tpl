@@ -4,6 +4,20 @@
 {{- $scheduleName := env.Getenv "SCHEDULE_NAME" -}}
 {{- $schedule := index $data.capacity_schedules $scheduleName -}}
 {{- $events := index $data.aws_cron.schedules $scheduleName | default (coll.Slice) -}}
+{{- $showRuler := eq (env.Getenv "usage_ruler" "false") "true" -}}
+{{- $rulerOffset := 0 -}}
+{{- if $showRuler -}}
+  {{- $offsetText := "0" -}}
+  {{- if env.HasEnv "usage_offset" -}}
+    {{- $offsetText = env.Getenv "usage_offset" -}}
+  {{- else if env.HasEnv "TIME_SCALE_OFFSET" -}}
+    {{- $offsetText = env.Getenv "TIME_SCALE_OFFSET" -}}
+  {{- end -}}
+  {{- if not (regexp.Match "^[0-9]+$" $offsetText) -}}
+    {{- test.Fail "offset (argument or TIME_SCALE_OFFSET) must be a non-negative integer" -}}
+  {{- end -}}
+  {{- $rulerOffset = conv.Atoi $offsetText -}}
+{{- end -}}
 {{- $days := coll.Slice "MON" "TUE" "WED" "THU" "FRI" "SAT" "SUN" -}}
 {{- $slotCount := len $data.time_brackets -}}
 {{- $blockW := 12 -}}
@@ -13,6 +27,9 @@
 {{- $stageTitleH := 28 -}}
 {{- $stageY := add $headerH $stageTitleH -}}
 {{- $stageH := 24 -}}
+{{- if $showRuler -}}
+  {{- $stageH = 44 -}}
+{{- end -}}
 {{- $dayH := 32 -}}
 {{- $scheduleH := add $stageH (mul (len $days) $dayH) -}}
 {{- $cronLineH := 18 -}}
@@ -29,7 +46,7 @@
 {{- if eq (len $events) 0 -}}
   {{- $cronLineCount = 2 -}}
 {{- end -}}
-{{- $cronH := mul $cronLineCount $cronLineH -}}
+{{- $cronH := add $stageH (add 1 (mul $cronLineCount $cronLineH)) -}}
 {{- $contentH := $scheduleH -}}
 {{- if gt $cronH $contentH -}}
   {{- $contentH = $cronH -}}
@@ -56,6 +73,25 @@
   <rect class="schedule-background" width="100%" height="100%"/>
   <line class="schedule-divider" x1="{{ add $scheduleW (div $columnGap 2) }}" y1="{{ $stageY }}" x2="{{ add $scheduleW (div $columnGap 2) }}" y2="{{ add $stageY $contentH }}"/>
   <text class="schedule-label" x="{{ $labelW }}" y="{{ add $headerH 19 }}" font-size="18" font-family="{{ $fontFamilyHeading }}" font-style="italic" font-weight="bold">{{ $scheduleName }}</text>
+  {{- if $showRuler }}
+  <g class="schedule-ruler">
+  {{- range $slot, $marker := strings.Split "" $data.time_scale_ruler }}
+  {{- if ne $marker " " }}
+  {{- $tickX := add $labelW (mul $slot $blockW) }}
+  {{- $tickH := 4 }}
+  {{- if eq $marker "|" }}
+    {{- $tickH = 8 }}
+  {{- else if eq $marker "║" }}
+    {{- $tickH = 12 }}
+  {{- end }}
+  <line class="schedule-divider" x1="{{ $tickX }}" y1="{{ sub (add $stageY 36) $tickH }}" x2="{{ $tickX }}" y2="{{ add $stageY 36 }}"/>
+  {{- if or (eq $marker "║") (eq $marker "|") }}
+  <text class="schedule-label" x="{{ $tickX }}" dx="{{ sub 0 $rulerOffset }}ch" y="{{ add $stageY 17 }}" font-size="12" font-family="{{ $fontFamily }}" text-anchor="start">{{ index $data.time_scale_annotations $slot }}</text>
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  </g>
+  {{- end }}
   {{- range $dayIndex, $dayName := $days }}
   {{- $row := index $schedule $dayName }}
   {{- $y := add $stageY (add $stageH (mul $dayIndex $dayH)) }}
@@ -86,15 +122,15 @@
   {{- end }}
   {{- end }}
   {{- end }}
-  {{- $cronY := add $stageY $scheduleH }}
-  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add $stageY 17 }}" font-size="14" font-family="{{ $fontFamily }}">AWS Cron Expression</text>
-  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add $stageY 17 }}" font-size="14" font-family="{{ $fontFamily }}">Transition</text>
+  {{- $cronY := add $stageY $stageH }}
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add $cronY 18 }}" font-size="14" font-family="{{ $fontFamily }}">AWS Cron Expression</text>
+  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add $cronY 18 }}" font-size="14" font-family="{{ $fontFamily }}">Transition</text>
   {{- if eq (len $events) 0 }}
-  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $stageY $cronLineH) 17 }}" font-size="12" font-family="{{ $fontFamily }}">No tier transitions</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $cronY $cronLineH) 18 }}" font-size="12" font-family="{{ $fontFamily }}">No tier transitions</text>
   {{- else }}
   {{- range $eventIndex, $event := $events }}
-  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $stageY (mul (add $eventIndex 1) $cronLineH)) 17 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.cron }}</text>
-  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add (add $stageY (mul (add $eventIndex 1) $cronLineH)) 17 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.from_tier }} -&gt; {{ $event.to_tier }}</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $cronY (mul (add $eventIndex 1) $cronLineH)) 18 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.cron }}</text>
+  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add (add $cronY (mul (add $eventIndex 1) $cronLineH)) 18 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.from_tier }} -&gt; {{ $event.to_tier }}</text>
   {{- end }}
   {{- end }}
   {{- $legendY := add $stageY $contentH }}

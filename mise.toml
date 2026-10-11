@@ -36,6 +36,8 @@ Example output with offset 2:
 description = "Render all configured schedules to SVG."
 run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh svg'
 usage = '''
+flag "-r --ruler" help="Enable time annotations and ticks above the slot grid"
+flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Shift SVG timestamps left by this many font-character widths"
 flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
 flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
 '''
@@ -46,7 +48,7 @@ flag "-r --ruler" help="Enable ruler"
 flag "-l --legend" help="Enable legend"
 flag "-m --markdown" help="Wrap the rendered table in a Markdown document"
 flag "-s --svg" help="Embed per-schedule SVGs in Markdown instead of inline text"
-flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler and schedule indentation in spaces"
+flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative text indentation in spaces, or SVG timestamp shift left in font-character widths"
 flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
 flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
 '''
