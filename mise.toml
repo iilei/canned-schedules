@@ -33,6 +33,11 @@ Example output with offset 2:
 
 '''
 
+[tasks.render-schedule-svg]
+depends = ['render-time-scale']
+description = "Render all configured schedules to SVG."
+run = 'gomplate -d data=schedule.json -f schedule.svg.tpl > schedule.svg'
+
 [tasks.render-time-table]
 depends = ['render-time-scale --offset {{ usage.offset }}']
 usage = '''
@@ -53,6 +58,7 @@ Example: mise run render-time-table --markdown -r -l --offset 2
 
 run = '''
 if [ "{{ usage.markdown }}" = "true" ]; then
+  gomplate -d data=schedule.json -f schedule.svg.tpl > schedule.svg
   gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -t time-table=time-table.tmpl -f time-table-markdown.tmpl
 else
   gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl

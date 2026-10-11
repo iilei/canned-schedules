@@ -21,6 +21,9 @@ jq -e 'all(.aws_cron.schedules[]; all(.[]; has("cron")))' "$tmpdir/schedule.json
 jq -e 'any(.aws_cron.schedules.standard[]; .cron == "0 5 ? * MON,TUE,WED,THU,FRI,SAT *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
 jq -e 'any(.aws_cron.schedules.weekday_maximum[]; .cron == "0 5 ? * MON-FRI *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
 
+gomplate -d "data=$tmpdir/schedule.json" -f schedule.svg.tpl > "$tmpdir/schedule.svg"
+[ -s "$tmpdir/schedule.svg" ]
+
 cue vet -d '#schedule_contract' schedule-schema.cue test.cue.json
 jq '.capacity_schedules.extra = .capacity_schedules.standard' test.cue.json > "$tmpdir/valid-extra.json"
 cue vet -d '#schedule_contract' schedule-schema.cue "$tmpdir/valid-extra.json"
@@ -70,8 +73,7 @@ grep -Fq '# Capacity Schedules' "$tmpdir/time-table.md"
 grep -Fq '## Configured Schedules' "$tmpdir/time-table.md"
 grep -Fq -- '- `all_off`' "$tmpdir/time-table.md"
 grep -Fq '## Weekly Schedule Drawings' "$tmpdir/time-table.md"
-grep -Fq '~~~text' "$tmpdir/time-table.md"
-[ "$(grep -Fc '~~~' "$tmpdir/time-table.md")" -eq 2 ]
+grep -Fq '![Configured capacity schedules](schedule.svg)' "$tmpdir/time-table.md"
 
 gomplate -c ".=$tmpdir/schedule.json" -t time-scale=time-scale.tmpl -f time-table.tmpl > "$tmpdir/time-table-default.txt"
 if grep -Fq 'Legend:' "$tmpdir/time-table-default.txt" || grep -Fq '00:00' "$tmpdir/time-table-default.txt"; then

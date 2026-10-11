@@ -24,6 +24,7 @@ mise run render-time-table
 mise run render-time-table -r -l
 mise run render-time-table -r -l --offset 2
 mise run render-time-table --markdown -r -l --offset 2
+mise run render-schedule-svg
 ```
 
 - Edit [schedules.cue](./schedules.cue) to create or change schedules.
@@ -32,9 +33,8 @@ mise run render-time-table --markdown -r -l --offset 2
 - Each configured stage appears as a separate section, with MON-SUN rows in order.
 - `-r` / `--ruler` adds time annotations and the ruler.
 - `-l` / `--legend` adds the ordered capacity legend.
-- `-m` / `--markdown` wraps the table in a Markdown document with a preset index
-  and a `~~~text` fenced drawing. It can be combined with the ruler, legend, and
-  offset options.
+- `-m` / `--markdown` writes a Markdown document with a preset index and an
+  embedded `schedule.svg` image. It can be combined with ruler, legend, and offset.
 - `-o` / `--offset` sets non-negative indentation for the ruler and schedule rows.
   It defaults to `TIME_SCALE_OFFSET` when set, otherwise `0`.
 - Annotation text stays at its original position; the same offset padding is
@@ -42,15 +42,17 @@ mise run render-time-table --markdown -r -l --offset 2
 
 ### Markdown output
 
-Use `--markdown` to generate a Markdown report with a schedule index and the
-rendered table inside a `~~~text` code fence. Redirect it to save a document:
+Use `--markdown` to generate a Markdown report with a schedule index and an SVG
+image of every configured schedule. The task writes `schedule.svg` beside the
+Markdown output; redirect standard output to save the document:
 
 ```powershell
 mise run render-time-table --markdown -r -l --offset 2 > schedules.md
 ```
 
-The ruler, legend, and offset remain optional and work the same as in plain-text
-mode. Without `--markdown`, the task continues to print the plain table.
+The SVG tier colors come from `capacity_tiers` in the exported JSON, and its width
+is derived from `time_brackets`. Use `mise run render-schedule-svg` to generate
+only the SVG asset. Ruler, legend, and offset remain available in plain-text mode.
 
 The table task reuses `render-time-scale`, passing through the offset. That task
 exports the root CUE package to `schedule.json` and generates `time-scale.txt`;

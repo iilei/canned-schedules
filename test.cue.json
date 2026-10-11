@@ -118,22 +118,26 @@
         "Off": {
             "min": 0,
             "desired": 0,
-            "max": 0
+            "max": 0,
+            "color": "#e0e0e0"
         },
         "Minimum": {
             "min": 1,
             "desired": 2,
-            "max": 4
+            "max": 4,
+            "color": "#90ee90"
         },
         "Medium": {
             "min": 1,
             "desired": 2,
-            "max": 4
+            "max": 4,
+            "color": "#228b22"
         },
         "Maximum": {
             "min": 4,
             "desired": 4,
-            "max": 8
+            "max": 8,
+            "color": "#006400"
         }
     },
     "capacity_legend": [
@@ -154,6 +158,10 @@
             "tier": "Maximum"
         }
     ],
+    "schedule_theme": {
+        "background": "#1a1a2e",
+        "label": "#cccccc"
+    },
     "aws_cron": {
         "timezone": "UTC",
         "schedules": {

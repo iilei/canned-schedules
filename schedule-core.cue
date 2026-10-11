@@ -59,24 +59,28 @@ capacity_tiers: {
 		min:     0 & <=desired
 		desired: 0 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
+		color:   "#e0e0e0"
 	}
 
 	Minimum: {
 		min:     1 & <=desired
 		desired: 2 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
+		color:   "#90ee90"
 	}
 
 	Medium: {
 		min:     1 & <=desired
 		desired: 2 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
+		color:   "#228b22"
 	}
 
 	Maximum: {
 		min:     4 & <=desired
 		desired: 4 & <=(max * 2)
 		max:     desired*2 & >=(desired * 2)
+		color:   "#006400"
 	}
 }
 capacity_legend: [
@@ -85,6 +89,10 @@ capacity_legend: [
 	{symbol: _t2, tier: "Medium"},
 	{symbol: _t3, tier: "Maximum"},
 ]
+schedule_theme: {
+	background: "#1a1a2e"
+	label:      "#cccccc"
+}
 
 _schedule_validation: #schedule_contract & {
 	capacity_tiers:     capacity_tiers
