@@ -1,0 +1,49 @@
+[tools]
+cue = "latest"
+gomplate = "latest"
+
+[tasks.fmt]
+run = "cue fmt ./..."
+
+[tasks.render-time-scale]
+run = [
+    'cue export test.cue > ./schedule.json',
+    'gomplate -c .=schedule.json -f time-scale.tmpl > time-scale.txt',
+]
+usage = '''
+flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler indentation in spaces"
+'''
+
+description = '''
+Based on actual configuration such as step size / slots per day, generates a time scale.
+TIME_SCALE_OFFSET sets the ruler indentation (non-negative integer; default: 0).
+Run: mise run render-time-scale --offset 4
+Without an argument, TIME_SCALE_OFFSET is used if set; otherwise the offset is 0.
+The same padding is appended to the annotation row and prepended to the ruler.
+Example output with offset 2:
+
+00:00       06:00       12:00       18:00         \n
+  ║     :     |     :     ║     :     |     :     \n
+
+
+'''
+
+[tasks.render-time-table]
+depends = ['render-time-scale --offset {{ usage.offset }}']
+usage = '''
+flag "-r --ruler" help="Enable ruler"
+flag "-l --legend" help="Enable legend"
+flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler and schedule indentation in spaces"
+'''
+
+description = '''
+Display every configured stage as a capacity timetable using its Unicode symbols.
+Use -r to include time annotations and the ruler; use -l to include the capacity legend.
+TIME_SCALE_OFFSET controls ruler and schedule indentation (default: 0).
+Reuses render-time-scale and forwards --offset.
+Example: mise run render-time-table -r -l --offset 2
+'''
+
+run = [
+    'gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl',
+]
