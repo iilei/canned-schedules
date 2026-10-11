@@ -61,11 +61,4 @@ _slot_minutes: div(24*60, _slots)
 			true & list.Contains(_legend_symbols, symbol)
 		}
 	]
-	_week_boundary_is_continuous: [
-		for _, schedule in capacity_schedules {
-			let monday = strings.Split(schedule.MON, "")
-			let sunday = strings.Split(schedule.SUN, "")
-			true & (monday[0] == sunday[_slots-1])
-		}
-	]
 }

@@ -27,12 +27,10 @@ _t2: "\u2593" // ▓
 _t3: "\u2588" // █
 
 _days: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-_day_maximum:          _t1*10 + _t2*4 + _t3*20 + _t2*4 + _t1*10
-_day_medium:           _t1*10 + _t2*28 + _t1*10
-_day_minimum:          _t1 * _slots
-_all_off:              _t0 * _slots
-_all_off_then_minimum: _t0*(_slots-1) + _t1
-_all_medium_then_off:  _t2*(_slots-1) + _t0
+_day_maximum: _t1*10 + _t2*4 + _t3*20 + _t2*4 + _t1*10
+_day_medium:  _t1*10 + _t2*28 + _t1*10
+_day_minimum: _t1 * _slots
+_all_off:     _t0 * _slots
 
 #base: {
 	MON: _day_maximum
@@ -41,7 +39,7 @@ _all_medium_then_off:  _t2*(_slots-1) + _t0
 	THU: _day_maximum
 	FRI: _day_maximum
 	SAT: _day_medium
-	SUN: _all_off_then_minimum
+	SUN: _all_off
 	...
 }
 

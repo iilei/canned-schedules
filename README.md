@@ -24,17 +24,20 @@ mise run render-time-table
 mise run render-time-table -r -l
 mise run render-time-table -r -l --offset 2
 mise run render-time-table --markdown -r -l --offset 2
+mise run render-time-table --markdown --svg -r -l --offset 2
 mise run render-schedule-svg
 ```
 
 - Edit [schedules.cue](./schedules.cue) to create or change schedules.
 - `mise run check` validates schedules, checks the exported snapshot, exercises
   invalid contract cases, and smoke-tests rendering.
-- Each configured stage appears as a separate section, with MON-SUN rows in order.
+- Render tasks write artifacts to a temporary directory and print its path.
+- Without `--markdown`, that directory contains one `time-table-<name>.txt` per
+  schedule; the combined table content is also sent to stdout.
 - `-r` / `--ruler` adds time annotations and the ruler.
 - `-l` / `--legend` adds the ordered capacity legend.
-- `-m` / `--markdown` writes a Markdown document with a preset index and an
-  embedded `schedule.svg` image. It can be combined with ruler, legend, and offset.
+- `-m` / `--markdown` writes a Markdown document with one schedule per section;
+  it embeds inline ASCII by default. Combine with `--svg` to embed SVG files.
 - `-o` / `--offset` sets non-negative indentation for the ruler and schedule rows.
   It defaults to `TIME_SCALE_OFFSET` when set, otherwise `0`.
 - Annotation text stays at its original position; the same offset padding is
@@ -42,22 +45,49 @@ mise run render-schedule-svg
 
 ### Markdown output
 
-Use `--markdown` to generate a Markdown report with a schedule index and an SVG
-image of every configured schedule. The task writes `schedule.svg` beside the
-Markdown output; redirect standard output to save the document:
+Use `--markdown` to generate a Markdown report with one schedule per section.
+By default, each section contains its ASCII table in a fenced text block:
 
 ```powershell
 mise run render-time-table --markdown -r -l --offset 2 > schedules.md
 ```
 
-The SVG tier colors come from `capacity_tiers` in the exported JSON, and its width
-is derived from `time_brackets`. Use `mise run render-schedule-svg` to generate
-only the SVG asset. Ruler, legend, and offset remain available in plain-text mode.
+The task also saves `SCHEDULES.md` in its temporary directory and prints that
+directory on stderr.
 
-The table task reuses `render-time-scale`, passing through the offset. That task
-exports the root CUE package to `schedule.json` and generates `time-scale.txt`;
-the table itself is printed to standard output. The check task uses temporary
-files instead of writing these artifacts into the project directory.
+Add `--svg` to generate one `schedule-<name>.svg` per configured schedule and
+embed those instead:
+
+```powershell
+mise run render-time-table --markdown --svg -r -l --offset 2 > schedules.md
+```
+
+The redirected Markdown contains relative SVG links. To keep those links valid,
+use `SCHEDULES.md` from the reported temporary directory, or copy the SVG
+sidecars beside the redirected Markdown file. The task's temporary directory
+contains a ready-to-view `SCHEDULES.md` and all its SVGs.
+
+To place the complete bundle in `output/`, set a target directory. `--force`
+replaces matching generated filenames but leaves unrelated files untouched:
+
+```powershell
+mise run render-time-table --markdown --svg -r -l --offset 2 --target-dir output/ --force
+```
+
+This creates `output/SCHEDULES.md` alongside `output/schedule-<name>.svg` files.
+Without `--markdown`, it contains one `time-table-<name>.txt` per schedule. Use
+`mise run render-schedule-svg` to generate only the SVG files. Each SVG contains
+one schedule, uses tier colors from `capacity_tiers`, and derives its width from
+`time_brackets`. Hovering a slot shows the cron expression that set its tier,
+active until the next transition. Ruler, legend, and offset work in both modes.
+
+Every render task exports the root CUE package and writes `schedule.json` and
+`time-scale.txt` alongside its output in a retained temporary directory under
+`$TMPDIR` (normally `/tmp`). Rendered content goes to stdout, so it can be
+redirected; the artifact-directory message goes to stderr. The SVG-only task
+prints a list of SVG paths to stdout, which can be redirected to a manifest.
+No generated render files are written to the repository root. The check task uses
+and removes its own temporary files.
 
 The scale can also be rendered independently:
 
@@ -103,10 +133,14 @@ expression (`minute hour day-of-month month day-of-week year`). For example,
 `weekday_maximum` changes to Medium at `0 5 ? * MON-FRI *`. `[standard]` also has
 the same Saturday transition, so its expression includes Saturday.
 
-The weekly pattern is cyclic: Monday's first slot must use the same symbol as
-Sunday's final slot. The shared CUE contract rejects schedules that break this
-boundary. Consumers should use the transition list to apply changes; the cron
-expressions do not independently establish an initial tier when a consumer starts.
+The weekly schedule repeats in UTC, and Monday may start at a different tier
+from Sunday's final slot. Such a boundary creates a transition at Monday 00:00
+in the generated cron data. Consumers should use the transition list to apply
+changes; the cron expressions do not independently establish an initial tier
+when a consumer starts.
+
+The plain-text timetable and SVG both show these UTC cron expressions beneath
+each schedule. Schedules with no tier changes are marked accordingly.
 
 ## Create a schedule
 

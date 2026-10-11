@@ -11,12 +11,11 @@ description = "Validate schedule contracts, snapshot consistency, and renderer b
 run = "sh tests/check.sh"
 
 [tasks.render-time-scale]
-run = [
-  'cue export . > ./schedule.json',
-    'gomplate -c .=schedule.json -f time-scale.tmpl > time-scale.txt',
-]
+run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh scale'
 usage = '''
 flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler indentation in spaces"
+flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
+flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
 '''
 
 description = '''
@@ -34,33 +33,32 @@ Example output with offset 2:
 '''
 
 [tasks.render-schedule-svg]
-depends = ['render-time-scale']
 description = "Render all configured schedules to SVG."
-run = 'gomplate -d data=schedule.json -f schedule.svg.tpl > schedule.svg'
+run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh svg'
+usage = '''
+flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
+flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
+'''
 
 [tasks.render-time-table]
-depends = ['render-time-scale --offset {{ usage.offset }}']
 usage = '''
 flag "-r --ruler" help="Enable ruler"
 flag "-l --legend" help="Enable legend"
 flag "-m --markdown" help="Wrap the rendered table in a Markdown document"
+flag "-s --svg" help="Embed per-schedule SVGs in Markdown instead of inline text"
 flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler and schedule indentation in spaces"
+flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
+flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
 '''
 
 description = '''
-Display every configured stage as a capacity timetable using its Unicode symbols.
+Render each configured schedule in a temporary output directory.
 Use -r to include time annotations and the ruler; use -l to include the capacity legend.
-Use -m to wrap the output in Markdown with a preset index and a fenced text drawing.
+Use -m to emit Markdown with one inline ASCII table per schedule; add -s to embed SVGs.
+The rendered-files directory is reported in the command output.
+Use --target-dir to copy files to a chosen directory; --force replaces matching outputs.
 TIME_SCALE_OFFSET controls ruler and schedule indentation (default: 0).
-Reuses render-time-scale and forwards --offset.
 Example: mise run render-time-table --markdown -r -l --offset 2
 '''
 
-run = '''
-if [ "{{ usage.markdown }}" = "true" ]; then
-  gomplate -d data=schedule.json -f schedule.svg.tpl > schedule.svg
-  gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -t time-table=time-table.tmpl -f time-table-markdown.tmpl
-else
-  gomplate -c .=schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl
-fi
-'''
+run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh table'

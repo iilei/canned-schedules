@@ -1,5 +1,9 @@
 schedule.json
 time-scale.txt
 time-table.txt
+time-table-*.txt
 schedules.md
+schedule-*.svg
 schedule.svg
+output/**
+!output/.gitkeep
