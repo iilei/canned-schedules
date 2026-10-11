@@ -7,7 +7,8 @@ pattern while retaining the same validation rules.
 
 [schedules.cue](./schedules.cue) is the authoring file: add a stage and set its
 MON-SUN day strings there. The model, shared tiers, legend, and derived display
-data stay in [test.cue](./test.cue) and [schedule-schema.cue](./schedule-schema.cue).
+data stay in [schedule-core.cue](./schedule-core.cue) and
+[schedule-schema.cue](./schedule-schema.cue).
 CUE validates and exports; gomplate only renders the resulting JSON.
 
 ## Quick start
@@ -90,6 +91,20 @@ The time brackets, HH:MM annotations, and ruler are derived from the slot count.
 Rendering multiple stages together makes their daily and weekly patterns easy to
 compare. The renderer is an inspection tool, not an interactive schedule selector:
 choosing a schedule means referencing or editing the configuration.
+
+## AWS cron transitions
+
+The root CUE export includes `aws_cron` data derived from each weekly schedule.
+Its timezone is fixed to UTC. Each schedule has a list of tier changes with the
+source tier, destination tier, affected weekdays, and an AWS six-field cron
+expression (`minute hour day-of-month month day-of-week year`). For example,
+`weekday_maximum` changes to Medium at `0 5 ? * MON-FRI *`. `[standard]` also has
+the same Saturday transition, so its expression includes Saturday.
+
+The weekly pattern is cyclic: Monday's first slot must use the same symbol as
+Sunday's final slot. The shared CUE contract rejects schedules that break this
+boundary. Consumers should use the transition list to apply changes; the cron
+expressions do not independently establish an initial tier when a consumer starts.
 
 ## Create a schedule
 

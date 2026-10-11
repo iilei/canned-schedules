@@ -4,7 +4,8 @@ import "strings"
 
 import "list"
 
-_slots: 48
+_slots:        48
+_slot_minutes: div(24*60, _slots)
 
 #schedule_day: strings.MinRunes(_slots) & strings.MaxRunes(_slots)
 #weekly_schedule: {
@@ -53,6 +54,13 @@ _slots: 48
 		for _, day in schedule
 		for _, symbol in strings.Split(day, "") {
 			true & list.Contains(_legend_symbols, symbol)
+		}
+	]
+	_week_boundary_is_continuous: [
+		for _, schedule in capacity_schedules {
+			let monday = strings.Split(schedule.MON, "")
+			let sunday = strings.Split(schedule.SUN, "")
+			true & (monday[0] == sunday[_slots-1])
 		}
 	]
 }

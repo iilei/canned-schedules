@@ -15,6 +15,11 @@ diff -u "$tmpdir/expected-schedule.json" "$tmpdir/actual-schedule.json"
 jq -e '(.capacity_schedules | keys | map(select(. != "all_off")) | length) == 6' "$tmpdir/schedule.json" > /dev/null
 jq -e 'has("_base_schedules") | not' "$tmpdir/schedule.json" > /dev/null
 jq -e '.capacity_schedules.all_off | length == 7 and all(.[]; length == 48 and (split("") | all(. == "░")))' "$tmpdir/schedule.json" > /dev/null
+jq -e '.aws_cron.timezone == "UTC"' "$tmpdir/schedule.json" > /dev/null
+jq -e '.aws_cron.schedules.all_off == []' "$tmpdir/schedule.json" > /dev/null
+jq -e 'all(.aws_cron.schedules[]; all(.[]; has("cron")))' "$tmpdir/schedule.json" > /dev/null
+jq -e 'any(.aws_cron.schedules.standard[]; .cron == "0 5 ? * MON,TUE,WED,THU,FRI,SAT *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
+jq -e 'any(.aws_cron.schedules.weekday_maximum[]; .cron == "0 5 ? * MON-FRI *" and .to_tier == "Medium")' "$tmpdir/schedule.json" > /dev/null
 
 cue vet -d '#schedule_contract' schedule-schema.cue test.cue.json
 jq '.capacity_schedules.extra = .capacity_schedules.standard' test.cue.json > "$tmpdir/valid-extra.json"
@@ -43,6 +48,7 @@ expect_invalid missing-day '.capacity_schedules.standard |= del(.SUN)'
 expect_invalid unknown-day '.capacity_schedules.standard.FUNDAY = .capacity_schedules.standard.MON'
 expect_invalid wrong-length '.capacity_schedules.standard.MON = "░"'
 expect_invalid unknown-symbol '.capacity_schedules.standard.MON |= gsub("▒"; "?")'
+expect_invalid week-boundary '.capacity_schedules.standard.MON |= sub("^."; "░")'
 expect_invalid unknown-tier '.capacity_legend[0].tier = "Ghost"'
 expect_invalid duplicate-symbol '.capacity_legend[1].symbol = .capacity_legend[0].symbol'
 

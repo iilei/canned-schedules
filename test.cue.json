@@ -7,7 +7,7 @@
             "THU": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓████████████████████▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
             "FRI": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓████████████████████▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
             "SAT": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
-            "SUN": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"
+            "SUN": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▒"
         },
         "weekday_maximum": {
             "MON": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓████████████████████▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
@@ -16,7 +16,7 @@
             "THU": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓████████████████████▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
             "FRI": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓████████████████████▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
             "SAT": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░",
-            "SUN": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"
+            "SUN": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▒"
         },
         "weekday_medium": {
             "MON": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
@@ -25,7 +25,7 @@
             "THU": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
             "FRI": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
             "SAT": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░",
-            "SUN": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"
+            "SUN": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▒"
         },
         "all_medium": {
             "MON": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
@@ -43,7 +43,7 @@
             "THU": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░",
             "FRI": "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░",
             "SAT": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒",
-            "SUN": "▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒"
+            "SUN": "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░"
         },
         "minimum": {
             "MON": "▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒",
@@ -154,6 +154,330 @@
             "tier": "Maximum"
         }
     ],
+    "aws_cron": {
+        "timezone": "UTC",
+        "schedules": {
+            "all_off": [],
+            "standard": [
+                {
+                    "day_of_week": "MON,TUE,WED,THU,FRI,SAT",
+                    "minute": 0,
+                    "hour": 5,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI",
+                        "SAT"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Medium",
+                    "cron": "0 5 ? * MON,TUE,WED,THU,FRI,SAT *"
+                },
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 7,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Maximum",
+                    "cron": "0 7 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 17,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Maximum",
+                    "to_tier": "Medium",
+                    "cron": "0 17 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "MON,TUE,WED,THU,FRI,SAT",
+                    "minute": 0,
+                    "hour": 19,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI",
+                        "SAT"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Minimum",
+                    "cron": "0 19 ? * MON,TUE,WED,THU,FRI,SAT *"
+                },
+                {
+                    "day_of_week": "SUN",
+                    "minute": 0,
+                    "hour": 0,
+                    "days": [
+                        "SUN"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Off",
+                    "cron": "0 0 ? * SUN *"
+                },
+                {
+                    "day_of_week": "SUN",
+                    "minute": 30,
+                    "hour": 23,
+                    "days": [
+                        "SUN"
+                    ],
+                    "from_tier": "Off",
+                    "to_tier": "Minimum",
+                    "cron": "30 23 ? * SUN *"
+                }
+            ],
+            "weekday_maximum": [
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 5,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Medium",
+                    "cron": "0 5 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 7,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Maximum",
+                    "cron": "0 7 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 17,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Maximum",
+                    "to_tier": "Medium",
+                    "cron": "0 17 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 19,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Minimum",
+                    "cron": "0 19 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "SAT",
+                    "minute": 0,
+                    "hour": 0,
+                    "days": [
+                        "SAT"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Off",
+                    "cron": "0 0 ? * SAT *"
+                },
+                {
+                    "day_of_week": "SUN",
+                    "minute": 30,
+                    "hour": 23,
+                    "days": [
+                        "SUN"
+                    ],
+                    "from_tier": "Off",
+                    "to_tier": "Minimum",
+                    "cron": "30 23 ? * SUN *"
+                }
+            ],
+            "weekday_medium": [
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 5,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Medium",
+                    "cron": "0 5 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "MON-FRI",
+                    "minute": 0,
+                    "hour": 19,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Minimum",
+                    "cron": "0 19 ? * MON-FRI *"
+                },
+                {
+                    "day_of_week": "SAT",
+                    "minute": 0,
+                    "hour": 0,
+                    "days": [
+                        "SAT"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Off",
+                    "cron": "0 0 ? * SAT *"
+                },
+                {
+                    "day_of_week": "SUN",
+                    "minute": 30,
+                    "hour": 23,
+                    "days": [
+                        "SUN"
+                    ],
+                    "from_tier": "Off",
+                    "to_tier": "Minimum",
+                    "cron": "30 23 ? * SUN *"
+                }
+            ],
+            "all_medium": [
+                {
+                    "day_of_week": "MON-SUN",
+                    "minute": 0,
+                    "hour": 5,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI",
+                        "SAT",
+                        "SUN"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Medium",
+                    "cron": "0 5 ? * MON-SUN *"
+                },
+                {
+                    "day_of_week": "MON-SUN",
+                    "minute": 0,
+                    "hour": 19,
+                    "days": [
+                        "MON",
+                        "TUE",
+                        "WED",
+                        "THU",
+                        "FRI",
+                        "SAT",
+                        "SUN"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Minimum",
+                    "cron": "0 19 ? * MON-SUN *"
+                }
+            ],
+            "weekend_medium": [
+                {
+                    "day_of_week": "SAT",
+                    "minute": 0,
+                    "hour": 0,
+                    "days": [
+                        "SAT"
+                    ],
+                    "from_tier": "Off",
+                    "to_tier": "Minimum",
+                    "cron": "0 0 ? * SAT *"
+                },
+                {
+                    "day_of_week": "SAT",
+                    "minute": 0,
+                    "hour": 5,
+                    "days": [
+                        "SAT"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Medium",
+                    "cron": "0 5 ? * SAT *"
+                },
+                {
+                    "day_of_week": "SAT",
+                    "minute": 0,
+                    "hour": 19,
+                    "days": [
+                        "SAT"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Minimum",
+                    "cron": "0 19 ? * SAT *"
+                },
+                {
+                    "day_of_week": "SUN",
+                    "minute": 0,
+                    "hour": 0,
+                    "days": [
+                        "SUN"
+                    ],
+                    "from_tier": "Minimum",
+                    "to_tier": "Medium",
+                    "cron": "0 0 ? * SUN *"
+                },
+                {
+                    "day_of_week": "SUN",
+                    "minute": 30,
+                    "hour": 23,
+                    "days": [
+                        "SUN"
+                    ],
+                    "from_tier": "Medium",
+                    "to_tier": "Off",
+                    "cron": "30 23 ? * SUN *"
+                }
+            ],
+            "minimum": []
+        }
+    },
     "time_scale_ruler": "║     :     |     :     ║     :     |     :     ",
     "time_scale_annotations": [
         "00:00",
