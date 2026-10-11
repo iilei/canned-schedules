@@ -4,9 +4,13 @@ set -eu
 mode=${1:?usage: render.sh scale|svg|table}
 output_dir=$(mktemp -d "${TMPDIR:-/tmp}/canned-schedules.XXXXXX")
 schedule_json="$output_dir/schedule.json"
-echo $output_dir
+printf '%s\n' "$output_dir" >&2
 
-cue export . > "$schedule_json"
+if [ -n "${usage_proposal:-}" ]; then
+	sh proposal.sh "$usage_proposal" "$output_dir"
+else
+	cue export . > "$schedule_json"
+fi
 gomplate -c ".=$schedule_json" -f time-scale.tpl > "$output_dir/time-scale.txt"
 
 render_svgs() {

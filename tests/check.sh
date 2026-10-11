@@ -197,4 +197,6 @@ if env -u usage_offset TIME_SCALE_OFFSET=-1 gomplate -c ".=$tmpdir/schedule.json
 	exit 1
 fi
 
+sh tests/check-proposals.sh
+
 printf 'Schedule validation, snapshot, and render checks passed.\n'

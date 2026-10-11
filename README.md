@@ -1,4 +1,18 @@
-# Schedule configuration and visualization
+# Canned Schedules
+
+A CUE-based toolkit for defining, validating, comparing, and rendering reusable
+capacity schedules. Start from a preconfigured weekly pattern, inspect its daily
+rhythm visually, and choose the schedule that fits. When needed, compose a new
+pattern while keeping the same validation rules, rendering logic, and exported
+machine-readable data.
+
+This project turns weekly capacity plans into reusable, inspectable data: define
+site or team availability in a compact symbolic format, validate it with CUE,
+render it as tables or SVGs for review, and export AWS-style cron transitions for
+automation. The goal is to make capacity schedules easy to reuse and compare
+without limiting more specialized configurations.
+
+## Schedule configuration and visualization
 
 The goal is to make capacity schedules easy to reuse and compare without limiting
 more specialized configurations. Start with a preconfigured schedule, inspect its
@@ -15,7 +29,7 @@ CUE validates and exports; gomplate only renders the resulting JSON.
 
 With mise and the tools configured in [mise.toml](./mise.toml) available:
 
-The checked CUE, gomplate, and jq versions are pinned in Mise. Update them there
+The checked CUE, gomplate, jq, and yq versions are pinned in Mise. Update them there
 and rerun `mise run check` when changing tool versions.
 
 ```powershell
@@ -48,6 +62,55 @@ mise run render-schedule-svg --ruler --offset 2
   It defaults to `TIME_SCALE_OFFSET` when set, otherwise `0`.
 - Annotation text stays at its original position; the same offset padding is
   appended to that row. An offset of `2` aligns ruler markers with HH:MM colons.
+
+### Previewing a proposed preset
+
+Contributors can validate and preview a schedule before opening an issue, without
+editing the catalog. Use either example in [demo/](./demo/) as a starting point:
+
+```sh
+mise run vet-proposal demo/a_issue_example_visually.md
+mise run preview-proposal demo/b_issue_example_cue.md > preview.md
+mise run preview-proposal demo/b_issue_example_cue.md --svg --target-dir previews/
+```
+
+`preview-proposal` calls `render-time-table` with Markdown, ruler, legend, and an
+offset of `2`. To choose the presentation yourself, use the rendering tasks:
+
+```sh
+mise run render-time-table --proposal demo/b_issue_example_cue.md --markdown --ruler --legend --offset 2
+mise run render-schedule-svg --proposal demo/a_issue_example_visually.md --ruler
+mise run check-proposals
+```
+
+Proposals must start with YAML frontmatter bounded by `---` lines. `name` and
+exactly one of `schedule_visual` or `schedule_cue` are required. Optional metadata
+is `description`, `team`, and `owner` (a list of strings); unknown fields are
+rejected. Names must start with a lowercase letter and contain only lowercase
+letters, digits, and underscores, and must not already exist in the catalog.
+
+- `schedule_visual` contains seven unlabelled rows, ordered MON-SUN, with exactly
+  48 tier symbols per row.
+- `schedule_cue` is a MON-SUN map of CUE expression strings. It supports shared
+  day helpers (`_day_maximum`, `_day_medium`, `_day_minimum`, `_all_off`), `_t0`
+  through `_t3`, quoted tier-symbol strings, integer counts, `+`, `*`, and
+  parentheses. For example: `MON: "_t1*10 + _t2*28 + _t1*10"`. It is not an
+  unrestricted CUE program.
+
+The task extracts frontmatter with `yq --front-matter extract`, builds an isolated
+CUE configuration, validates it against the existing contracts, and renders only
+the proposed preset, including derived UTC cron transitions. Successful previews
+retain `proposal.json` (metadata), `proposal.cue` (candidate source), and
+`schedule.json` beside the rendered files. Nothing is automatically applied or
+committed. A maintainer can review the candidate source before adding it to the
+catalog.
+
+Everything after the closing frontmatter delimiter is optional issue context and
+is ignored by validation. Contributors may paste the generated Markdown preview
+below it, attach the preview, or submit just the frontmatter. SVG previews need
+their sidecar files; text Markdown is convenient for pasting into an issue.
+Validation establishes structural plausibility, not whether a schedule meets a
+service's operational requirements.
 
 ### Markdown output
 

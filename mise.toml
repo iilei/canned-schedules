@@ -2,6 +2,7 @@
 cue = "0.17.1"
 gomplate = "5.2.0"
 jq = "1.8.1"
+yq = "4.53.3"
 
 [tasks.fmt]
 run = "cue fmt ./..."
@@ -9,6 +10,34 @@ run = "cue fmt ./..."
 [tasks.check]
 description = "Validate schedule contracts, snapshot consistency, and renderer behavior."
 run = "sh tests/check.sh"
+
+[tasks.check-proposals]
+description = "Check proposal extraction, validation, and preview rendering."
+run = "sh tests/check-proposals.sh"
+
+[tasks.vet-proposal]
+description = "Validate a Markdown schedule proposal without changing the catalog."
+usage = '''
+arg "<file>" help="Markdown proposal with YAML frontmatter"
+'''
+run = 'sh proposal.sh "$usage_file"'
+
+[tasks.preview-proposal]
+description = "Validate a proposal and render Markdown with ruler, legend, and cron transitions."
+usage = '''
+arg "<file>" help="Markdown proposal with YAML frontmatter"
+flag "-s --svg" help="Embed generated SVG sidecars instead of text"
+flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="2" help="Text indentation or SVG timestamp shift"
+flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy the preview bundle into this directory"
+flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching preview files in the target directory"
+'''
+run = '''
+set -- render-time-table --proposal "$usage_file" --markdown --ruler --legend --offset "$usage_offset"
+if [ "$usage_svg" = "true" ]; then set -- "$@" --svg; fi
+if [ -n "$usage_target_dir" ]; then set -- "$@" --target-dir "$usage_target_dir"; fi
+if [ "$usage_force" = "true" ]; then set -- "$@" --force; fi
+mise run "$@"
+'''
 
 [tasks.render-time-scale]
 run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh scale'
@@ -36,6 +65,7 @@ Example output with offset 2:
 description = "Render all configured schedules to SVG."
 run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh svg'
 usage = '''
+flag "--proposal <file>" help="Validate and render only this Markdown proposal, without editing the catalog"
 flag "-r --ruler" help="Enable time annotations and ticks above the slot grid"
 flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Shift SVG timestamps left by this many font-character widths"
 flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
@@ -44,6 +74,7 @@ flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files i
 
 [tasks.render-time-table]
 usage = '''
+flag "--proposal <file>" help="Validate and render only this Markdown proposal, without editing the catalog"
 flag "-r --ruler" help="Enable ruler"
 flag "-l --legend" help="Enable legend"
 flag "-m --markdown" help="Wrap the rendered table in a Markdown document"
