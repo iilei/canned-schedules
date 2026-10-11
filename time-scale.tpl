@@ -1,6 +1,6 @@
 {{- /* mise run render-time-scale --offset N; defaults to TIME_SCALE_OFFSET or 0 spaces.
 0 restores left alignment. The named argument takes precedence over the environment.
-PowerShell: $env:TIME_SCALE_OFFSET = '4'; mise exec -- gomplate -c .=schedule.json -f time-scale.tmpl
+PowerShell: $env:TIME_SCALE_OFFSET = '4'; mise exec -- gomplate -c .=schedule.json -f time-scale.tpl
 */ -}}
 {{- define "time-scale-padding" -}}
 {{- $offsetText := "0" -}}

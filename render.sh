@@ -6,7 +6,7 @@ output_dir=$(mktemp -d "${TMPDIR:-/tmp}/canned-schedules.XXXXXX")
 schedule_json="$output_dir/schedule.json"
 
 cue export . > "$schedule_json"
-gomplate -c ".=$schedule_json" -f time-scale.tmpl > "$output_dir/time-scale.txt"
+gomplate -c ".=$schedule_json" -f time-scale.tpl > "$output_dir/time-scale.txt"
 
 render_svgs() {
 	jq -r '.capacity_schedules | keys[]' "$schedule_json" |
@@ -34,16 +34,16 @@ case "$mode" in
 				render_svgs
 			fi
 			gomplate -c ".=$schedule_json" \
-				-t time-scale=time-scale.tmpl \
-				-t time-table=time-table.tmpl \
-				-f time-table-markdown.tmpl > "$output_dir/SCHEDULES.md"
+				-t time-scale=time-scale.tpl \
+				-t time-table=time-table.tpl \
+				-f time-table-markdown.tpl > "$output_dir/SCHEDULES.md"
 		else
 			jq -r '.capacity_schedules | keys[]' "$schedule_json" |
 			while IFS= read -r schedule; do
 				SCHEDULE_NAME="$schedule" gomplate \
 					-c ".=$schedule_json" \
-					-t time-scale=time-scale.tmpl \
-					-f time-table.tmpl > "$output_dir/time-table-$schedule.txt"
+					-t time-scale=time-scale.tpl \
+					-f time-table.tpl > "$output_dir/time-table-$schedule.txt"
 			done
 		fi
 		;;

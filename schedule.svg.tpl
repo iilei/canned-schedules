@@ -49,7 +49,7 @@
   {{- range $legend := $data.capacity_legend }}
   {{- if eq $legend.symbol $symbol }}
   {{- $tier := index $data.capacity_tiers $legend.tier }}
-  <rect x="{{ add $labelW (mul $i $blockW) }}" y="{{ $y }}" width="{{ $blockW }}" height="{{ $blockH }}" fill="{{ $tier.color }}" rx="1"><title>{{ if $activeEvent }}cron({{ $activeEvent.cron }}) sets {{ $activeEvent.to_tier }} until the next tier transition{{ else }}{{ $legend.tier }}; no tier transitions{{ end }}</title></rect>
+  <rect x="{{ add $labelW (mul $i $blockW) }}" y="{{ $y }}" width="{{ $blockW }}" height="{{ $blockH }}" fill="{{ $tier.color }}" rx="1"><title>{{ if $activeEvent }}Schedule: cron({{ $activeEvent.cron }})&#10;Set tier: {{ $activeEvent.to_tier }}{{ else }}Schedule: no tier transitions&#10;Set tier: {{ $legend.tier }}{{ end }}</title></rect>
   {{- end }}
   {{- end }}
   {{- end }}

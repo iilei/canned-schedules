@@ -30,13 +30,13 @@ while IFS= read -r schedule; do
 done < "$tmpdir/schedule-names.txt"
 [ "$(find "$tmpdir" -maxdepth 1 -name 'schedule-*.svg' | wc -l | tr -d ' ')" -eq "$(wc -l < "$tmpdir/schedule-names.txt" | tr -d ' ')" ]
 grep -Fq '0 0 ? * MON *' "$tmpdir/schedule-standard.svg"
-grep -Fq '<title>cron(0 0 ? * MON *) sets Minimum until the next tier transition</title>' "$tmpdir/schedule-standard.svg"
+grep -Fq '<title>Schedule: cron(0 0 ? * MON *)&#10;Set tier: Minimum</title>' "$tmpdir/schedule-standard.svg"
 
 cue vet -d '#schedule_contract' schedule-schema.cue test.cue.json
 jq '.capacity_schedules.extra = .capacity_schedules.standard' test.cue.json > "$tmpdir/valid-extra.json"
 cue vet -d '#schedule_contract' schedule-schema.cue "$tmpdir/valid-extra.json"
-gomplate -c ".=$tmpdir/valid-extra.json" -t time-scale=time-scale.tmpl -f time-table.tmpl > "$tmpdir/time-table-first.txt"
-gomplate -c ".=$tmpdir/valid-extra.json" -t time-scale=time-scale.tmpl -f time-table.tmpl > "$tmpdir/time-table-second.txt"
+gomplate -c ".=$tmpdir/valid-extra.json" -t time-scale=time-scale.tpl -f time-table.tpl > "$tmpdir/time-table-first.txt"
+gomplate -c ".=$tmpdir/valid-extra.json" -t time-scale=time-scale.tpl -f time-table.tpl > "$tmpdir/time-table-second.txt"
 cmp "$tmpdir/time-table-first.txt" "$tmpdir/time-table-second.txt"
 extra_line=$(grep -nF '[extra]' "$tmpdir/time-table-first.txt" | cut -d: -f1)
 minimum_line=$(grep -nF '[minimum]' "$tmpdir/time-table-first.txt" | cut -d: -f1)
@@ -46,7 +46,7 @@ if [ "$extra_line" -ge "$minimum_line" ]; then
 fi
 
 while IFS= read -r schedule; do
-	SCHEDULE_NAME="$schedule" gomplate -c ".=$tmpdir/schedule.json" -t time-scale=time-scale.tmpl -f time-table.tmpl > "$tmpdir/time-table-$schedule.txt"
+	SCHEDULE_NAME="$schedule" gomplate -c ".=$tmpdir/schedule.json" -t time-scale=time-scale.tpl -f time-table.tpl > "$tmpdir/time-table-$schedule.txt"
 	[ -s "$tmpdir/time-table-$schedule.txt" ]
 	grep -Fq "[$schedule]" "$tmpdir/time-table-$schedule.txt"
 done < "$tmpdir/schedule-names.txt"
@@ -91,21 +91,21 @@ TMPDIR="$tmpdir" SCHEDULE_TARGET_DIR="$tmpdir/target-dir" SCHEDULE_FORCE=true sh
 grep -Fq '00:00' "$tmpdir/target-dir/time-scale.txt"
 grep -Fq 'keep' "$tmpdir/target-dir/unrelated.txt"
 
-gomplate -c ".=$tmpdir/schedule.json" -f time-scale.tmpl > "$tmpdir/time-scale.txt"
+gomplate -c ".=$tmpdir/schedule.json" -f time-scale.tpl > "$tmpdir/time-scale.txt"
 [ -s "$tmpdir/time-scale.txt" ]
 usage_ruler=true usage_legend=true usage_offset=2 gomplate \
 	-c ".=$tmpdir/schedule.json" \
-	-t time-scale=time-scale.tmpl \
-	-f time-table.tmpl > "$tmpdir/time-table-full.txt"
+	-t time-scale=time-scale.tpl \
+	-f time-table.tpl > "$tmpdir/time-table-full.txt"
 grep -Fq '00:00' "$tmpdir/time-table-full.txt"
 grep -Fq 'Legend:' "$tmpdir/time-table-full.txt"
 grep -Fq 'MON' "$tmpdir/time-table-full.txt"
 grep -Fq '0 0 ? * MON *' "$tmpdir/time-table-full.txt"
 
 gomplate -c ".=$tmpdir/schedule.json" \
-	-t time-scale=time-scale.tmpl \
-	-t time-table=time-table.tmpl \
-	-f time-table-markdown.tmpl > "$tmpdir/time-table.md"
+	-t time-scale=time-scale.tpl \
+	-t time-table=time-table.tpl \
+	-f time-table-markdown.tpl > "$tmpdir/time-table.md"
 grep -Fq '# Capacity Schedules' "$tmpdir/time-table.md"
 grep -Fq '## Configured Schedules' "$tmpdir/time-table.md"
 grep -Fq -- '- `all_off`' "$tmpdir/time-table.md"
@@ -117,21 +117,21 @@ done < "$tmpdir/schedule-names.txt"
 [ "$(grep -Fc '~~~text' "$tmpdir/time-table.md")" -eq "$(wc -l < "$tmpdir/schedule-names.txt" | tr -d ' ')" ]
 
 usage_svg=true gomplate -c ".=$tmpdir/schedule.json" \
-	-t time-scale=time-scale.tmpl \
-	-t time-table=time-table.tmpl \
-	-f time-table-markdown.tmpl > "$tmpdir/time-table-svg.md"
+	-t time-scale=time-scale.tpl \
+	-t time-table=time-table.tpl \
+	-f time-table-markdown.tpl > "$tmpdir/time-table-svg.md"
 while IFS= read -r schedule; do
 	grep -Fq "![${schedule} capacity schedule](schedule-${schedule}.svg)" "$tmpdir/time-table-svg.md"
 done < "$tmpdir/schedule-names.txt"
 [ "$(grep -cF '![' "$tmpdir/time-table-svg.md")" -eq "$(wc -l < "$tmpdir/schedule-names.txt" | tr -d ' ')" ]
 
-gomplate -c ".=$tmpdir/schedule.json" -t time-scale=time-scale.tmpl -f time-table.tmpl > "$tmpdir/time-table-default.txt"
+gomplate -c ".=$tmpdir/schedule.json" -t time-scale=time-scale.tpl -f time-table.tpl > "$tmpdir/time-table-default.txt"
 if grep -Fq 'Legend:' "$tmpdir/time-table-default.txt" || grep -Fq '00:00' "$tmpdir/time-table-default.txt"; then
 	printf 'Default table unexpectedly includes optional ruler or legend.\n' >&2
 	exit 1
 fi
 
-if env -u usage_offset TIME_SCALE_OFFSET=-1 gomplate -c ".=$tmpdir/schedule.json" -f time-scale.tmpl > /dev/null 2>&1; then
+if env -u usage_offset TIME_SCALE_OFFSET=-1 gomplate -c ".=$tmpdir/schedule.json" -f time-scale.tpl > /dev/null 2>&1; then
 	printf 'Expected a negative time-scale offset to fail.\n' >&2
 	exit 1
 fi

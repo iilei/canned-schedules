@@ -21,10 +21,10 @@ and rerun `mise run check` when changing tool versions.
 ```powershell
 mise run check
 mise run render-time-table
-mise run render-time-table -r -l
-mise run render-time-table -r -l --offset 2
-mise run render-time-table --markdown -r -l --offset 2
-mise run render-time-table --markdown --svg -r -l --offset 2
+mise run render-time-table -ruler --legend
+mise run render-time-table -ruler --legend --offset 2
+mise run render-time-table --markdown -ruler --legend --offset 2
+mise run render-time-table --markdown --svg -ruler --legend --offset 2
 mise run render-schedule-svg
 ```
 
@@ -49,7 +49,7 @@ Use `--markdown` to generate a Markdown report with one schedule per section.
 By default, each section contains its ASCII table in a fenced text block:
 
 ```powershell
-mise run render-time-table --markdown -r -l --offset 2 > schedules.md
+mise run render-time-table --markdown -ruler --legend --offset 2 > schedules.md
 ```
 
 The task also saves `SCHEDULES.md` in its temporary directory and prints that
@@ -59,7 +59,7 @@ Add `--svg` to generate one `schedule-<name>.svg` per configured schedule and
 embed those instead:
 
 ```powershell
-mise run render-time-table --markdown --svg -r -l --offset 2 > schedules.md
+mise run render-time-table --markdown --svg -ruler --legend --offset 2 > schedules.md
 ```
 
 The redirected Markdown contains relative SVG links. To keep those links valid,
@@ -71,7 +71,7 @@ To place the complete bundle in `output/`, set a target directory. `--force`
 replaces matching generated filenames but leaves unrelated files untouched:
 
 ```powershell
-mise run render-time-table --markdown --svg -r -l --offset 2 --target-dir output/ --force
+mise run render-time-table --markdown --svg -ruler --legend --offset 2 --target-dir output/ --force
 ```
 
 This creates `output/SCHEDULES.md` alongside `output/schedule-<name>.svg` files.
@@ -169,7 +169,7 @@ Then validate and preview:
 
 ```powershell
 mise run check
-mise run render-time-table -r -l
+mise run render-time-table -ruler --legend
 ```
 
 The check rejects missing or unknown days, values with the wrong number of
@@ -213,7 +213,7 @@ JSON input mode.
 Render that validated JSON directly:
 
 ```powershell
-mise exec -- gomplate -c .=validated-schedule.json -t time-scale=time-scale.tmpl -f time-table.tmpl
+mise exec -- gomplate -c .=validated-schedule.json -t time-scale=time-scale.tpl -f time-table.tpl
 ```
 
 This direct invocation shows schedule rows only. The current Mise rendering tasks
