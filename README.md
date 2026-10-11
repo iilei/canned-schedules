@@ -28,7 +28,10 @@ mise run render-time-table --markdown --svg -ruler --legend --offset 2
 mise run render-schedule-svg
 ```
 
-- Edit [schedules.cue](./schedules.cue) to create or change schedules.
+- Edit the reusable presets under `_base_schedules` in
+  [schedules.cue](./schedules.cue) to create or change schedules. The
+  `capacity_schedules` block in that file assembles the exported schedules;
+  add presets under `_base_schedules`, not to that generated block.
 - `mise run check` validates schedules, checks the exported snapshot, exercises
   invalid contract cases, and smoke-tests rendering.
 - Render tasks write artifacts to a temporary directory and print its path.
@@ -167,17 +170,53 @@ each schedule. Schedules with no tier changes are marked accordingly.
 
 ## Create a schedule
 
-The six reusable weekly presets live under `_base_schedules` in
+The reusable weekly presets live under `_base_schedules` in
 [schedules.cue](./schedules.cue): `standard`, `weekday_maximum`,
 `weekday_medium`, `all_medium`, `weekend_medium`, and `minimum`. The exported
 `capacity_schedules` is generated from those presets, so all six appear in the
-rendered table. `all_off` is an additional generated schedule.
+rendered table. Add new presets in `_base_schedules`; do not add them to the
+`capacity_schedules` comprehension. `all_off` is an additional generated schedule.
 
 To create another preset, copy one of the entries in `_base_schedules`, give it
 a new name, and edit its MON-SUN values. Each week has exactly seven day keys;
 each quoted day value is 48 Unicode symbols, one per half-hour starting at
 midnight. The model generates the all-off week by assigning `_all_off` to every
 day in a comprehension.
+
+### Draft a schedule with an LLM
+
+You can describe the weekly pattern in plain language and ask an LLM to translate
+it into a preset. Be explicit about the default tier and the days and times for
+each override. The grid is UTC, starts at 00:00, and has 48 half-hour slots per
+day, so times must fall on a 30-minute boundary.
+
+For example, provide a request like this, replacing the schedule name and
+requirements with your own:
+
+```text
+Add a reusable schedule named `office_hours` under `_base_schedules` in
+schedules.cue.
+
+The schedule repeats weekly in UTC. Each day has 48 half-hour slots starting at
+00:00. The symbols are ░ Off, ▒ Minimum, ▓ Medium, and █ Maximum.
+
+Requirements:
+- Minimum every day by default.
+- Medium Monday through Friday from 09:00 to 17:00.
+
+Treat ranges as start-inclusive and end-exclusive. If a time is not on a
+half-hour boundary, or the requirements leave a gap or overlap, ask me before
+editing. Add only the new preset under `_base_schedules` in schedules.cue; do
+not edit the `capacity_schedules` comprehension, schema, templates, or generated
+files. Reuse existing schedule patterns where they fit.
+
+After editing, run `mise run check` and `mise run render-time-table -ruler
+--legend`. Summarize the schedule and report whether validation passed.
+```
+
+Review the generated table, then run `mise run check` yourself before keeping
+the change. See [schedules.cue](./schedules.cue) for the existing presets and
+the exact CUE structure.
 
 Use only symbols from the shared legend:
 

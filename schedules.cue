@@ -43,7 +43,7 @@ capacity_schedules: {
 	for name, schedule in _base_schedules {
 		"\(name)": schedule
 	}
-	all_off: {
+	turned_off: {
 		for day in _days {
 			"\(day)": _all_off
 		}

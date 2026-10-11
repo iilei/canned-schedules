@@ -18,8 +18,11 @@
 {{- $cronLineH := 18 -}}
 {{- $scheduleW := add $labelW (mul $slotCount $blockW) -}}
 {{- $columnGap := 28 -}}
-{{- $cronW := 420 -}}
+{{- $cronW := 315 -}}
 {{- $cronX := add $scheduleW $columnGap -}}
+{{- $cronTextX := add $cronX 6 -}}
+{{- $transitionDividerX := add $cronX 165 -}}
+{{- $transitionX := add $transitionDividerX 6 -}}
 {{- $legendPaddingRight := 32 -}}
 {{- $totalW := add $cronX $cronW -}}
 {{- $cronLineCount := add 1 (len $events) -}}
@@ -84,12 +87,14 @@
   {{- end }}
   {{- end }}
   {{- $cronY := add $stageY $scheduleH }}
-  <text class="schedule-label" x="{{ $cronX }}" y="{{ add $stageY 17 }}" font-size="14" font-family="{{ $fontFamily }}">AWS Cron (UTC)</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add $stageY 17 }}" font-size="14" font-family="{{ $fontFamily }}">AWS Cron Expression</text>
+  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add $stageY 17 }}" font-size="14" font-family="{{ $fontFamily }}">Transition</text>
   {{- if eq (len $events) 0 }}
-  <text class="schedule-label" x="{{ $cronX }}" y="{{ add (add $stageY $cronLineH) 17 }}" font-size="12" font-family="{{ $fontFamily }}">No tier transitions</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $stageY $cronLineH) 17 }}" font-size="12" font-family="{{ $fontFamily }}">No tier transitions</text>
   {{- else }}
   {{- range $eventIndex, $event := $events }}
-  <text class="schedule-label" x="{{ $cronX }}" y="{{ add (add $stageY (mul (add $eventIndex 1) $cronLineH)) 17 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.cron }}  {{ $event.from_tier }} -&gt; {{ $event.to_tier }}</text>
+  <text class="schedule-label" x="{{ $cronTextX }}" y="{{ add (add $stageY (mul (add $eventIndex 1) $cronLineH)) 17 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.cron }}</text>
+  <text class="schedule-label" x="{{ $transitionX }}" y="{{ add (add $stageY (mul (add $eventIndex 1) $cronLineH)) 17 }}" font-size="12" font-family="{{ $fontFamily }}">{{ $event.from_tier }} -&gt; {{ $event.to_tier }}</text>
   {{- end }}
   {{- end }}
   {{- $legendY := add $stageY $contentH }}

@@ -35,6 +35,13 @@ grep -Eq '<text class="schedule-label" x="40" y="[0-9]+" font-size="18" font-fam
 grep -Fq '@media (prefers-color-scheme: dark)' "$tmpdir/schedule-standard.svg"
 grep -Fq 'fill: var(--tier-color-dark)' "$tmpdir/schedule-standard.svg"
 grep -Fq 'AWS Cron (UTC)' "$tmpdir/schedule-standard.svg"
+grep -Fq '>Transition</text>' "$tmpdir/schedule-standard.svg"
+grep -Fq '>0 0 ? * MON *</text>' "$tmpdir/schedule-standard.svg"
+grep -Fq '>Off -&gt; Minimum</text>' "$tmpdir/schedule-standard.svg"
+if grep -Fq 'cron-table-rule' "$tmpdir/schedule-standard.svg"; then
+	printf 'Cron panel should not have table borders.\n' >&2
+	exit 1
+fi
 grep -Eq '<line class="schedule-divider" x1="40" y1="[0-9]+" x2="[0-9]+" y2="[0-9]+"/>' "$tmpdir/schedule-standard.svg"
 grep -Eq '<rect class="schedule-tier schedule-tier-0" x="40" y="[0-9]+" width="20" height="16"' "$tmpdir/schedule-standard.svg"
 grep -Fq '>Off</text>' "$tmpdir/schedule-standard.svg"
