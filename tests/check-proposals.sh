@@ -22,6 +22,38 @@ cue -C "$tmpdir" vet .
 cue -C "$tmpdir" export . -e capacity_schedules > "$tmpdir/combined.json"
 jq -e 'has("standard") and has("occassional_load_b")' "$tmpdir/combined.json" > /dev/null
 
+mkdir "$tmpdir/apply"
+cp "$repo_root"/*.cue "$tmpdir/apply/"
+git -C "$tmpdir/apply" init -q
+git -C "$tmpdir/apply" apply --check "$tmpdir/cue/b_issue_example_cue.generated.patch"
+git -C "$tmpdir/apply" apply "$tmpdir/cue/b_issue_example_cue.generated.patch"
+awk '/^capacity_schedules: \{$/ {exit} {print}' schedules.cue > "$tmpdir/original-base.cue"
+awk '/^capacity_schedules: \{$/ {exit} {print}' "$tmpdir/apply/schedules.cue" > "$tmpdir/patched-base.cue"
+cmp "$tmpdir/original-base.cue" "$tmpdir/patched-base.cue"
+awk '
+	/"occassional_load_b": \{/ {found = 1}
+	found && /^[ \t]*}$/ {closed = 1; next}
+	closed {
+		if ($0 !~ /^[ \t]*\.\.\.[ \t]*$/) exit 1
+		placed = 1
+		exit
+	}
+	END {if (!placed) exit 1}
+' "$tmpdir/apply/schedules.cue"
+cue -C "$tmpdir/apply" vet .
+cue -C "$tmpdir/apply" export . > "$tmpdir/applied.json"
+jq -S '.capacity_schedules.occassional_load_b' "$tmpdir/applied.json" > "$tmpdir/applied-days.json"
+jq -S '.capacity_schedules.occassional_load_b' "$tmpdir/cue/schedule.json" > "$tmpdir/proposed-days.json"
+cmp "$tmpdir/applied-days.json" "$tmpdir/proposed-days.json"
+if git -C "$tmpdir/apply" apply --check "$tmpdir/cue/b_issue_example_cue.generated.patch" > /dev/null 2>&1; then
+	printf 'Expected applying the same proposal patch twice to fail.\n' >&2
+	exit 1
+fi
+cp schedules.cue "$tmpdir/apply/schedules.cue"
+git -C "$tmpdir/apply" apply --check "$tmpdir/visual/a_issue_example_visually.generated.patch"
+git -C "$tmpdir/apply" apply "$tmpdir/visual/a_issue_example_visually.generated.patch"
+cue -C "$tmpdir/apply" vet .
+
 make_proposal() {
 	case_name=$1
 	filter=$2
@@ -81,7 +113,7 @@ if sh proposal.sh "$tmpdir/unclosed.md" > /dev/null 2> "$tmpdir/unclosed.err"; t
 	exit 1
 fi
 
-TMPDIR="$tmpdir" usage_proposal=demo/b_issue_example_cue.md usage_markdown=true usage_ruler=true usage_legend=true usage_offset=2 \
+TMPDIR="$tmpdir" SCHEDULE_TARGET_DIR="$tmpdir/text-bundle" usage_proposal=demo/b_issue_example_cue.md usage_markdown=true usage_ruler=true usage_legend=true usage_offset=2 \
 	sh render.sh table > "$tmpdir/preview.md" 2> "$tmpdir/preview.err"
 grep -Fq '# Capacity Schedules' "$tmpdir/preview.md"
 grep -Fq '### occassional_load_b' "$tmpdir/preview.md"
@@ -95,12 +127,31 @@ fi
 output_dir=$(sed -n 's/^Rendered files: //p' "$tmpdir/preview.err")
 [ -s "$output_dir/proposal.cue" ]
 [ -s "$output_dir/proposal.json" ]
-cmp "$tmpdir/preview.md" "$output_dir/SCHEDULES.md"
+cmp "$tmpdir/preview.md" "$output_dir/b_issue_example_cue.generated-text.md"
 
-TMPDIR="$tmpdir" usage_proposal=demo/a_issue_example_visually.md usage_markdown=true usage_svg=true usage_ruler=true usage_offset=2 \
+TMPDIR="$tmpdir" SCHEDULE_TARGET_DIR="$tmpdir/svg-bundle" usage_proposal=demo/a_issue_example_visually.md usage_markdown=true usage_svg=true usage_ruler=true usage_offset=2 \
 	sh render.sh table > "$tmpdir/svg-preview.md" 2> "$tmpdir/svg-preview.err"
 output_dir=$(sed -n 's/^Rendered files: //p' "$tmpdir/svg-preview.err")
-grep -Fq '![occassional_load_a capacity schedule](schedule-occassional_load_a.svg)' "$tmpdir/svg-preview.md"
-grep -Fq 'class="schedule-ruler"' "$output_dir/schedule-occassional_load_a.svg"
+grep -Fq '~~~text' "$tmpdir/svg-preview.md"
+grep -Fq 'class="schedule-ruler"' "$output_dir/a_issue_example_visually.generated-img.svg"
+
+mkdir "$tmpdir/local previews"
+cp demo/b_issue_example_cue.md "$tmpdir/local previews/my-proposal.md"
+TMPDIR="$tmpdir" usage_proposal="$tmpdir/local previews/my-proposal.md" usage_markdown=true usage_svg=true \
+	sh render.sh table > "$tmpdir/local-preview.md" 2> "$tmpdir/local-preview.err"
+cmp "$tmpdir/local-preview.md" "$tmpdir/local previews/my-proposal.generated-text.md"
+[ -s "$tmpdir/local previews/my-proposal.generated-img.svg" ]
+[ -s "$tmpdir/local previews/my-proposal.generated.patch" ]
+[ ! -e "$tmpdir/local previews/schedule.json" ]
+if TMPDIR="$tmpdir" usage_proposal="$tmpdir/local previews/my-proposal.md" usage_markdown=true \
+	sh render.sh table > /dev/null 2> "$tmpdir/collision.err"; then
+	printf 'Expected preview collision to fail without force.\n' >&2
+	exit 1
+fi
+grep -Fq 'pass --force' "$tmpdir/collision.err"
+TMPDIR="$tmpdir" SCHEDULE_FORCE=true usage_proposal="$tmpdir/local previews/my-proposal.md" usage_markdown=true \
+	sh render.sh table > /dev/null 2> "$tmpdir/force.err"
+git check-ignore --no-index demo/my-proposal.generated-text.md demo/my-proposal.generated-img.svg demo/my-proposal.generated.patch > "$tmpdir/ignored.txt"
+[ "$(wc -l < "$tmpdir/ignored.txt")" -eq 3 ]
 
 printf 'Proposal validation and preview checks passed.\n'

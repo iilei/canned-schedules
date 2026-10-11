@@ -46,8 +46,9 @@ mise run render-schedule-svg --ruler --offset 2
 
 - Edit the reusable presets under `_base_schedules` in
   [schedules.cue](./schedules.cue) to create or change schedules. The
-  `capacity_schedules` block in that file assembles the exported schedules;
-  add presets under `_base_schedules`, not to that generated block.
+  `capacity_schedules` block in that file assembles the exported schedules.
+  Generated contribution patches add explicit presets at the end of that block,
+  immediately before `...`, without changing `_base_schedules`.
 - `mise run check` validates schedules, checks the exported snapshot, exercises
   invalid contract cases, and smoke-tests rendering.
 - Render tasks write artifacts to a temporary directory and print its path.
@@ -70,12 +71,22 @@ editing the catalog. Use either example in [demo/](./demo/) as a starting point:
 
 ```sh
 mise run vet-proposal demo/a_issue_example_visually.md
-mise run preview-proposal demo/b_issue_example_cue.md > preview.md
+mise run preview-proposal demo/b_issue_example_cue.md
 mise run preview-proposal demo/b_issue_example_cue.md --svg --target-dir previews/
 ```
 
 `preview-proposal` calls `render-time-table` with Markdown, ruler, legend, and an
-offset of `2`. To choose the presentation yourself, use the rendering tasks:
+offset of `2`. It saves `b_issue_example_cue.generated-text.md` beside the input.
+Add `--svg` to also save `b_issue_example_cue.generated-img.svg`; proposal
+Markdown stays text and does not depend on that image. Names follow the input
+filename stem, while the schedule name from frontmatter appears in the content.
+It also saves `b_issue_example_cue.generated.patch`, which adds the preset at the
+end of `capacity_schedules` in `schedules.cue`, immediately before `...`, leaving
+`_base_schedules` unchanged. All generated suffixes are gitignored.
+Use `--force` to replace an existing
+preview, or `--target-dir` to copy the complete bundle elsewhere.
+
+To choose the presentation yourself, use the rendering tasks:
 
 ```sh
 mise run render-time-table --proposal demo/b_issue_example_cue.md --markdown --ruler --legend --offset 2
@@ -101,14 +112,35 @@ The task extracts frontmatter with `yq --front-matter extract`, builds an isolat
 CUE configuration, validates it against the existing contracts, and renders only
 the proposed preset, including derived UTC cron transitions. Successful previews
 retain `proposal.json` (metadata), `proposal.cue` (candidate source), and
-`schedule.json` beside the rendered files. Nothing is automatically applied or
+`schedule.json` in the reported temporary bundle. Only named preview files are
+copied beside the input by default; `--target-dir` copies the whole bundle.
+Nothing is automatically applied or
 committed. A maintainer can review the candidate source before adding it to the
 catalog.
 
+#### Applying the contribution patch
+
+Attach the generated patch to an issue, or apply it on a contribution branch:
+
+```sh
+git apply --check demo/b_issue_example_cue.generated.patch
+git apply demo/b_issue_example_cue.generated.patch
+mise run fmt
+cue export . > test.cue.json
+mise run check
+```
+
+The patch changes only `schedules.cue`; generation validates the combined catalog
+and checks that the patch applies to the current working file. It does not apply,
+stage, or commit anything. Review the change, refresh the exported snapshot, and
+include any required generated documentation before opening a merge request.
+If the catalog has changed since generation, re-check applicability or regenerate
+the patch. `--force` never bypasses the duplicate schedule-name check.
+
 Everything after the closing frontmatter delimiter is optional issue context and
 is ignored by validation. Contributors may paste the generated Markdown preview
-below it, attach the preview, or submit just the frontmatter. SVG previews need
-their sidecar files; text Markdown is convenient for pasting into an issue.
+below it, attach the preview, or submit just the frontmatter. The optional SVG is
+a separate convenience preview; text Markdown is convenient for pasting into an issue.
 Validation establishes structural plausibility, not whether a schedule meets a
 service's operational requirements.
 

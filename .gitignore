@@ -5,6 +5,9 @@ time-table-*.txt
 schedules.md
 schedule-*.svg
 schedule.svg
+*.generated-text.md
+*.generated-img.svg
+*.generated.patch
 output/**
 !output/.gitkeep
 !output/schedule-standard.svg

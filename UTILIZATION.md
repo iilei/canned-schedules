@@ -114,7 +114,7 @@ The contribution entry point is exposed through mise tasks:
 
 ```sh
 mise run vet-proposal demo/a_issue_example_visually.md
-mise run preview-proposal demo/b_issue_example_cue.md > preview.md
+mise run preview-proposal demo/b_issue_example_cue.md
 ```
 
 Both example documents use strict YAML frontmatter. A proposal provides either
@@ -127,6 +127,14 @@ unchanged.
 and UTC cron transitions. Contributors can also invoke `render-time-table
 --proposal <file>` directly to select rendering options, or request SVG previews.
 The preview bundle includes candidate CUE source and exported JSON for review.
+The task saves `<input-stem>.generated-text.md` beside the input proposal.
+With `--svg`, it also saves `<input-stem>.generated-img.svg` as a convenience
+preview, without replacing the text in Markdown. It also generates
+`<input-stem>.generated.patch`, adding the preset at the end of
+`capacity_schedules` in `schedules.cue`, immediately before `...`, without
+changing `_base_schedules`. All generated suffixes are gitignored;
+repeat generation requires `--force`. Candidate source and JSON remain in the
+temporary bundle unless a full bundle is requested with `--target-dir`.
 See [README.md](./README.md#previewing-a-proposed-preset) for the input contract
 and commands.
 
@@ -135,6 +143,10 @@ generated visual preview there, attach it, or omit it entirely. Automation must
 read the frontmatter rather than reconstruct a schedule from incidental examples
 in the issue body. Maintainers review and promote the validated candidate through
 a merge request; previewing does not apply a patch or publish a release.
+Contributors can attach the patch to an issue or apply it with `git apply` on a
+contribution branch. Patch generation validates the combined catalog and checks
+applicability without modifying the working catalog. A merge request should
+include the refreshed export snapshot and pass the repository checks.
 
 ## CI/CD workflow
 

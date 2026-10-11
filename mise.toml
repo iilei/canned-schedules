@@ -23,10 +23,10 @@ arg "<file>" help="Markdown proposal with YAML frontmatter"
 run = 'sh proposal.sh "$usage_file"'
 
 [tasks.preview-proposal]
-description = "Validate a proposal and render Markdown with ruler, legend, and cron transitions."
+description = "Validate a proposal and save a named Markdown preview beside the input."
 usage = '''
 arg "<file>" help="Markdown proposal with YAML frontmatter"
-flag "-s --svg" help="Embed generated SVG sidecars instead of text"
+flag "-s --svg" help="Also save an SVG preview; Markdown stays text"
 flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="2" help="Text indentation or SVG timestamp shift"
 flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy the preview bundle into this directory"
 flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching preview files in the target directory"

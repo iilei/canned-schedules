@@ -83,7 +83,53 @@ cue -C "$tmpdir/model" export . > "$tmpdir/schedule.json"
 cue vet -d '#schedule_contract' schedule-schema.cue "$tmpdir/schedule.json"
 
 if [ -n "$output_dir" ]; then
+	mkdir "$tmpdir/patch" "$tmpdir/combined"
+	cp "$repo_root"/*.cue "$tmpdir/combined/"
+	awk '
+		/^_base_schedules: \{$/ {inside = 1; next}
+		inside && /^}$/ {exit}
+		inside {print}
+	' "$tmpdir/model/proposal.cue" > "$tmpdir/preset.cue"
+	awk -v preset="$tmpdir/preset.cue" '
+		/^capacity_schedules: \{$/ {inside = 1; count++; print; next}
+		inside && /^}$/ {
+			last = size
+			while (last > 0 && block[last] ~ /^[ \t]*$/) last--
+			if (block[last] !~ /^[ \t]*\.\.\.[ \t]*$/) {
+				print "Expected capacity_schedules to end with an ellipsis in schedules.cue." > "/dev/stderr"
+				exit 1
+			}
+			for (i = 1; i < last; i++) print block[i]
+			while ((getline line < preset) > 0) print line
+			close(preset)
+			for (i = last; i <= size; i++) print block[i]
+			inside = 0
+			print
+			next
+		}
+		inside {block[++size] = $0; next}
+		{print}
+		END {
+			if (count != 1 || inside) {
+				print "Expected exactly one complete capacity_schedules block in schedules.cue." > "/dev/stderr"
+				exit 1
+			}
+		}
+	' schedules.cue > "$tmpdir/combined/schedules.cue"
+	cue -C "$tmpdir/combined" vet .
+	cue -C "$tmpdir/combined" export . > "$tmpdir/combined.json"
+	cue vet -d '#schedule_contract' schedule-schema.cue "$tmpdir/combined.json"
+
+	cp schedules.cue "$tmpdir/patch/schedules.cue"
+	git -C "$tmpdir/patch" init -q
+	git -C "$tmpdir/patch" -c core.autocrlf=false add schedules.cue
+	cp "$tmpdir/combined/schedules.cue" "$tmpdir/patch/schedules.cue"
+	proposal_stem=$(basename -- "$proposal")
+	proposal_stem=${proposal_stem%.*}
+	git -C "$tmpdir/patch" -c core.autocrlf=false --no-pager diff --no-color --no-ext-diff --no-textconv -- schedules.cue > "$tmpdir/$proposal_stem.generated.patch"
+	git apply --check "$tmpdir/$proposal_stem.generated.patch"
 	mkdir -p "$output_dir"
 	cp "$tmpdir/proposal.json" "$tmpdir/model/proposal.cue" "$tmpdir/schedule.json" "$output_dir/"
+	cp "$tmpdir/$proposal_stem.generated.patch" "$output_dir/"
 fi
 printf 'Validated proposal: %s\n' "$name" >&2
