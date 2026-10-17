@@ -3,6 +3,7 @@ cue = "0.17.1"
 gomplate = "5.2.0"
 jq = "1.8.1"
 yq = "4.53.3"
+"github:johnlepikhin/markdown-tool" = "latest"
 
 [tasks.fmt]
 run = "cue fmt ./..."
@@ -95,3 +96,27 @@ Example: mise run render-time-table --markdown -r -l --offset 2
 '''
 
 run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh table'
+
+
+[tasks.markdown-extract-times]
+description = "Convert Markdown to AST JSON and extract times."
+usage = '''
+arg "<input-file>" help="Input Markdown file to process"
+'''
+run = '''
+set -euo pipefail
+
+INPUT_FILE="$usage_input_file"
+
+mise exec -- markdown-tool convert-to ast-json \
+  < "$INPUT_FILE" \
+  > "$INPUT_FILE.ast.json"
+
+jq '.' \
+  < "$INPUT_FILE.ast.json" \
+  > "$INPUT_FILE.pp.ast.json"
+
+jq -f commonmark/extract_times.jq \
+  "$INPUT_FILE.ast.json" \
+  > "$INPUT_FILE.data.json"
+'''
