@@ -1,0 +1,20 @@
+# Odysseus Workspace Rules
+
+# These instructions are injected into every conversation in this workspace
+
+## Coding conventions
+
+- adhere to common coherency-asserting files such as .editorconfig and .rumdl.toml if present
+- when wrapping up a code change, also run mise tasks associated with linting, formatting etc.
+
+## Architecture notes
+
+-
+
+## Do not modify
+
+-
+
+## Learned by agent
+<!-- the agent appends durable facts here via the update_rules tool, gated by the same
+     write-approval flow as any other file edit -->
