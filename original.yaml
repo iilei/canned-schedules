@@ -1,0 +1,9 @@
+"*": low-load
+
+"20:00-08:00": off
+
+MON-SAT:
+  "09:00-15:00": business-load
+
+FRI:
+  "13:00-17:00": high-demand

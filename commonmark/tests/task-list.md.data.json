@@ -1,0 +1,25 @@
+[
+  {
+    "tier": "Minimum",
+    "times": [
+      "24h"
+    ],
+    "days": "ALL-WEEK"
+  },
+  {
+    "tier": "Regular",
+    "times": [
+      "07:00-12:00",
+      "14:00-18:00"
+    ],
+    "days": "MON-FRI"
+  },
+  {
+    "tier": "Regular",
+    "times": [
+      "06:00-14:00",
+      "15:00-18:30"
+    ],
+    "days": "SAT,SUN"
+  }
+]
