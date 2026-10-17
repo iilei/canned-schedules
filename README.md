@@ -25,20 +25,6 @@ data stay in [schedule-core.cue](./schedule-core.cue) and
 [schedule-schema.cue](./schedule-schema.cue).
 CUE validates and exports; gomplate only renders the resulting JSON.
 
-## Contributing with an AI assistant
-
-With mise already configured, invoke `/contribute-schedule` in a skill-enabled
-assistant, or ask it to use the
-[contribute-schedule skill](./.github/skills/contribute-schedule/SKILL.md):
-
-> Help me contribute a new preset named `occasional_load`: Medium on Monday
-> and Thursday, Off on the other days. Show me the previews before applying
-> the patch, then help me prepare a merge request.
-
-The skill runs the existing validation and preview tasks, guides your review,
-and prepares the branch and catalog change. It asks before committing or
-publishing. Mise setup and usage are covered separately in the handbook.
-
 ## Quick start
 
 With mise and the tools configured in [mise.toml](./mise.toml) available:
