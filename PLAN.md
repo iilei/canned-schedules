@@ -2,7 +2,7 @@
 
 The planned update aims to redefine the schedule definition syntax using a set of ordered rules. Each rule assigns a named load profile to a day and/or time range, with later rules overriding earlier rules wherever they overlap. This approach offers a low-barrier entry to define schedules while ensuring unambiguous configuration through CUE validation and transformation.
 
-### Key Changes
+## Key Changes
 
 1. **Syntax Update**: Define schedules using a set of ordered rules.
 2. **Rule Precedence**: Later rules override earlier rules wherever they overlap, with earlier rules continuing to apply elsewhere.
@@ -53,6 +53,7 @@ The planned update aims to redefine the schedule definition syntax using a set o
 The plan involves updating the schedule definition syntax to a rule-based approach, ensuring unambiguous configuration through CUE validation. This update will be documented in the `README.md`, and the `schedules.cue` file will be modified accordingly. The `check` task will be used to validate the new configuration, and the rendering tasks will be tested to ensure correct interpretation and rendering.
 
 ***
+
 Since GitLab still has no native dropdown/radio in issue templates (issue [#353889](https://gitlab.com/gitlab-org/gitlab/-/issues/353889) remains open), you enforce constraints in your **parser + bot** layer:
 
 **1. Define the valid set (CUE or Go):**
@@ -118,12 +119,12 @@ Your scheduler only picks up issues that have a label like `ready` (which your b
 
 **Result:**
 
-| User does | What happens |
-| ----------- | ------------- |
-| Checks `medium` | ✅ Parsed, issue gets `ready` label |
-| Checks `medium` + `maximum` | ✅ Highest wins → `maximum` |
-| Checks `turbo` | ⚠️ Bot comments, adds `needs-attention` |
-| Checks nothing | ⚠️ Bot comments "no tier selected" |
+| User does                           | What happens                                      |
+| ----------------------------------- | ------------------------------------------------- |
+| Checks `medium`                     | ✅ Parsed, issue gets `ready` label               |
+| Checks `medium` + `maximum`         | ✅ Highest wins → `maximum`                       |
+| Checks `turbo`                      | ⚠️ Bot comments, adds `needs-attention`           |
+| Checks nothing                      | ⚠️ Bot comments "no tier selected"                |
 | Adds custom `- [x] Thu–Fri` to Days | ✅ Accepted as free-form (Days are unconstrained) |
 
 The key design choice: **tiers are a closed set** (constrained), **days are an open set** (free-form). Your parser treats them differently — one maps to an enum, the other to `[]string`. The "constraint" is enforced by the bot's comment + label, not by the template itself, since GitLab can't prevent the user from typing anything.
@@ -145,11 +146,11 @@ Reserve two keywords in the Hours field:
 <!-- e.g. 9:00–17:00, "all-day", or "none" -->
 ```
 
-| User types | Meaning |
-| --- | --- |
-| `9:00-17:00` | Normal range |
-| `all-day` | 24h, no gaps |
-| `none` | No scheduled hours (offline) |
+| User types   | Meaning                      |
+| ------------ | ---------------------------- |
+| `9:00-17:00` | Normal range                 |
+| `all-day`    | 24h, no gaps                 |
+| `none`       | No scheduled hours (offline) |
 
 Your parser:
 
