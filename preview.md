@@ -4,13 +4,11 @@
 
 - `occassional_load_b`
 
-
 ## Weekly Schedule Drawings
 
 Configured schedule patterns, rendered in 30-minute slots.
 
 ### occassional_load_b
-
 
 ~~~text
 
@@ -39,6 +37,3 @@ Legend:
   █ Maximum
 
 ~~~
-
-
-

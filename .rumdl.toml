@@ -1,6 +1,13 @@
 # Enable MD060 globally or via per-file-ignores/extend-enable
 [global]
-extend-enable = ["MD060"]
+extend-enable = [
+  "MD060",
+  "MD001",  # Heading increment
+  "MD003",  # Heading style
+  "MD022",  # Blanks around headings
+  "MD025",  # Single title
+  "MD032",  # Blanks around lists
+]
 
 [MD013]
 line-length = 227
@@ -8,6 +15,5 @@ line-length = 227
 # Configure MD060 options
 [MD060]
 enabled = true
-style = "aligned"           # Options: "aligned", "compact", "tight", "any"
-max-width = 0               # Auto-compact if exceeding line length (inherits from MD013)
-column-align = "auto"       # Options: "auto", "left", "center", "right"
+style = "aligned"
+column-align = "auto"

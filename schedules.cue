@@ -48,5 +48,5 @@ capacity_schedules: {
 			"\(day)": _all_off
 		}
 	}
-  ...
+	...
 }
