@@ -132,3 +132,92 @@ description = "Validate JSON Schema files"
 run = """
 jsonschema validate ./commonmark/ast.jsonschema.json ./commonmark/tests/task-list.ast.json --continue --format-assertion
 """
+
+[tasks.validate-schedule]
+description = "Parse and validate schedule admonitions"
+usage = '''
+arg "<file>" help="Markdown proposal with YAML frontmatter"
+flag "-o --output <path>" help="Write normalized schedule JSON to this file instead of stdout"
+'''
+run = '''
+set -eu
+
+input=${usage_file?Missing required Markdown file}
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' 0
+trap 'exit 1' HUP INT TERM
+
+markdown-tool convert-to ast-json \
+  < "$input" \
+  > "$tmpdir/raw.ast.json"
+
+jq -f commonmark/transform-admonitions.jq \
+  "$tmpdir/raw.ast.json" \
+  > "$tmpdir/ast.json"
+
+if [ -n "${usage_output:-}" ]; then
+  jq -e \
+    --rawfile pattern commonmark/schedule.pattern \
+    -f commonmark/tier-admonitions.jq \
+    "$tmpdir/ast.json" \
+    > "$usage_output"
+else
+  jq -e \
+    --rawfile pattern commonmark/schedule.pattern \
+    -f commonmark/tier-admonitions.jq \
+    "$tmpdir/ast.json"
+fi
+'''
+
+[tasks."md:extract"]
+description = "Extract frontmatter and schedule transitions from Markdown"
+usage = '''
+arg "<file>" help="Markdown proposal with YAML frontmatter"
+flag "-o --output <path>" help="Write extracted JSON to this file instead of stdout"
+'''
+run = '''
+set -eu
+
+input=${usage_file?Missing required Markdown file}
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' 0
+trap 'exit 1' HUP INT TERM
+
+markdown-tool convert-to ast-json \
+  < "$input" \
+  > "$tmpdir/raw.ast.json"
+
+jq -f commonmark/transform-admonitions.jq \
+  "$tmpdir/raw.ast.json" \
+  > "$tmpdir/ast.json"
+
+jq -e -f commonmark/base-admonition.jq \
+  "$tmpdir/ast.json" \
+  > "$tmpdir/base.json"
+
+jq -e \
+  --rawfile pattern commonmark/schedule.pattern \
+  -f commonmark/tier-admonitions.jq \
+  "$tmpdir/ast.json" \
+  > "$tmpdir/transitions.json"
+
+yq --front-matter=extract '.' "$input" --output-format json \
+  > "$tmpdir/frontmatter.json"
+
+jq -n \
+  --slurpfile frontmatter "$tmpdir/frontmatter.json" \
+  --slurpfile base "$tmpdir/base.json" \
+  --slurpfile transitions "$tmpdir/transitions.json" \
+  '{
+    frontmatter: $frontmatter[0],
+    base: $base[0].base,
+    transitions: $transitions[0]
+  }' \
+  > "$tmpdir/result.json"
+
+if [ -n "${usage_output:-}" ]; then
+  cp "$tmpdir/result.json" "$usage_output"
+else
+  cat "$tmpdir/result.json"
+fi
+'''
