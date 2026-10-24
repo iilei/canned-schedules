@@ -1,4 +1,6 @@
-package report
+// Package files holds the file handling shared by every output: display paths (home shown as "~"), path-free OS
+// errors, and atomic writes.
+package files
 
 import (
 	"errors"

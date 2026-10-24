@@ -114,3 +114,37 @@ func TestReportFile(t *testing.T) {
 		t.Errorf("a directory as report target: exit code = %d, stderr = %q", code, stderr.String())
 	}
 }
+
+func TestSVGFile(t *testing.T) {
+	t.Parallel()
+
+	target := filepath.Join(t.TempDir(), "preview.svg")
+
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{"--svg-output-file", target, basic}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+
+	b, err := os.ReadFile(target)
+	if err != nil || !bytes.HasPrefix(b, []byte("<svg ")) {
+		t.Fatalf("preview = %q, err = %v", b, err)
+	}
+
+	if err := os.WriteFile(target, []byte("previous"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	code := run(
+		[]string{"--svg-output-file", target, "../../testdata/golden/error/time-24-00/input.md"},
+		&stdout,
+		&stderr,
+	)
+	if code != exitInvalid {
+		t.Fatalf("exit code = %d", code)
+	}
+
+	if b, _ := os.ReadFile(target); string(b) != "previous" {
+		t.Error("a document with errors must not replace the preview")
+	}
+}

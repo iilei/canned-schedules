@@ -7,3 +7,8 @@ import _ "embed" // Required for go:embed.
 //
 //go:embed markdown-gfm.tmpl
 var MarkdownGFM string
+
+// ScheduleSVG renders a schedule preview as SVG. It operates on the render model computed by internal/render.
+//
+//go:embed schedule-svg.tmpl
+var ScheduleSVG string

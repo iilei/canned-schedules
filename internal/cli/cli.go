@@ -4,11 +4,13 @@ package cli
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"strconv"
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
 )
@@ -19,6 +21,8 @@ var errNotBool = errors.New(`want "true" or "false"`)
 
 // Options is the parsed command line.
 type Options struct {
+	// SVGFile is --svg-output-file; empty means no preview.
+	SVGFile   string
 	Report    ReportOptions
 	Overrides []config.Override
 	Args      []string
@@ -63,6 +67,8 @@ func Parse(args []string) (Options, diag.List) {
 			return nil
 		},
 	)
+	fs.StringVar(&opts.SVGFile, "svg-output-file", "", "write an SVG preview of the schedule to this file (only "+
+		"when the document has no errors)")
 	fs.StringVar(&opts.Report.File, "error-output-file", "", "write the error report to this file instead of stderr")
 	fs.StringVar(&opts.Report.Format, "error-output-format", "", "error report format: txt (default) or json")
 	fs.StringVar(&opts.Report.Template, "error-report-template", "", "render the error report with a built-in "+
@@ -121,6 +127,16 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	out, evalDiags := schedule.Evaluate(src, cfg, opts.Schedule)
 
 	return out, append(diags, evalDiags...)
+}
+
+// SVG renders the preview of a successfully evaluated document with the same config overrides.
+func SVG(opts *Options, out *schedule.Output) ([]byte, error) {
+	cfg, diags := config.Load(opts.Overrides)
+	if cfg == nil {
+		return nil, fmt.Errorf("config: %v", diags)
+	}
+
+	return render.SVG(out, cfg)
 }
 
 func reportFlags(r ReportOptions) diag.List {
