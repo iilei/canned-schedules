@@ -424,6 +424,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Sphinx build artifacts** (the styling part is done, see "Sphinx kit"): the same docs build emits the canned
   schedules as artifacts; a cron expression as a tooltip; other themes than Furo. Open: where the docs live, in this
   repo or in a consumer repo.
+- **Admonition-style SVG** (asked 2026-10-24, deferred): a second SVG showing the request as the page's Sphinx view
+  does: a META card ("Schedule: hint"), the BASE card (`myst.BaseText`), one tier-coloured card per TIER with one row
+  per range, weekday `<title>` tooltips. Same pattern as the week SVG: a model with all coordinates in
+  `internal/render`, a gomplate-compatible `templates/schedule-cards-svg.tmpl`, plain per-tier fills with
+  `prefers-color-scheme` and `--svg-theme` (no CSS variables), title and body tints pre-blended with `blend`. Content
+  walk as in `internal/myst.Render`. No text wrapping needed (all lines are short and validated); monospace items,
+  fixed card width; system fonts (embedding Ubuntu ≈ +60 KB). Channels when built: a CLI flag (only without errors)
+  and a page download button. Estimated at about half a day.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
   catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
