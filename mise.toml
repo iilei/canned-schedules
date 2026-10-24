@@ -1,223 +1,44 @@
 [tools]
-cue = "0.17.1"
-gomplate = "5.2.0"
-jq = "1.8.1"
-yq = "4.53.3"
-"github:johnlepikhin/markdown-tool" = "2.4.0"
-rumdl = "0.2.74"
-tombi = "1.8.5"
-jsonschema = "latest"
+# Keep the linter before Go so an older copy in Go's bin directory cannot shadow it.
+golangci-lint = "2.14.0"
+go = "1.25.14"
 
 [tasks.fmt]
-run = ["cue fmt ./...", "rumdl fmt"]
+description = "Format Go code using the configured golangci-lint formatters"
+run = "golangci-lint fmt"
+
+[tasks."fmt:check"]
+description = "Check Go formatting without changing files"
+run = "golangci-lint fmt --diff"
+
+[tasks.vet]
+description = "Run Go vet on all packages"
+run = "go vet ./..."
+
+[tasks.lint]
+description = "Run golangci-lint with .golangci.yml"
+run = "golangci-lint run"
+
+[tasks.test]
+description = "Run all tests with the race detector"
+run = "go test -race ./..."
+
+[tasks.coverage]
+description = "Run tests and report coverage"
+run = [
+  "mkdir -p coverage",
+  "go test -race -coverpkg=./... -coverprofile=coverage/coverage.out ./...",
+  "go tool cover -func=coverage/coverage.out",
+]
+
+[tasks.build]
+description = "Compile all packages, including the CLI"
+run = "go build ./..."
+
+[tasks.tidy]
+description = "Tidy Go module dependencies"
+run = "go mod tidy"
 
 [tasks.check]
-description = "Validate schedule contracts, snapshot consistency, and renderer behavior."
-run = "sh tests/check.sh"
-
-[tasks.lint-markdown]
-description = "Lint Markdown files"
-run = "rumdl check ."
-
-[tasks.check-proposals]
-description = "Check proposal extraction, validation, and preview rendering."
-run = "sh tests/check-proposals.sh"
-
-[tasks.vet-proposal]
-description = "Validate a Markdown schedule proposal without changing the catalog."
-usage = '''
-arg "<file>" help="Markdown proposal with YAML frontmatter"
-'''
-run = 'sh proposal.sh "$usage_file"'
-
-[tasks.preview-proposal]
-description = "Validate a proposal and save a named Markdown preview beside the input."
-usage = '''
-arg "<file>" help="Markdown proposal with YAML frontmatter"
-flag "-s --svg" help="Also save an SVG preview; Markdown stays text"
-flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="2" help="Text indentation or SVG timestamp shift"
-flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy the preview bundle into this directory"
-flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching preview files in the target directory"
-'''
-run = '''
-set -- render-time-table --proposal "$usage_file" --markdown --ruler --legend --offset "$usage_offset"
-if [ "$usage_svg" = "true" ]; then set -- "$@" --svg; fi
-if [ -n "$usage_target_dir" ]; then set -- "$@" --target-dir "$usage_target_dir"; fi
-if [ "$usage_force" = "true" ]; then set -- "$@" --force; fi
-mise run "$@"
-'''
-
-[tasks.render-time-scale]
-run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh scale'
-usage = '''
-flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative ruler indentation in spaces"
-flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
-flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
-'''
-
-description = '''
-Based on actual configuration such as step size / slots per day, generates a time scale.
-TIME_SCALE_OFFSET sets the ruler indentation (non-negative integer; default: 0).
-Run: mise run render-time-scale --offset 4
-Without an argument, TIME_SCALE_OFFSET is used if set; otherwise the offset is 0.
-The same padding is appended to the annotation row and prepended to the ruler.
-Example output with offset 2:
-
-00:00       06:00       12:00       18:00         \n
-  ║     :     |     :     ║     :     |     :     \n
-
-
-'''
-
-[tasks.render-schedule-svg]
-description = "Render all configured schedules to SVG."
-run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh svg'
-usage = '''
-flag "--proposal <file>" help="Validate and render only this Markdown proposal, without editing the catalog"
-flag "-r --ruler" help="Enable time annotations and ticks above the slot grid"
-flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Shift SVG timestamps left by this many font-character widths"
-flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
-flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
-'''
-
-[tasks.render-time-table]
-usage = '''
-flag "--proposal <file>" help="Validate and render only this Markdown proposal, without editing the catalog"
-flag "-r --ruler" help="Enable ruler"
-flag "-l --legend" help="Enable legend"
-flag "-m --markdown" help="Wrap the rendered table in a Markdown document"
-flag "-s --svg" help="Embed per-schedule SVGs in Markdown instead of inline text"
-flag "-o --offset <offset>" env="TIME_SCALE_OFFSET" default="0" help="Non-negative text indentation in spaces, or SVG timestamp shift left in font-character widths"
-flag "--target-dir <path>" env="SCHEDULE_TARGET_DIR" help="Copy rendered files into this directory"
-flag "-f --force" env="SCHEDULE_FORCE" help="Overwrite matching rendered files in the target directory"
-'''
-
-description = '''
-Render each configured schedule in a temporary output directory.
-Use -r to include time annotations and the ruler; use -l to include the capacity legend.
-Use -m to emit Markdown with one inline ASCII table per schedule; add -s to embed SVGs.
-The rendered-files directory is reported in the command output.
-Use --target-dir to copy files to a chosen directory; --force replaces matching outputs.
-TIME_SCALE_OFFSET controls ruler and schedule indentation (default: 0).
-Example: mise run render-time-table --markdown -r -l --offset 2
-'''
-
-run = 'SCHEDULE_TARGET_DIR="{{ usage.target_dir }}" SCHEDULE_FORCE="{{ usage.force }}" sh render.sh table'
-
-[tasks.markdown-extract-times]
-description = "Convert Markdown to AST JSON and extract times."
-usage = '''
-arg "<input-file>" help="Input Markdown file to process"
-'''
-run = '''
-set -euo pipefail
-
-INPUT_FILE="$usage_input_file"
-
-mise exec -- markdown-tool convert-to ast-json \
-  < "$INPUT_FILE" \
-  > "$INPUT_FILE.ast.json"
-
-jq '.' \
-  < "$INPUT_FILE.ast.json" \
-  > "$INPUT_FILE.pp.ast.json"
-
-jq -f commonmark/extract_times.jq \
-  "$INPUT_FILE.ast.json" \
-  > "$INPUT_FILE.data.json"
-'''
-
-[tasks.validate-schema]
-description = "Validate JSON Schema files"
-run = """
-jsonschema validate ./commonmark/ast.jsonschema.json ./commonmark/tests/task-list.ast.json --continue --format-assertion
-"""
-
-[tasks.validate-schedule]
-description = "Parse and validate schedule admonitions"
-usage = '''
-arg "<file>" help="Markdown proposal with YAML frontmatter"
-flag "-o --output <path>" help="Write normalized schedule JSON to this file instead of stdout"
-'''
-run = '''
-set -eu
-
-input=${usage_file?Missing required Markdown file}
-tmpdir=$(mktemp -d)
-trap 'rm -rf "$tmpdir"' 0
-trap 'exit 1' HUP INT TERM
-
-markdown-tool convert-to ast-json \
-  < "$input" \
-  > "$tmpdir/raw.ast.json"
-
-jq -f commonmark/transform-admonitions.jq \
-  "$tmpdir/raw.ast.json" \
-  > "$tmpdir/ast.json"
-
-if [ -n "${usage_output:-}" ]; then
-  jq -e \
-    --rawfile pattern commonmark/schedule.pattern \
-    -f commonmark/tier-admonitions.jq \
-    "$tmpdir/ast.json" \
-    > "$usage_output"
-else
-  jq -e \
-    --rawfile pattern commonmark/schedule.pattern \
-    -f commonmark/tier-admonitions.jq \
-    "$tmpdir/ast.json"
-fi
-'''
-
-[tasks."md:extract"]
-description = "Extract frontmatter and schedule transitions from Markdown"
-usage = '''
-arg "<file>" help="Markdown proposal with YAML frontmatter"
-flag "-o --output <path>" help="Write extracted JSON to this file instead of stdout"
-'''
-run = '''
-set -eu
-
-input=${usage_file?Missing required Markdown file}
-tmpdir=$(mktemp -d)
-trap 'rm -rf "$tmpdir"' 0
-trap 'exit 1' HUP INT TERM
-
-markdown-tool convert-to ast-json \
-  < "$input" \
-  > "$tmpdir/raw.ast.json"
-
-jq -f commonmark/transform-admonitions.jq \
-  "$tmpdir/raw.ast.json" \
-  > "$tmpdir/ast.json"
-
-jq -e -f commonmark/base-admonition.jq \
-  "$tmpdir/ast.json" \
-  > "$tmpdir/base.json"
-
-jq -e \
-  --rawfile pattern commonmark/schedule.pattern \
-  -f commonmark/tier-admonitions.jq \
-  "$tmpdir/ast.json" \
-  > "$tmpdir/transitions.json"
-
-yq --front-matter=extract '.' "$input" --output-format json \
-  > "$tmpdir/frontmatter.json"
-
-jq -n \
-  --slurpfile frontmatter "$tmpdir/frontmatter.json" \
-  --slurpfile base "$tmpdir/base.json" \
-  --slurpfile transitions "$tmpdir/transitions.json" \
-  '{
-    frontmatter: $frontmatter[0],
-    base: $base[0].base,
-    transitions: $transitions[0]
-  }' \
-  > "$tmpdir/result.json"
-
-if [ -n "${usage_output:-}" ]; then
-  cp "$tmpdir/result.json" "$usage_output"
-else
-  cat "$tmpdir/result.json"
-fi
-'''
+description = "Run all non-mutating quality checks"
+depends = ["fmt:check", "vet", "lint", "test", "build"]

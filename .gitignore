@@ -13,3 +13,7 @@ output/**
 !output/schedule-standard.svg
 **/*.ast.json
 !commonmark/tests/task-list.md.data.json
+
+*coverage.txt
+coverage
+canned-schedules
