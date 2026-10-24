@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/report.schema.json",
+  "title": "canned-schedules error report",
+  "description": "Written by --error-output-format json; the built-in markdown-gfm template operates on this shape. Strings are sanitized: control and bidi characters appear as \\uXXXX escapes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema-version",
+    "summary",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema-version": {
+      "const": "1"
+    },
+    "file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "errors",
+        "warnings"
+      ],
+      "properties": {
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "severity": {
+          "enum": [
+            "error",
+            "warn"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z]+(?:-[a-z]+)*$"
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "description": "path:line:col, ready to use; prefer file/line/column for parsing (paths may contain ':').",
+          "type": "string",
+          "minLength": 1
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "excerpt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "marker"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "marker": {
+              "type": "string",
+              "pattern": "^[ \\t]*\\^$"
+            }
+          }
+        }
+      },
+      "dependentRequired": {
+        "line": [
+          "column",
+          "location"
+        ],
+        "column": [
+          "line"
+        ],
+        "location": [
+          "line"
+        ],
+        "excerpt": [
+          "line"
+        ]
+      }
+    }
+  }
+}

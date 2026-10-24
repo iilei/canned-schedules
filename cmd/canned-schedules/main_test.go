@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -36,6 +38,29 @@ func TestRun(t *testing.T) {
 			wantStderr: "../../testdata/golden/error/time-24-00/input.md:9:17: error[invalid-time]",
 		},
 		{name: "invalid flag value", args: []string{"--granularity", "7", basic}, wantCode: exitInvalid},
+		{name: "directory as input", args: []string{"."}, wantCode: exitUsage, wantStderr: "a directory"},
+		{
+			name:       "json report on stderr",
+			args:       []string{"--error-output-format", "json", "../../testdata/golden/error/time-24-00/input.md"},
+			wantCode:   exitInvalid,
+			wantStderr: `"location": "../../testdata/golden/error/time-24-00/input.md:9:17"`,
+		},
+		{
+			name: "markdown report on stderr",
+			args: []string{
+				"--error-report-template",
+				"markdown-gfm",
+				"../../testdata/golden/error/time-24-00/input.md",
+			},
+			wantCode:   exitInvalid,
+			wantStderr: "#### error `invalid-time`",
+		},
+		{
+			name:       "format and template are exclusive",
+			args:       []string{"--error-output-format", "json", "--error-report-template", "markdown-gfm", basic},
+			wantCode:   exitInvalid,
+			wantStderr: "can't be combined",
+		},
 	}
 
 	for _, tt := range tests {
@@ -60,3 +85,32 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestReportFile(t *testing.T) {
+	t.Parallel()
+
+	target := filepath.Join(t.TempDir(), "report.json")
+	if err := os.WriteFile(target, []byte("stale"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+
+	code := run([]string{"--error-output-format", "json", "--error-output-file", target, basic}, &stdout, &stderr)
+	if code != exitOK || stderr.Len() != 0 {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+
+	b, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(b), `"diagnostics": []`) {
+		t.Errorf("a successful run must still write an (empty) report, got %s", b)
+	}
+
+	code = run([]string{"--error-output-file", t.TempDir(), basic}, &stdout, &stderr)
+	if code != exitUsage || !strings.Contains(stderr.String(), "is a directory") {
+		t.Errorf("a directory as report target: exit code = %d, stderr = %q", code, stderr.String())
+	}
+}

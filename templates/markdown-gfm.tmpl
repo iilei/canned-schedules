@@ -1,0 +1,32 @@
+{{- /*
+  Error report as GitHub-flavoured Markdown, built into canned-schedules (--error-report-template markdown-gfm).
+
+  The data is the JSON report (--error-output-format json). The template uses plain Go text/template only, so it
+  also runs with gomplate as a starting point for your own layout:
+
+    canned-schedules --error-output-format json --error-output-file report.json request.md
+    gomplate -c .=report.json -f templates/markdown-gfm.tmpl
+
+  Safety: every user-derived string (file, message, source excerpt) is printed only inside the ~~~~~~ fences, where
+  Markdown, HTML, links, @mentions and #references don't render. The tool sanitizes control characters beforehand.
+*/ -}}
+### Schedule check
+
+**Errors:** {{ .summary.errors }} · **Warnings:** {{ .summary.warnings }}
+{{- if not .diagnostics }}
+
+No problems found.
+{{- end }}
+{{- range .diagnostics }}
+
+#### {{ .severity }} `{{ .code }}`
+
+~~~~~~text
+{{ with .location }}{{ . }}: {{ else }}{{ with .file }}{{ . }}: {{ end }}{{ end }}{{ .message }}
+{{- with .excerpt }}
+
+{{ .text }}
+{{ .marker }}
+{{- end }}
+~~~~~~
+{{- end }}

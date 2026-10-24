@@ -1,0 +1,4 @@
+--error-output-format
+json
+--error-report-template
+markdown-gfm
