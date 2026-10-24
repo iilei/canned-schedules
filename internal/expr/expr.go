@@ -3,6 +3,7 @@ package expr
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -40,6 +41,19 @@ type dayToken struct {
 	pos  diag.Pos
 }
 
+// writtenDay is a weekday abbreviation as written, with its position.
+type writtenDay struct {
+	pos diag.Pos
+	day int
+}
+
+// part is one DAY or DAY-DAY element of a weekday expression.
+type part struct {
+	written []writtenDay
+	from    int
+	to      int
+}
+
 // Parse parses one range item. Every time must be a multiple of sampleInterval minutes.
 func Parse(item document.Item, sampleInterval int) (Range, diag.List) {
 	toks := item.Tokens
@@ -63,13 +77,13 @@ func Parse(item document.Item, sampleInterval int) (Range, diag.List) {
 	}
 
 	days, dayDiags := parseDays(toks[3])
-	if len(dayDiags) > 0 {
+	if dayDiags.HasErrors() {
 		return Range{}, dayDiags
 	}
 
 	r.Days = days
 
-	return r, nil
+	return r, dayDiags
 }
 
 // wellFormed checks the token shape: code, " to ", code, whitespace plus weekdays, all on one line.
@@ -113,45 +127,88 @@ func parseTime(tok document.Token, sampleInterval int, diags *diag.List) (int, b
 	return total, true
 }
 
-// parseDays parses `DAY[-DAY](,DAY[-DAY])*`. Whitespace anywhere in the expression is ignored.
+// parseDays parses `DAY[-DAY](,DAY[-DAY])*`. Whitespace anywhere in the expression is ignored. Bounds are inclusive.
+// Writing the same abbreviation twice (MON,MON or WED-WED) is an error; a day that a range already covers
+// (MON-WED,TUE) only warns, once per item.
 func parseDays(tok document.Token) ([]int, diag.List) {
 	toks := lexDays(tok)
 
-	var days []int
+	var (
+		days     []int
+		warnings diag.List
+		written  = map[int]bool{}
+		covered  = map[int]bool{}
+	)
 
 	for i := 0; i < len(toks); {
-		from, err := dayAt(toks, i, tok)
+		p, next, err := dayPart(toks, i, tok)
 		if err != nil {
 			return nil, diag.List{*err}
 		}
 
-		to := from
-		i++
-
-		if i < len(toks) && toks[i].text == "-" {
-			if to, err = dayAt(toks, i+1, tok); err != nil {
-				return nil, diag.List{*err}
+		for _, w := range p.written {
+			if written[w.day] {
+				return nil, diag.List{diag.Errorf(w.pos, diag.CodeDuplicateWeekday,
+					"%s is written twice; list each weekday once (ranges include both ends: MON-FRI includes FRI)",
+					Weekdays[w.day])}
 			}
 
-			i += 2
+			written[w.day] = true
 		}
 
-		days = append(days, expand(from, to)...)
-
-		if i < len(toks) {
-			if toks[i].text != "," {
-				return nil, diag.List{badDay(toks[i])}
-			}
-
-			i++
-
-			if i == len(toks) {
-				return nil, diag.List{badDay(toks[i-1])}
-			}
+		span := expand(p.from, p.to)
+		if len(warnings) == 0 && slices.ContainsFunc(span, func(d int) bool { return covered[d] }) {
+			warnings = append(warnings, diag.Warnf(p.written[0].pos, diag.CodeRepeatedWeekday,
+				"%s is already covered by an earlier part of this weekday expression", Weekdays[p.from]))
 		}
+
+		for _, d := range span {
+			covered[d] = true
+		}
+
+		days = append(days, span...)
+		i = next
 	}
 
-	return days, nil
+	return days, warnings
+}
+
+// dayPart parses the part starting at toks[i] plus the following comma, and returns the index after it.
+func dayPart(toks []dayToken, i int, src document.Token) (part, int, *diag.Diagnostic) {
+	from, err := dayAt(toks, i, src)
+	if err != nil {
+		return part{}, 0, err
+	}
+
+	p := part{from: from, to: from, written: []writtenDay{{day: from, pos: toks[i].pos}}}
+	i++
+
+	if i < len(toks) && toks[i].text == "-" {
+		if p.to, err = dayAt(toks, i+1, src); err != nil {
+			return part{}, 0, err
+		}
+
+		p.written = append(p.written, writtenDay{day: p.to, pos: toks[i+1].pos})
+		i += 2
+	}
+
+	if i == len(toks) {
+		return p, i, nil
+	}
+
+	if toks[i].text != "," {
+		d := badDay(toks[i])
+
+		return part{}, 0, &d
+	}
+
+	if i+1 == len(toks) {
+		d := badDay(toks[i])
+
+		return part{}, 0, &d
+	}
+
+	return p, i + 1, nil
 }
 
 // invalidTime explains a malformed time. Examples stay on a 15-minute grid and avoid 23:59, which reads like a

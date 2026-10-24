@@ -48,6 +48,7 @@ The full syntax reference is at the end of this request.
 > - Equal start and end means a full 24 hours: `08:00` to `08:00` MON runs until Tuesday 08:00.
 >
 > **Weekdays:** `MON TUE WED THU FRI SAT SUN`, uppercase. Ranges like `MON-FRI` (also across the weekend,
-> `FRI-MON`) and lists like `SAT,SUN`.
+> `FRI-MON`) and lists like `SAT,SUN`. Weekday ranges include both ends: `MON-FRI` includes Friday, while the end
+> time of a range is excluded. Write each weekday at most once per range.
 >
 > **Overlaps:** later ranges win where they overlap earlier ones.

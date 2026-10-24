@@ -113,12 +113,26 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   or mixed case, no trailing dots, no other variants.
   - Ranges (`MON-FRI`) and comma lists (`SAT,SUN`) are allowed. Wrap-around ranges are allowed (`FRI-MON` = FRI, SAT,
     SUN, MON).
+  - **Weekday bounds are inclusive** (`MON-FRI` includes FRI), unlike times, whose end is exclusive. Documented in the
+    README and the issue templates.
+  - **Each abbreviation is written at most once per item (decided 2026-10-24):** `MON,MON`, `WED-WED` and
+    `MON-WED,WED` are errors (`duplicate-weekday`, at the second occurrence). One-day ranges are therefore not
+    allowed; write the single day.
+  - **A day already covered by an earlier part warns** (`repeated-weekday`, at the part that introduces it, once per
+    item): `MON-WED,TUE`, `FRI-MON,SUN`. The range still applies.
   - Whitespace from the first weekday name to the end of the line is ignored (`SAT, SUN` and `MON - FRI` are fine).
 - **Cron forms are not accepted** as input.
 - **`--sample-interval <minutes>`** (renamed from `--granularity`, 2026-10-24, for one vocabulary with
   `--preview-downsample`): default `1`. It must divide 60 evenly (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60). Every
   time must be a multiple of it, otherwise it's an error (`sample-interval`). This is an **input rule**: there is no
   rounding, ever.
+- **Item details (decided 2026-10-24):** `to` is lowercase only and needs whitespace on both sides (`TO` and
+  `` `06:00`to`22:00` `` are `invalid-range`); at least one space is required between the end time and the weekdays
+  (`` `22:00`MON `` is `invalid-range`); a range item that spans two lines is `invalid-range`.
+- **No time zones (decided 2026-10-24):** schedules are wall-clock times without a zone, and cron strings carry none.
+  Time zones stay out of this tool. UTC is the recommended convention; a team that needs another zone writes a
+  separate schedule for it, and downstream tooling (ASG `TimeZone`, EventBridge `ScheduleExpressionTimezone`) sets
+  the zone.
 
 ### Evaluation (decided)
 
@@ -319,15 +333,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-- [ ] **Time zone** (from the old plan's open decisions): schedules are wall-clock times without a zone, and cron
-      strings carry none; downstream tooling (ASG `TimeZone`, EventBridge `ScheduleExpressionTimezone`) sets it. Confirm
-      that this stays out of the core.
-
-- [ ] **Confirm choices made while implementing `expr`** (no fixtures yet; unit tests in `internal/expr`):
-      - `to` is lowercase only and needs whitespace on both sides (`TO` and `` `06:00`to`22:00` `` are `invalid-range`).
-      - At least one space is required between the end time and the weekdays (`` `22:00`MON `` is `invalid-range`).
-      - A range item that spans two lines is `invalid-range`.
-      - Repeated days (`MON,MON`, `MON-WED,TUE`) are allowed; painting them twice changes nothing.
+- Nothing open at the moment.
 
 ## Future ideas (not scheduled — don't build unasked)
 

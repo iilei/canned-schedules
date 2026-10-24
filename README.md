@@ -59,7 +59,10 @@ names are case-insensitive.
 - A range belongs to its start day and may cross midnight: `22:00` to `02:00` FRI runs into Saturday 02:00.
 - Equal start and end means a full 24 hours: `08:00` to `08:00` MON runs until Tuesday 08:00.
 - Weekdays are `MON TUE WED THU FRI SAT SUN` in uppercase, with ranges (`MON-FRI`, also across the weekend: `FRI-MON`)
-  and lists (`SAT,SUN`).
+  and lists (`SAT,SUN`). Weekday ranges are **inclusive**: `MON-FRI` includes Friday, unlike the time range, whose end
+  is exclusive.
+- Each weekday is written at most once per range: `MON,MON` and `WED-WED` are errors (write `WED`). A day that an
+  earlier range already covers, as in `MON-WED,TUE`, gets a warning: it's harmless but usually a typo.
 - Later ranges win where they overlap earlier ones.
 
 The tiers come from the configuration: `Off`, `Minimum`, `Medium` and `Maximum` by default.
