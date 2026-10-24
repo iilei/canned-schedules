@@ -1,0 +1,106 @@
+{
+  "schema-version": "1",
+  "base": "Off",
+  "annotations": {},
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Off"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Off"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Off"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Off"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Off"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ]
+  }
+}

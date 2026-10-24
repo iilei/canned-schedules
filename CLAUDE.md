@@ -201,6 +201,20 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   it through `$schema`. These are placeholders, possibly moving to GitHub Pages later. A branch URL can change under
   you, so consider tag-pinned URLs once there are releases.
 
+## Open (fixtures)
+
+Spec gaps found while writing `testdata/golden/`. Decide them, then add fixtures:
+
+- [ ] Unknown namespace with the default namespace configured (`[!SCHEDUEL:TIER]`): an error, or ignored with a WARN
+      as in custom-namespace mode? The two current rules conflict.
+- [ ] Times without a leading zero (`6:00`): accept or reject?
+- [ ] More than one META or BASE block; a TIER block with no range items; a missing META block.
+- [ ] Directives nested in lists or other containers, and bold-wrapped markers.
+- [ ] H1: required? Does it become `name` in the output?
+- [ ] Canonical output: the draft shape is in `testdata/golden/README.md` (per-day runs split at midnight, config
+      spelling of tier ids, `annotations`). Digests and derived transitions are still to be added, and the output
+      schema (for the safety-net check) is still to be written.
+
 ## Open ends in the current code
 
 The old code is churn, so don't fix it. The bugs below are useful as negative test cases for the Go implementation.
@@ -243,9 +257,18 @@ The rest is cleanup for when the Go tool replaces the old code.
 
 ## Working conventions
 
-- Tools are pinned through `mise` (currently cue, jq, yq, gomplate, markdown-tool, rumdl; Go to be added). Run
-  everything with `mise run …`.
-- Run `mise run fmt` and `mise run lint-markdown` after editing Markdown.
-- Generated files (`**/*.ast.json`, `output/**`, `*.generated-*`) are gitignored. Never commit them.
-- Commits follow conventional style (`feat:`, `feat!:` for breaking changes, `docs:`).
+- **Go boilerplate (`40d6d86`):** module `github.com/iilei/canned-schedules`, Go 1.25. `mise.toml` now pins only
+  `golangci-lint` and `go`. Tasks: `fmt`, `fmt:check`, `vet`, `lint`, `test` (with `-race`), `coverage`, `build`,
+  `tidy`, and `check` (runs all non-mutating checks). `.golangci.yml` is strict (`mnd`, `nonamedreturns`, `godot`,
+  `testpackage` outside tests, …). `.goreleaser.yml` handles releases.
+  - **All old mise tasks and tools (cue, jq, yq, gomplate, markdown-tool, rumdl, jsonschema) are gone**, so the old
+    pipeline no longer runs through mise. The `lint-schedule`/rumdl proposal needs rumdl re-added if it's still wanted.
+- **Boilerplate is adapted:** main package `./cmd/canned-schedules`, anchored `.gitignore` binary rule
+  (`/canned-schedules`), golangci import prefix `github.com/iilei/canned-schedules`, release texts renamed. Test files
+  have relaxed lint rules (`mnd`, `perfsprint`, complexity linters, `fieldalignment`, `rangeValCopy`/`hugeParam`).
+- **Golden fixtures** live in `testdata/golden/` (format in its README): `valid/`, `warn/` and `error/` cases, each with
+  `input.md`, optional `args` (one arg per line), and `want.json` and/or `want.diag` (`<severity> <line>:<col> <code>`).
+  They are the spec. Don't regenerate them from the implementation.
+- Generated files (`output/**`, `coverage`, `*coverage.txt`, the binary) are gitignored. Never commit them.
+- Commits follow conventional style (`feat:`, `feat!:` for breaking changes, `docs:`, `chore:`).
 - An earlier AI-assisted authoring skill was removed on purpose (`8f556d4`). Don't reintroduce it unasked.

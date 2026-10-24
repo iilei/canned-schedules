@@ -1,0 +1,4 @@
+--set-config-at
+representation.styles.tiers
+--set-config-value
+[{"symbol": "a", "color": {"light": "#000000", "dark": "#ffffff"}}, {"symbol": "b", "color": {"light": "#111111", "dark": "#eeeeee"}}]
