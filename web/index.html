@@ -38,7 +38,10 @@
     <div class="pane-head">
       <h2>Request</h2>
       <div class="actions">
-        <button type="button" class="ghost" id="reset" title="Load the issue template again">Reset</button>
+        <label class="preset-pick"><span class="visually-hidden">Preset</span>
+          <select id="preset" title="Start from a preset"></select>
+        </label>
+        <button type="button" class="ghost" id="reset" title="Undo your edits: load the selected preset again" disabled>Reset</button>
         <button type="button" class="ghost" id="copy-md" title="Copy the Markdown, ready to paste into an issue">Copy Markdown</button>
       </div>
     </div>

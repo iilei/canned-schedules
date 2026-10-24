@@ -342,8 +342,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme), the Markdown as a GitHub issue
   or as a Sphinx page with custom admonitions (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
   editor, the JSON and the ASCII preview. Options: preview buckets, sample interval, ASCII symbols. Theme toggle
-  (system/light/dark, saved in localStorage); `?theme=`, `?view=`, `?tab=` and `?symbols=` make views linkable, and
+  (system/light/dark, saved in localStorage); `?theme=`, `?view=`, `?tab=`, `?symbols=` and `?preset=` make views
+  linkable, and
   `#doc=<base64url>` opens a document (a fragment, so it never reaches the server).
+- Presets: `web/presets/index.json` lists them (id, label), `web/presets/<id>.md` holds the text. `office-hours` is
+  the GitLab issue template, copied in by `web:build`, so it never drifts. `TestPresets` (internal/web) requires every
+  preset to evaluate without diagnostics and the index and files to match. The dropdown replaces the editor content
+  (asking first when there are unsaved edits); Reset is disabled until the editor differs from the selected preset.
 - `--svg-theme auto|light|dark` (CLI too): an inline SVG's `prefers-color-scheme` follows the OS, not the page, so
   pages with their own toggle render a fixed palette. SVG rules are scoped under `.canned-schedule` because inline
   SVG styles are global in HTML.

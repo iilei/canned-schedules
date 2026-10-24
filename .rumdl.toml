@@ -20,8 +20,9 @@ enabled = true
 style = "aligned"
 column-align = "auto"
 
-# Schedule documents put directive blocks right after each other (MD028) and lists right under the marker line
+# Schedule documents (issue templates, page presets) put directive blocks right after each other (MD028) and lists right under the marker line
 # (MD032); the parser accepts both. On GitHub, rumdl counts the template's frontmatter title as a second H1 (MD025).
 [per-file-ignores]
 ".github/ISSUE_TEMPLATE/canned_schedule_request.md" = ["MD025", "MD028", "MD032"]
 ".gitlab/issue_templates/*.md" = ["MD028", "MD032"]
+"web/presets/*.md" = ["MD028", "MD032"]

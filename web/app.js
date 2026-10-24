@@ -3,8 +3,10 @@
 
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
-const state = { theme: document.documentElement.dataset.theme || "system", flavour: "github", tab: "rendered", svg: "" };
-let template = "";
+const DEFAULT_PRESET = "office-hours";
+const state = { theme: document.documentElement.dataset.theme || "system", flavour: "github", tab: "rendered", svg: "", preset: "" };
+const presets = []; // [{id, label, text}], from presets/index.json
+let current = null; // the selected preset
 let ready = false;
 
 // ---- theme ---------------------------------------------------------------------------------------------------------
@@ -150,6 +152,43 @@ function jumpTo(line, column) {
   editor.scrollTop = Math.max(0, (line - 4) * lineHeight);
 }
 
+// ---- presets ------------------------------------------------------------------------------------------------------
+
+async function loadPresets() {
+  const list = await fetch("presets/index.json").then((r) => r.json());
+  const texts = await Promise.all(list.map((p) => fetch("presets/" + p.id + ".md").then((r) => (r.ok ? r.text() : ""))));
+  list.forEach((p, i) => presets.push({ ...p, text: texts[i] }));
+  const select = $("preset");
+  for (const p of presets) select.append(Object.assign(document.createElement("option"), { value: p.id, textContent: p.label }));
+}
+
+// Switching presets replaces the editor content; unsaved edits are only dropped after confirmation.
+function choosePreset(id) {
+  const next = presets.find((p) => p.id === id);
+  if (!next) return;
+  if (dirty() && !confirm("Replace your edits with the \"" + next.label + "\" preset?")) {
+    $("preset").value = current.id;
+    return;
+  }
+  current = next;
+  load(next.text);
+}
+
+function load(text) {
+  editor.value = text;
+  updateReset();
+  evaluate();
+}
+
+function dirty() {
+  return current !== null && editor.value !== current.text;
+}
+
+// Reset is only active while the editor differs from the selected preset.
+function updateReset() {
+  $("reset").disabled = !dirty();
+}
+
 // ---- UI wiring -----------------------------------------------------------------------------------------------------
 
 function selectTab(tab) {
@@ -196,7 +235,9 @@ function wire() {
   for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => selectTab(b.dataset.tab));
   for (const id of ["downsample", "sample-interval", "symbols"]) $(id).addEventListener("change", evaluate);
   editor.addEventListener("input", debounce(evaluate, 120));
-  $("reset").addEventListener("click", () => { editor.value = template; evaluate(); });
+  editor.addEventListener("input", updateReset);
+  $("preset").addEventListener("change", () => choosePreset($("preset").value));
+  $("reset").addEventListener("click", () => { if (current) load(current.text); });
   $("copy-md").addEventListener("click", copyMarkdown);
   $("download-svg").addEventListener("click", () => download("schedule.svg", "image/svg+xml", state.svg));
   // Re-render when the OS theme changes while following the system (the SVG uses --svg-theme auto then).
@@ -219,7 +260,7 @@ function fromHash() {
   }
 }
 
-// Views can be linked: ?theme=dark&view=sphinx&tab=json&symbols=braille
+// Views can be linked: ?theme=dark&view=sphinx&tab=json&symbols=braille&preset=minimal
 function applyQuery() {
   const q = new URLSearchParams(location.search);
   const theme = q.get("theme");
@@ -231,6 +272,8 @@ function applyQuery() {
   const view = q.get("view");
   if (view === "github" || view === "sphinx") state.flavour = view;
   pressed($("flavour"), state.flavour);
+  const preset = q.get("preset");
+  if (preset) state.preset = preset;
   const symbols = q.get("symbols");
   if (symbols === "ascii" || symbols === "braille") $("symbols").value = symbols;
   const tab = q.get("tab");
@@ -247,15 +290,17 @@ async function start() {
   try {
     const go = new Go();
     const wasm = fetch("app.wasm");
-    const [instance, tpl] = await Promise.all([
+    const [instance] = await Promise.all([
       WebAssembly.instantiateStreaming
         ? WebAssembly.instantiateStreaming(wasm, go.importObject).then((r) => r.instance)
         : wasm.then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b, go.importObject)).then((r) => r.instance),
-      fetch("template.md").then((r) => (r.ok ? r.text() : "")),
+      loadPresets(),
     ]);
     go.run(instance);
-    template = tpl;
-    editor.value = fromHash() ?? template;
+    current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
+    $("preset").value = current.id;
+    editor.value = fromHash() ?? current.text;
+    updateReset();
     ready = true;
     const v = await fetch("version.txt").then((r) => (r.ok ? r.text() : "")).catch(() => "");
     $("version").textContent = v.trim();
