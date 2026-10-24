@@ -15,7 +15,6 @@ import (
 const goldenDir = "../../testdata/golden"
 
 // TestGolden runs every fixture in testdata/golden. The fixtures are the spec: never regenerate them from this code.
-// Cases that reach a pipeline stage which isn't implemented yet are skipped, not failed.
 func TestGolden(t *testing.T) {
 	t.Parallel()
 
@@ -41,14 +40,7 @@ func runGolden(t *testing.T, dir string) {
 	src := readFile(t, filepath.Join(dir, "input.md"))
 	args := splitLines(readOptional(t, filepath.Join(dir, "args")))
 
-	out, diags, err := Run(args, []byte(src))
-	if errors.Is(err, schedule.ErrNotImplemented) {
-		t.Skip("pipeline stage not implemented yet")
-	}
-
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	out, diags := Run(args, []byte(src))
 
 	gotDiag := make([]string, 0, len(diags))
 	for _, d := range diags {

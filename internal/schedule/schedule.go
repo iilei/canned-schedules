@@ -1,11 +1,10 @@
 // Package schedule turns a schedule document into the canonical weekly output.
 //
-// Parsing, META validation, tier resolution and range expressions are implemented. Painting is not yet: Evaluate
-// returns ErrNotImplemented for documents that get that far.
+// Evaluate runs the stages in order: parse (internal/document), META validation, tier and base resolution, range
+// expressions (internal/expr) and painting.
 package schedule
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/iilei/canned-schedules/internal/config"
@@ -16,9 +15,6 @@ import (
 
 // SchemaVersion is the schema version built into the binary. It applies when a document doesn't declare one.
 const SchemaVersion = "1"
-
-// ErrNotImplemented marks pipeline stages that don't exist yet.
-var ErrNotImplemented = errors.New("not implemented")
 
 // Options are the command-line settings that affect evaluation.
 type Options struct {
@@ -64,17 +60,17 @@ type tierRange struct {
 	expr.Range
 }
 
-// Evaluate parses src and paints the week.
-func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List, error) {
+// Evaluate parses src and paints the week. The output is nil when there are errors.
+func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List) {
 	doc, diags := document.Parse(src)
 	if diags.HasErrors() {
-		return nil, diags, nil
+		return nil, diags
 	}
 
 	m, metaDiags := decodeMeta(doc.Meta)
 	diags = append(diags, metaDiags...)
 
-	_, tierDiags := resolveTiers(doc, cfg, opts.Granularity)
+	ranges, tierDiags := resolveTiers(doc, cfg, opts.Granularity)
 	diags = append(diags, tierDiags...)
 
 	base, baseDiags := resolveBase(doc, cfg, opts)
@@ -83,20 +79,17 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List,
 	diags.Sort()
 
 	if diags.HasErrors() {
-		return nil, diags, nil
+		return nil, diags
 	}
 
-	// Everything except Week is known at this point; the expression and painting stages fill in Week.
-	out := &Output{
+	return &Output{
 		SchemaVersion: m.schemaVersion,
 		Name:          doc.Name.Value,
 		Hint:          m.hint,
 		Base:          base.ID,
 		Annotations:   m.annotations,
-	}
-	_ = out
-
-	return nil, diags, ErrNotImplemented
+		Week:          paint(base, ranges),
+	}, diags
 }
 
 // resolveTiers maps every TIER block to its config tier and parses its range items, in source order.

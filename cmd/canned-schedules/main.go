@@ -42,15 +42,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	out, diags, err := cli.Run(args, src)
+	out, diags := cli.Run(args, src)
 	for _, d := range diags {
 		fmt.Fprintln(stderr, d.Format(file))
-	}
-
-	if err != nil {
-		fmt.Fprintln(stderr, err)
-
-		return 1
 	}
 
 	if diags.HasErrors() {
