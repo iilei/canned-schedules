@@ -55,7 +55,8 @@ mkdir -p "$out"
 cp -R web/. "$out/"
 GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o "$out/app.wasm" ./cmd/canned-schedules-wasm
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" "$out/"
-cp .gitlab/issue_templates/canned_schedule_request.md "$out/template.md"
+# The "office hours" preset is the issue template itself, so the two never drift apart.
+cp .gitlab/issue_templates/canned_schedule_request.md "$out/presets/office-hours.md"
 git describe --always --dirty > "$out/version.txt" 2>/dev/null || true
 echo "built $out ($(du -sh "$out" | cut -f1))"
 '''

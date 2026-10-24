@@ -39,8 +39,8 @@ Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_
 
 ## Try it in the browser
 
-The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: edit a request and
-see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the tier
+The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: start from a preset
+(from a bare "Medium all week" to the full issue template), edit it and see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the tier
 styles, diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
 nothing is uploaded. It is published to GitHub Pages from `master`; locally:
 

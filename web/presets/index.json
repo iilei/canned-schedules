@@ -1,0 +1,7 @@
+[
+  {"id": "minimal", "label": "Minimal: Medium all week"},
+  {"id": "maintenance", "label": "Friday maintenance window"},
+  {"id": "office-hours", "label": "Office hours (issue template)"},
+  {"id": "weekday-peaks", "label": "Weekday peaks"},
+  {"id": "nightly-batch", "label": "Nightly batch"}
+]
