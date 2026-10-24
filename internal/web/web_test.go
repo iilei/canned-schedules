@@ -57,3 +57,24 @@ func TestEvaluateFlagError(t *testing.T) {
 		t.Errorf("result = %+v", res)
 	}
 }
+
+func TestSphinxKit(t *testing.T) {
+	t.Parallel()
+
+	src, err := os.ReadFile("../../.gitlab/issue_templates/canned_schedule_request.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zip, err := SphinxKit(src, []string{"--svg-theme", "dark"})
+	if err != nil || len(zip) < 1000 || string(zip[:2]) != "PK" {
+		t.Fatalf("kit: %d bytes, err %v", len(zip), err)
+	}
+
+	if _, err := SphinxKit(
+		[]byte("# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `10:00` to `24:00` SAT\n"),
+		nil,
+	); err == nil {
+		t.Error("an invalid request must not produce a kit")
+	}
+}

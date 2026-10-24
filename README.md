@@ -41,7 +41,7 @@ Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_
 
 The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: start from a preset
 (from a bare "Medium all week" to the full issue template), edit it and see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the tier
-styles, diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
+styles (downloadable as a [Sphinx kit](#sphinx)), diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
 nothing is uploaded. It is published to GitHub Pages from `master`; locally:
 
 ```sh
@@ -108,6 +108,8 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--svg-output-file <path>`    |            | Write an SVG preview (only when the document has no errors)                     |
 | `--svg-theme <theme>`         | `auto`     | SVG colours: `auto` (follow the viewer), `light` or `dark`                      |
 | `--ascii-output-file <path>`  |            | Write an ASCII preview (only when the document has no errors)                   |
+| `--myst-output-file <path>`   |            | Write the schedule as MyST for Sphinx (only when the document has no errors)    |
+| `--sphinx-kit-output-file`    |            | Write the Sphinx kit zip (only when the document has no errors)                 |
 | `--preview-downsample[=N]`    | 15         | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
 | `--no-preview-downsample`     |            | Preview at 1-minute resolution (1440 columns per day)                           |
 | `--ascii-symbols <preset>`    | `ascii`    | Symbols in the ASCII preview: `ascii`, `braille` or `styles`                    |
@@ -160,6 +162,28 @@ good preview with a broken one.
 
 The SVG comes from the built-in [`templates/schedule-svg.tmpl`](templates/schedule-svg.tmpl). The tool computes all
 coordinates, colours and labels, so the template is plain markup that also runs with gomplate.
+
+## Sphinx
+
+The preflight page's Sphinx view is not a mock-up: the same look is available for real Sphinx docs built with the
+[Furo](https://pradyunsg.me/furo/) theme. `--sphinx-kit-output-file kit.zip` (or **Download Sphinx kit** on the page)
+writes a zip with:
+
+- a local Sphinx extension (`_ext/canned_schedules`) that adds the stylesheet and fonts and enables MyST's
+  `colon_fence`;
+- the stylesheet, generated from the same tier styles as the SVG and the page. It styles only schedule admonitions,
+  through Furo's own admonition variables, and follows Furo's light, dark and auto modes;
+- Ubuntu and Ubuntu Mono, used only inside schedule admonitions;
+- the request as MyST, and a README with the two `conf.py` lines:
+
+  ```python
+  sys.path.append(os.path.abspath("_ext"))
+  extensions += ["canned_schedules"]
+  ```
+
+`--myst-output-file schedule.md` writes just the MyST for a request: the name, the hint, and the META, BASE and TIER
+blocks as `:::{admonition}` blocks with the classes the stylesheet expects, weekdays as `{abbr}` tooltips. The issue's
+free text stays out. Colours follow `--set-config-*`; regenerate the kit after changing the tier styles.
 
 ## Error reports
 

@@ -1,0 +1,39 @@
+{{- /*
+  Schedule admonitions for Sphinx (Furo) and for the preflight page's Sphinx view, built into canned-schedules.
+
+  Only CSS variables are set: Furo draws admonitions from --color-admonition-title (border and icon),
+  --color-admonition-title-background (title bar), --color-admonition-background (body) and --icon-admonition-default
+  (icon mask), and the page's Sphinx view uses the same variables. The two outputs differ only in their selectors:
+  .scope prefixes every rule, .dark and .auto select the dark theme and the theme that follows the OS.
+
+  The data is a model computed by the tool; the template uses plain Go text/template, so it also runs with gomplate.
+*/ -}}
+/* canned-schedules: schedule admonitions, generated from the config's tier styles. Do not edit; regenerate. */
+
+/* Ubuntu and Ubuntu Mono (Ubuntu Font Licence), used only inside schedule admonitions. */
+@font-face { font-family: "Canned Schedules Sans"; font-weight: 400; font-display: swap; src: url("{{ .fonts }}ubuntu-400.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Sans"; font-weight: 500; font-display: swap; src: url("{{ .fonts }}ubuntu-500.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Mono"; font-weight: 400; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-400.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Mono"; font-weight: 700; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-700.woff2") format("woff2"); }
+
+{{ .scope }}.admonition.schedule {
+  --color-admonition-title: var(--tier, #8a8f98);
+  --color-admonition-title-background: color-mix(in srgb, var(--tier, #8a8f98) 18%, transparent);
+  --color-admonition-background: color-mix(in srgb, var(--tier, #8a8f98) 6%, transparent);
+  font-family: "Canned Schedules Sans", sans-serif;
+}
+/* A rounded square in the tier colour instead of the default icon: the swatch also used in the SVG legend. */
+{{ .scope }}.admonition.schedule-tier,
+{{ .scope }}.admonition.schedule-base {
+  --icon-admonition-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='18' height='18' rx='4'/%3E%3C/svg%3E");
+}
+{{ .scope }}.admonition.schedule ul { list-style: none; padding-left: 0; }
+{{ .scope }}.admonition.schedule li { margin: .15em 0; }
+{{ .scope }}.admonition.schedule code { font-family: "Canned Schedules Mono", monospace; }
+{{ .scope }}.admonition.schedule abbr[title] { text-decoration: underline dotted; cursor: help; }
+{{- range .tiers }}
+
+{{ $.scope }}.admonition.{{ .class }} { --tier: {{ .light }}; }
+{{ $.dark }} {{ $.scope }}.admonition.{{ .class }} { --tier: {{ .dark }}; }
+@media (prefers-color-scheme: dark) { {{ $.auto }} {{ $.scope }}.admonition.{{ .class }} { --tier: {{ .dark }}; } }
+{{- end }}

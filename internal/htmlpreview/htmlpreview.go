@@ -19,6 +19,7 @@ import (
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/document"
+	"github.com/iilei/canned-schedules/internal/myst"
 )
 
 // Modes.
@@ -58,6 +59,8 @@ type Callout struct {
 	Class string
 	// Title is the visible title.
 	Title string
+	// Body is text rendered inside before the children (the BASE explanation).
+	Body string
 	ast.BaseBlock
 	// Schedule marks schedule directives, whose content gets weekday tooltips in Sphinx mode.
 	Schedule bool
@@ -189,6 +192,7 @@ func (t *transformer) schedule(kind, title string) *Callout {
 		}
 	case string(document.KindBase):
 		c.Class, c.Title = "admonition schedule schedule-base "+t.tierClass(title), "Base tier: "+t.tierName(title)
+		c.Body = myst.BaseText
 	case string(document.KindTier):
 		c.Class, c.Title = "admonition schedule schedule-tier "+t.tierClass(title), t.tierName(title)
 	default:
@@ -268,9 +272,22 @@ func (r *calloutRenderer) render(w util.BufWriter, _ []byte, n ast.Node, enterin
 		titleClass = "markdown-alert-title"
 	}
 
+	// Like the MyST output: a META block with only a hint has nothing to box, so it is a paragraph.
+	if c.Schedule && c.ChildCount() == 0 && c.Body == "" && strings.Contains(c.Class, "schedule-meta") {
+		if entering {
+			_, _ = fmt.Fprintf(w, "<p>%s</p>\n", util.EscapeHTML([]byte(strings.TrimPrefix(c.Title, "Schedule: "))))
+		}
+
+		return ast.WalkSkipChildren, nil
+	}
+
 	if entering {
 		_, _ = fmt.Fprintf(w, `<div class="%s"><p class="%s">%s</p>`+"\n",
 			util.EscapeHTML([]byte(c.Class)), titleClass, util.EscapeHTML([]byte(c.Title)))
+
+		if c.Body != "" {
+			_, _ = fmt.Fprintf(w, "<p>%s</p>\n", util.EscapeHTML([]byte(c.Body)))
+		}
 
 		return ast.WalkContinue, nil
 	}

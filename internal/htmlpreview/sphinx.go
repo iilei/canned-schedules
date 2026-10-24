@@ -1,11 +1,8 @@
 package htmlpreview
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/iilei/canned-schedules/internal/config"
 )
 
 const scheduleStart = `<div class="admonition schedule`
@@ -74,25 +71,4 @@ func abbrRun(s string, inCode bool) string {
 	return weekday.ReplaceAllStringFunc(s, func(d string) string {
 		return `<abbr title="` + weekdayNames[d] + `">` + d + `</abbr>`
 	})
-}
-
-// StyleSheet returns CSS for the Sphinx preview's schedule admonitions, coloured from the config's tier styles. The
-// container carries data-theme="light", "dark" or "system"; system follows prefers-color-scheme.
-func StyleSheet(cfg *config.Config, scope string) string {
-	var b strings.Builder
-
-	for i := range cfg.Tiers {
-		c := cfg.Style(i).Color
-		sel := fmt.Sprintf("%s .admonition.tier-%d", scope, i)
-		fmt.Fprintf(&b, "%s { --tier: %s; }\n", sel, c.Light)
-		fmt.Fprintf(&b, "[data-theme=\"dark\"] %s { --tier: %s; }\n", sel, c.Dark)
-		fmt.Fprintf(
-			&b,
-			"@media (prefers-color-scheme: dark) { [data-theme=\"system\"] %s { --tier: %s; } }\n",
-			sel,
-			c.Dark,
-		)
-	}
-
-	return b.String()
 }

@@ -274,29 +274,34 @@ pre.ascii { font-family: "Schedule Braille Mono", var(--mono); font-size: 14px; 
 .rendered.sphinx a { color: var(--sx-link); }
 .rendered.sphinx abbr[title] { text-decoration: underline dotted; cursor: help; }
 .rendered.sphinx blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 3px solid var(--border); }
+/* Admonitions imitate Furo and use Furo's own variables (--color-admonition-title, -title-background, -background,
+   --icon-admonition-default). The schedule stylesheet injected into #tier-styles, which the Sphinx kit ships for real
+   Furo builds, only sets those variables, so it works unchanged in both places. */
 .rendered.sphinx .admonition {
-  --tier: var(--sx-note);
-  margin: 1em 0; padding: 0 .9em .6em; border-radius: .25rem; overflow: hidden;
-  border-left: .25rem solid var(--tier);
-  background: color-mix(in srgb, var(--tier) 7%, transparent);
-  box-shadow: 0 .1rem .25rem rgba(0, 0, 0, .06);
+  --color-admonition-title: var(--kind, var(--sx-note));
+  --color-admonition-title-background: color-mix(in srgb, var(--kind, var(--sx-note)) 15%, transparent);
+  --color-admonition-background: color-mix(in srgb, var(--sx-text) 3%, transparent);
+  /* Furo's default admonition icon (four lines). */
+  --icon-admonition-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 5h16v2H4zm0 4h16v2H4zm0 4h16v2H4zm0 4h10v2H4z'/%3E%3C/svg%3E");
+  margin: 1rem 0; padding: 0 .5rem .5rem; border-radius: .2rem; overflow: hidden;
+  border-left: .2rem solid var(--color-admonition-title);
+  background: var(--color-admonition-background);
+  box-shadow: 0 .2rem .5rem rgba(0, 0, 0, .05), 0 0 .0625rem rgba(0, 0, 0, .1);
 }
 .rendered.sphinx .admonition > :last-child { margin-bottom: 0; }
 .rendered.sphinx .admonition-title {
-  margin: 0 -.9em .6em; padding: .45em .9em; font-weight: 500;
-  background: color-mix(in srgb, var(--tier) 18%, transparent);
+  position: relative; margin: 0 -.5rem .5rem; padding: .4rem .5rem .4rem 2rem; font-weight: 500; line-height: 1.3;
+  background: var(--color-admonition-title-background);
 }
-.rendered.sphinx .admonition.tip { --tier: #00c852; }
-.rendered.sphinx .admonition.important { --tier: #00bfa5; }
-.rendered.sphinx .admonition.warning { --tier: #ff9100; }
-.rendered.sphinx .admonition.caution { --tier: #ff5252; }
-.rendered.sphinx .admonition.schedule-meta { --tier: var(--muted); }
-.rendered.sphinx .admonition.schedule-tier .admonition-title::before,
-.rendered.sphinx .admonition.schedule-base .admonition-title::before {
-  content: ""; display: inline-block; width: .8em; height: .8em; border-radius: .2em; margin-right: .5em;
-  background: var(--tier); vertical-align: -.05em;
+.rendered.sphinx .admonition-title::before {
+  content: ""; position: absolute; left: .5rem; top: .55rem; width: 1rem; height: 1rem;
+  background-color: var(--color-admonition-title);
+  -webkit-mask: var(--icon-admonition-default) no-repeat center / contain;
+  mask: var(--icon-admonition-default) no-repeat center / contain;
 }
-.rendered.sphinx .admonition.schedule ul { list-style: none; padding-left: 0; }
-.rendered.sphinx .admonition.schedule li { padding: .1em 0; }
+.rendered.sphinx .admonition.tip { --kind: #00c852; }
+.rendered.sphinx .admonition.important { --kind: #00bfa5; }
+.rendered.sphinx .admonition.warning { --kind: #ff9100; }
+.rendered.sphinx .admonition.caution { --kind: #ff5252; }
 
 .footer { max-width: 1600px; margin: 0 auto; padding: 24px 0 32px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }

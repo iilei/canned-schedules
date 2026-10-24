@@ -10,9 +10,11 @@ import (
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/myst"
 	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
+	"github.com/iilei/canned-schedules/internal/sphinxkit"
 )
 
 const minutesPerHour = 60
@@ -21,11 +23,20 @@ var errNotBool = errors.New(`want "true" or "false"`)
 
 // Options is the parsed command line.
 type Options struct {
+	Sphinx    SphinxOptions
 	Preview   PreviewOptions
 	Report    ReportOptions
 	Overrides []config.Override
 	Args      []string
 	Schedule  schedule.Options
+}
+
+// SphinxOptions configure the Sphinx outputs.
+type SphinxOptions struct {
+	// MySTFile is --myst-output-file: the request's schedule as MyST.
+	MySTFile string
+	// KitFile is --sphinx-kit-output-file: the Sphinx kit zip.
+	KitFile string
 }
 
 // ReportOptions configure the error report.
@@ -73,6 +84,10 @@ func Parse(args []string) (Options, diag.List) {
 		},
 	)
 	registerPreviewFlags(fs, &opts.Preview)
+	fs.StringVar(&opts.Sphinx.MySTFile, "myst-output-file", "", "write the schedule as MyST for Sphinx (only without "+
+		"errors)")
+	fs.StringVar(&opts.Sphinx.KitFile, "sphinx-kit-output-file", "", "write the Sphinx kit zip: stylesheet, fonts, "+
+		"local extension and the schedule as MyST (only without errors)")
 	fs.StringVar(&symbols, "ascii-symbols", "", "symbol preset for the ASCII preview: ascii, braille or styles "+
 		"(shorthand for --set-config-at representation.ascii.symbols)")
 	fs.StringVar(&opts.Report.File, "error-output-file", "", "write the error report to this file instead of stderr")
@@ -176,6 +191,28 @@ func ASCII(opts *Options, out *schedule.Output, color bool) ([]byte, error) {
 	}
 
 	return render.ASCII(out, cfg, opts.Preview.Downsample, color)
+}
+
+// MyST renders the schedule of a successfully evaluated document as MyST.
+func MyST(opts *Options, src []byte) ([]byte, error) {
+	cfg, err := previewConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := myst.Render(src, cfg)
+
+	return []byte(out), err
+}
+
+// SphinxKit builds the Sphinx kit for a successfully evaluated document; version names the generating tool.
+func SphinxKit(opts *Options, src []byte, version string) ([]byte, error) {
+	cfg, err := previewConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return sphinxkit.Kit(src, cfg, version)
 }
 
 // previewConfig reloads the config; Run already validated it, so this can't fail for a document that evaluated.

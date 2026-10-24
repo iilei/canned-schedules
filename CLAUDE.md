@@ -356,9 +356,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - GitHub mode: NOTE/TIP/IMPORTANT/WARNING/CAUTION become GitHub callouts (only when the marker stands alone);
     schedule directives stay quotes with the literal marker, as GitHub really shows them.
   - Sphinx mode: all alerts become admonitions; schedule directives get `admonition schedule schedule-tier tier-N`
-    with the tier's display name, coloured by `StyleSheet(cfg, scope)` from the config's tier styles (light, dark,
-    system); weekday names inside schedule admonitions get `<abbr>` tooltips.
-- Fonts: Ubuntu + Ubuntu Mono, **self-hosted** in `web/fonts` (Ubuntu Font Licence, `UFL.txt`): no requests to Google
+    with the tier's display name, coloured by `sphinxkit.CSS(cfg, sphinxkit.Page)` (see "Sphinx kit"); weekday names
+    inside schedule admonitions get `<abbr>` tooltips. BASE gets the body `myst.BaseText`; a META block with only a
+    hint is a paragraph, like in the MyST output.
+  - `web/style.css` imitates Furo's admonitions with Furo's variable names, so the generated schedule stylesheet works
+    unchanged on the page and in a real Furo build.
+- Fonts: Ubuntu + Ubuntu Mono, **self-hosted** in `assets/fonts` (embedded by `assets/embed.go` for the Sphinx kit,
+  copied to `dist/site/fonts` by `web:build`; Ubuntu Font Licence, `UFL.txt`): no requests to Google
   (a German court treated Google Fonts loading as a privacy violation), works offline.
   - Ubuntu Mono has **no braille glyphs** and narrow cells (0.5 em); fallback fonts draw braille wider, so braille rows
     overshot the ruler. The ASCII tab therefore always uses `Schedule Braille Mono` (for every preset): a renamed subset (ASCII,
@@ -374,22 +378,38 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `upload-pages-artifact`/`deploy-pages`). **One-time setup:** Settings → Pages → Source: "GitHub Actions".
 - To verify after the first deploy: whether GitHub Pages serves `app.wasm` compressed (otherwise 10 MB per visit).
 
+## Sphinx kit (implemented 2026-10-24)
+
+- Goal: Sphinx docs (Furo first) get exactly the page's Sphinx look. Decided: CLI flag plus page button, a local
+  extension folder rather than a PyPI package, fonts only inside schedule admonitions.
+- `templates/sphinx-schedule.css.tmpl` is the **single source** of the schedule admonition styles, rendered by
+  `internal/sphinxkit.CSS(cfg, target)` for two targets that differ only in selectors: `Page` (scope
+  `.rendered.sphinx`, `:root[data-theme=dark|system]`) and `Furo` (no scope, `body[data-theme="dark"]`, auto =
+  `body:not([data-theme="light"])` inside a dark media query). It only sets Furo's variables
+  (`--color-admonition-title`, `-title-background`, `--color-admonition-background`, `--icon-admonition-default` for
+  the tier swatch) from `--tier`; checked against furo 2025.12.19.
+- `templates.Execute` is the shared JSON-shaped template runner (render, report, CSS, kit templates).
+- `internal/myst`: a valid request → MyST (H1, META as `Schedule: hint` admonition or a hint paragraph, BASE with
+  `BaseText`, TIER items with `{abbr}` weekdays). docutils requires admonition content, hence BaseText. Text goes
+  through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
+- `internal/sphinxkit.Kit`: deterministic zip (sorted, fixed timestamps) with README, `_ext/canned_schedules`
+  (`__init__.py` loads myst_parser, appends its static dir to `html_static_path`, adds `colon_fence`, adds the CSS),
+  the Furo stylesheet, four Ubuntu fonts + UFL, `examples/<slug>.md`, VERSION (tool + config digest).
+- Channels: `--myst-output-file`, `--sphinx-kit-output-file` (written in `writeOutputs` like the previews, only
+  without errors); page: `cannedSchedules.sphinxKit(markdown, args)` returns a `Uint8Array` or an error string, built
+  on click.
+- Verified end to end with sphinx 9.1.0, furo 2025.12.19, myst-parser 5.1.0: `sphinx-build -W` clean, screenshots in
+  light and dark match the page.
+
 ## Open
 
 - Nothing open at the moment.
 
 ## Future ideas (not scheduled — don't build unasked)
 
-- **Sphinx docs with custom tier admonitions plus build artifacts.** Schedules render as styled admonitions, and the
-  same build emits the canned schedules as artifacts.
-  - MyST's GFM `alert` extension handles only NOTE, TIP, IMPORTANT, WARNING and CAUTION. Custom kinds need
-    `:::{admonition} …` with `:class:`.
-  - Generate the MyST from the canonical JSON with a template, rather than having Sphinx parse the issue Markdown.
-    That keeps one parser.
-  - Styles come from the config (`representation.styles…`), not duplicated in CSS.
-  - Wrap weekday names in MyST's `{abbr}` role (``{abbr}`MON (Monday)` ``).
-  - Show the equivalent cron expression as a tooltip.
-  - Open: where the docs live, in this repo or in a consumer repo.
+- **Sphinx build artifacts** (the styling part is done, see "Sphinx kit"): the same docs build emits the canned
+  schedules as artifacts; a cron expression as a tooltip; other themes than Furo. Open: where the docs live, in this
+  repo or in a consumer repo.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
   catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
@@ -415,8 +435,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - `internal/files`: display paths (home as `~`), path-free OS errors, atomic writes; shared by report and SVG.
   - `internal/htmlpreview`, `internal/web`, `cmd/canned-schedules-wasm`, `web/`: the browser preflight page (see
     "Preflight page").
-  - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`, `schedule-ascii.tmpl`),
-    embedded.
+  - `internal/myst`, `internal/sphinxkit`, `assets/`: MyST output and the Sphinx kit (see "Sphinx kit").
+  - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`, `schedule-ascii.tmpl`,
+    `sphinx-schedule.css.tmpl`), embedded.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and
     `output.schema.json` (`go:embed`), plus `Compile`. Its test validates every golden `want.json` against the output
     schema.
