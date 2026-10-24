@@ -149,20 +149,9 @@ func (c *Config) check() diag.List {
 }
 
 func validate(doc any) error {
-	c := jsonschema.NewCompiler()
-
-	schemaDoc, err := jsonschema.UnmarshalJSON(bytes.NewReader(schema.ConfigSchema))
+	sch, err := schema.Compile(schema.ConfigSchemaURL, schema.ConfigSchema)
 	if err != nil {
-		return fmt.Errorf("config schema: %w", err)
-	}
-
-	if err := c.AddResource(schema.ConfigSchemaURL, schemaDoc); err != nil {
-		return fmt.Errorf("config schema: %w", err)
-	}
-
-	sch, err := c.Compile(schema.ConfigSchemaURL)
-	if err != nil {
-		return fmt.Errorf("config schema: %w", err)
+		return err
 	}
 
 	return sch.Validate(doc)

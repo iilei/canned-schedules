@@ -81,7 +81,7 @@ styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
   `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `granularity`, `invalid-flag`, `invalid-override`,
   `config-schema`, `config-duplicate-tier`, `config-duplicate-symbol`, `unknown-namespace`, `style-reuse`, `missing-kind`, `duplicate-block`,
-  `empty-tier`, `misplaced-directive`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
+  `empty-tier`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 
 ## Undecided: no fixtures yet
 
