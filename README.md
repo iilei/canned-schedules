@@ -7,8 +7,8 @@ at mistakes by line and column, and turns it into canonical JSON: the tier in ef
 the moments the tier changes, with ready-made cron expressions.
 
 > [!NOTE]
-> Work in progress. The CLI, the input syntax and error reports work end to end; previews (ASCII/SVG) and releases
-> are still to come. Older files (CUE, jq, shell) are leftovers from earlier designs.
+> Work in progress. The CLI, the input syntax, error reports and SVG previews work end to end; releases are still to
+> come. Older files (CUE, jq, shell) are leftovers from earlier designs.
 
 ## Example
 
@@ -27,6 +27,8 @@ the moments the tier changes, with ready-made cron expressions.
 > [!SCHEDULE:TIER] Maximum
 > - `16:00` to `00:00` FRI
 ```
+
+![Preview of the Office Hours schedule](docs/office-hours.svg)
 
 Read it as: the base tier is `Minimum`. `Medium` applies on weekdays from 06:00 to 22:00 and on Saturdays from 10:00
 to 18:00. `Maximum` applies on Fridays from 16:00 until midnight; it comes later, so it wins where it overlaps the
@@ -88,10 +90,22 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--base <tier>`              | first tier | Base tier when the document has no BASE block                                   |
 | `--set-config-at <path>`     |            | Config path to replace, e.g. `representation.styles.tiers[0]` (repeatable)      |
 | `--set-config-value <json>`  |            | JSON value for the matching `--set-config-at` (repeatable)                      |
+| `--svg-output-file <path>`   |            | Write an SVG preview (only when the document has no errors)                     |
 | `--error-output-file <path>` | stderr     | Write the error report to this file (always, even when empty)                   |
 | `--error-output-format`      | `txt`      | Error report format: `txt` or `json`                                            |
 | `--error-report-template`    |            | Render the error report with the built-in `markdown-gfm` template instead       |
 | `--version`                  |            | Print the version                                                               |
+
+## SVG preview
+
+`--svg-output-file preview.svg` writes a picture of the week like the one above: one row per day, a time ruler, the
+transitions with POSIX and AWS cron, and a legend with the base tier marked. Hovering a block shows its tier, its time
+range and the cron expression that starts it. Colours come from the configuration's styles and follow the viewer's
+light or dark mode. The preview is only written when the document has no errors, so a failed run never replaces a
+good preview with a broken one.
+
+The SVG comes from the built-in [`templates/schedule-svg.tmpl`](templates/schedule-svg.tmpl). The tool computes all
+coordinates, colours and labels, so the template is plain markup that also runs with gomplate.
 
 ## Error reports
 

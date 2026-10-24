@@ -270,6 +270,25 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Exit codes:** 0 ok, 1 errors in the document or flag values, 2 unusable command line or environment
   (`invalid-args`, `input-file`, report not writable).
 
+## SVG preview (implemented 2026-10-24)
+
+- `--svg-output-file <path>`: written atomically (`files.WriteFile`), **only when the document has no errors**, so a
+  failed run leaves an earlier preview untouched.
+- Same approach as the old gomplate renderer and the error report: a repo-baked template (`templates/schedule-svg.tmpl`,
+  embedded) rendering a JSON data shape. **Layout arithmetic lives in Go** (`internal/render`: render model with every
+  coordinate, colour, label and tooltip); the template only emits markup and escapes text with the builtin `html`.
+- Visual design follows the old renderer: monospace labels, one row per day (24 px per hour), a ruler with labels every
+  6 h, faint guides, the transition table (POSIX + AWS cron), a legend with the base tier marked, tooltips (tier, range,
+  starting cron). Days are drawn as runs, not minute blocks; the grid resolution (GCD of all run boundaries and 60)
+  only adds minor ruler ticks when it is 15–30 minutes.
+- Colours: plain per-tier `fill` rules, repeated in `@media (prefers-color-scheme: dark)`. **No CSS custom
+  properties**: librsvg (and other converters / PDF pipelines) render them black.
+- **Templates must be gomplate-compatible:** builtins only, and Go executes them with the default strict
+  `missingkey=error` like gomplate. The SVG model always emits every key; the report template reads optional keys with
+  `index`. Verified byte-identical with gomplate 5.2.0 (`gomplate -c .=model.json -f templates/schedule-svg.tmpl`).
+- `docs/office-hours.svg` is the README image, rendered from the issue template; `TestDocsPreview` fails when it is
+  stale.
+
 ## Open (fixtures)
 
 - [ ] **Confirm choices made while implementing `expr`** (no fixtures yet; unit tests in `internal/expr`):
@@ -329,7 +348,10 @@ The rest is cleanup for when the Go tool replaces the old code.
 - **Go layout** (skeleton since 2026-10-24):
   - `cmd/canned-schedules`: the CLI entry point (`--version`): input reading, report output and exit codes (see
     "Error reporting").
-  - `internal/report` and `templates/`: the error report (txt, JSON, built-in Markdown template) and atomic writing.
+  - `internal/report`: the error report (txt, JSON, built-in Markdown template).
+  - `internal/render`: the SVG render model and rendering.
+  - `internal/files`: display paths (home as `~`), path-free OS errors, atomic writes; shared by report and SVG.
+  - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`), embedded.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and
     `output.schema.json` (`go:embed`), plus `Compile`. Its test validates every golden `want.json` against the output
     schema.
