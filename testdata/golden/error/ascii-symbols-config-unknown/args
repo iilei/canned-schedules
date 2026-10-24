@@ -1,0 +1,4 @@
+--set-config-at
+representation.ascii.symbols
+--set-config-value
+"blocks"

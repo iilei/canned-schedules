@@ -30,31 +30,34 @@
         "label": "#cccccc"
       }
     },
+    "ascii": {
+      "symbols": "ascii"
+    },
     "styles": {
       "tiers": [
         {
-          "symbol": "░",
+          "symbol": ".",
           "color": {
             "light": "#A7DCC840",
             "dark": "#B9A5FF40"
           }
         },
         {
-          "symbol": "▒",
+          "symbol": ":",
           "color": {
             "light": "#B8E8D9D9",
             "dark": "#B9A5FFD9"
           }
         },
         {
-          "symbol": "▓",
+          "symbol": "=",
           "color": {
             "light": "#54C6A5D9",
             "dark": "#9D82EAD9"
           }
         },
         {
-          "symbol": "█",
+          "symbol": "#",
           "color": {
             "light": "#087E6BD9",
             "dark": "#7048D6D9"

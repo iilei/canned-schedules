@@ -168,6 +168,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   schema-version            const "1"
   tiers[]                   {id, display-name}: ordered, index 0 = default base
   representation.theme      {light, dark} × {background, label}: page-level colours
+  representation.ascii      {symbols}: ascii | braille | styles
   representation.styles.tiers[]
                             {symbol, color: {light, dark}}: round robin, no tier id
   ```
@@ -304,13 +305,22 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 - `--output json|ascii`: what stdout carries (default `json`). `--ascii-output-file <path>`: saves the preview
   (atomic, only without errors, like the SVG). With `--output ascii` and errors, stdout stays empty.
-- Layout: title (name — hint), a ruler (labels every 6 h; `║` every 6 h, `|` every hour, `:` every half hour), one row
-  per day (`MON` + one style symbol per bucket), a legend with the base tier marked, and the approximation note.
+- Layout: title (`name - hint`), a ruler (labels every 6 h; `+` every 6 h, `|` every hour, `:` every half hour), one
+  row per day (`MON` + one symbol per bucket), a legend with the base tier marked, and the `~` approximation note.
   Rendered through `templates/schedule-ascii.tmpl` on a model computed in `internal/render` (same gomplate rules).
+- **Pure ASCII by default (decided 2026-10-24):** block characters (`▒▓█`, lower blocks, `║`, `—`, `≈`) have East Asian
+  Width "ambiguous" and turn double-width in CJK terminals, so the ruler and text are always ASCII and the symbols
+  come from a preset in `representation.ascii.symbols`:
+  - `ascii` (default): `. : = #` by tier order, round robin.
+  - `braille`: `⠀ ⣀ ⣤ ⣶ ⣿`, neutral width, so single-width everywhere too. Needs a font with braille glyphs.
+  - `styles`: each style's own `symbol` (the built-in ones are ASCII as well). Repeated style symbols only warn, and
+    only with this preset.
+  - Blocks were rejected as a preset. `--ascii-symbols <preset>` is shorthand for the override; it is applied after
+    `--set-config-at` pairs, so the dedicated flag wins.
 - Colours: `--color auto|always|never` (default `auto`: only on a terminal, and only when `NO_COLOR` is unset or
-  empty). 24-bit ANSI colours from the **dark** theme's tier colours, alpha-blended over the dark background. Files
-  get colours only with `--color always`.
-- Block symbols (`░▒▓█`) are "ambiguous width" in Unicode; CJK terminals may draw them double-width.
+  empty). The cell **background** gets the dark theme's tier colour (24-bit, alpha-blended over the dark background);
+  the symbol is drawn in the background colour and stays as the fallback without colour. Files get colours only with
+  `--color always`.
 
 ## Open (fixtures)
 
