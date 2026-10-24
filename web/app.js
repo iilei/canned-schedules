@@ -4,7 +4,7 @@
 const $ = (id) => document.getElementById(id);
 const editor = $("editor");
 const DEFAULT_PRESET = "office-hours";
-const state = { theme: document.documentElement.dataset.theme || "system", flavour: "github", tab: "rendered", svg: "", preset: "" };
+const state = { theme: document.documentElement.dataset.theme || "system", flavour: "sphinx", tab: "rendered", svg: "", preset: "" };
 const presets = []; // [{id, label, text}], from presets/index.json
 let current = null; // the selected preset
 let ready = false;
