@@ -1,3 +1,0 @@
-package schedules
-
-raw: string

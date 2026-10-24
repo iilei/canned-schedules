@@ -7,8 +7,8 @@ at mistakes by line and column, and turns it into canonical JSON: the tier in ef
 the moments the tier changes, with ready-made cron expressions.
 
 > [!NOTE]
-> Work in progress. The CLI, the input syntax, error reports and SVG previews work end to end; releases are still to
-> come. Older files (CUE, jq, shell) are leftovers from earlier designs.
+> Work in progress. The CLI, the input syntax, error reports and previews work end to end; releases are still to
+> come.
 
 ## Example
 

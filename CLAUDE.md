@@ -1,11 +1,8 @@
 # Agent steering — canned-schedules (work in progress)
 
-This repo is mid-migration. Many files are leftovers from earlier designs. Read this before changing anything.
-
-**All existing CUE, jq, Markdown/AST and shell code, up to and including commit `3ec7494`, is work-in-progress churn**
-(decided 2026-10-24). It sets no contract, needs no backward compatibility and is not a reference oracle. The
-decisions and the syntax below are the spec. Old code is at most a source of ideas or test cases.
-Update the "Decisions" and "Open" sections when an item is resolved or a new one appears.
+Read this before changing anything. The decisions and the syntax below are the spec; the golden fixtures in
+`testdata/golden` are its executable form. Update the "Decisions" and "Open" sections when an item is resolved or a
+new one appears.
 
 ## Goal
 
@@ -16,16 +13,15 @@ should read like prose, with backticks marking only the values a machine has to 
 
 ## How the design evolved (newest last)
 
-1. **CUE catalog (churn).** `schedule-schema.cue`, `schedule-core.cue` and `schedules.cue` hold schedules as 48-char
-   slot strings per weekday plus tiers, legend and theme. `render.sh`, `proposal.sh` and `*.tpl` render tables and
-   SVGs from it. Tasks: `check`, `vet-proposal`, `preview-proposal`, `render-*`.
-2. **Range-based Markdown (`7d9edcb`, churn).** One `## Tier` heading per tier, then `**MON-FRI**`, then a list of
-   ranges. Leftovers: `TODO.md`, `commonmark/extract_times.jq`, `commonmark/tests/task-list.md*`,
-   `commonmark/ast.jsonschema.json`, tasks `markdown-extract-times` and `validate-schema`.
-3. **Admonition transitions (`3ec7494`, churn).** Spec `plan.md`, sample `commonmark/lenient-expressions.md`,
-   pipeline `mise run md:extract` (markdown-tool → jq filters + `schedule.pattern` → yq frontmatter).
-4. **Target design (2026-10-24, not implemented yet):** a single Go binary, the namespaced `[!SCHEDULE:*]` syntax with
-   ranges, a painting evaluator, and a JSON config validated by JSON Schema. Everything below.
+Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they're in the git history if needed.
+
+1. **CUE catalog:** schedules as 48-char slot strings per weekday, rendered by shell scripts and gomplate templates.
+2. **Range-based Markdown (`7d9edcb`):** one `## Tier` heading per tier, `**MON-FRI**`, then a list of ranges.
+3. **Admonition transitions (`3ec7494`):** `> [!Tier-X]` blocks with transition times, parsed by markdown-tool, jq
+   and a regex. Its bugs (case-dependent alert names, silently dropped prose and nested or bold markers, NOTE alerts
+   read as tiers, unchecked tier names) are covered by negative golden fixtures.
+4. **Current design:** a single Go binary, the namespaced `[!SCHEDULE:*]` syntax with ranges, a painting evaluator, a
+   JSON config validated by JSON Schema, error reports and previews. Everything below.
 
 ## Decisions — architecture
 
@@ -175,9 +171,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
   - Styles carry **no tier id**, so round robin works: tier *i* gets `styles.tiers[i mod len]`. Users steer the
     mapping by ordering both lists.
-  - Colours: `#RRGGBB` or `#RRGGBBAA` (`"color": {"light": "#54C6A5D9", "dark": "#9D82EAD9"}`, as in the old
-    `temp.json`).
-  - `symbol` is one character, used for ASCII grids and the legend.
+  - Colours: `#RRGGBB` or `#RRGGBBAA` (`"color": {"light": "#54C6A5D9", "dark": "#9D82EAD9"}`).
+  - `symbol` is one character, used by the ASCII preview with the `styles` preset.
   - Every object has `additionalProperties: false`. `x-custom-*` is not allowed in the config.
 - **Checks JSON Schema can't express** (done in Go, covered by tests):
   - tier ids unique after upper-casing;
@@ -322,34 +317,17 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   the symbol is drawn in the background colour and stays as the fallback without colour. Files get colours only with
   `--color always`.
 
-## Open (fixtures)
+## Open
+
+- [ ] **Time zone** (from the old plan's open decisions): schedules are wall-clock times without a zone, and cron
+      strings carry none; downstream tooling (ASG `TimeZone`, EventBridge `ScheduleExpressionTimezone`) sets it. Confirm
+      that this stays out of the core.
 
 - [ ] **Confirm choices made while implementing `expr`** (no fixtures yet; unit tests in `internal/expr`):
       - `to` is lowercase only and needs whitespace on both sides (`TO` and `` `06:00`to`22:00` `` are `invalid-range`).
       - At least one space is required between the end time and the weekdays (`` `22:00`MON `` is `invalid-range`).
       - A range item that spans two lines is `invalid-range`.
       - Repeated days (`MON,MON`, `MON-WED,TUE`) are allowed; painting them twice changes nothing.
-
-## Open ends in the current code
-
-The old code is churn, so don't fix it. The bugs below are useful as negative test cases for the Go implementation.
-The rest is cleanup for when the Go tool replaces the old code.
-
-- [ ] **Bugs found by probing `md:extract` (2026-10-24), to use as negative tests:**
-      - Alert names handled in two ways by `markdown-tool` (upper-cased native alert vs LinkReference, depending on a
-      hyphen).
-      - Prose before the code span silently dropped (`> switch at `08:00 MON`` accepted).
-      - A standard alert with a code span treated as a tier (`[!NOTE]` → tier `Note`).
-      - Unknown BASE values and tier names accepted.
-      - Bold markers and alerts nested in lists dropped silently.
-      - Frontmatter parsed as a ThematicBreak plus a Setext heading.
-- [ ] **`PLAN.md` vs `plan.md`** collide on case-insensitive filesystems. `PLAN.md` (ordered rules) is close to the
-      painting model. `plan.md` is the transition spec. Merge them or remove one (ask the user first).
-- [ ] **Scratch files are tracked:** `temp.json`, `test.cue`, `test.cue.json`, `original.yaml`, `preview.md`. Ask
-      before deleting them.
-- [ ] **Obsolete leftovers** from steps 1–3, including `jsonschema = "latest"` (unpinned) in `mise.toml`.
-- [ ] **Still open from plan.md §14:** time zone. (CI feedback, milestone 6, is replaced by the error report flags;
-      the CLI itself never posts to repos.)
 
 ## Future ideas (not scheduled — don't build unasked)
 
@@ -366,6 +344,11 @@ The rest is cleanup for when the Go tool replaces the old code.
   - Wrap weekday names in MyST's `{abbr}` role (``{abbr}`MON (Monday)` ``).
   - Show the equivalent cron expression as a tooltip.
   - Open: where the docs live, in this repo or in a consumer repo.
+- **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
+  catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
+  previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
+  or an internal registry such as Artifactory); a docs handbook (see the Sphinx idea) embeds the presets list,
+  summaries and previews, linking to the versioned artifacts.
 
 ## Working conventions
 
@@ -418,7 +401,7 @@ The rest is cleanup for when the Go tool replaces the old code.
 - **Golden fixtures** live in `testdata/golden/` (format in its README), generated by `testdata/golden/gen.py`: `valid/`, `warn/` and `error/` cases, each with
   `input.md`, optional `args` (one arg per line), and `want.json` and/or `want.diag` (`<severity> <line>:<col> <code>`).
   They are the spec. Don't regenerate them from the implementation.
-- Generated files (`output/**`, `coverage`, `*coverage.txt`, the binary) are gitignored. Never commit them.
+- Generated files (`coverage`, `*coverage.txt`, the binary) are gitignored. Never commit them.
 - **Examples in messages and docs:** times sit on a 15-minute grid (`6:15`, `21:45`). Never use `23:59`: it reads
   like a recommended end of day, but the end of a range is exclusive and "until midnight" is written `00:00`. The
   `24:00` error says exactly that.
