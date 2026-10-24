@@ -1,13 +1,16 @@
 // Package schedule turns a schedule document into the canonical weekly output.
 //
-// The stages (parse, normalise, paint) are not implemented yet; Evaluate returns ErrNotImplemented.
+// Parsing, META validation and tier resolution are implemented. Time expressions and painting are not yet:
+// Evaluate returns ErrNotImplemented for documents that get that far.
 package schedule
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/document"
 )
 
 // SchemaVersion is the schema version built into the binary. It applies when a document doesn't declare one.
@@ -55,6 +58,87 @@ type Run struct {
 }
 
 // Evaluate parses src and paints the week.
-func Evaluate(_ []byte, _ *config.Config, _ Options) (*Output, diag.List, error) {
-	return nil, nil, ErrNotImplemented
+func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List, error) {
+	doc, diags := document.Parse(src)
+	if diags.HasErrors() {
+		return nil, diags, nil
+	}
+
+	m, metaDiags := decodeMeta(doc.Meta)
+	diags = append(diags, metaDiags...)
+
+	_, tierDiags := resolveTiers(doc, cfg)
+	diags = append(diags, tierDiags...)
+
+	base, baseDiags := resolveBase(doc, cfg, opts)
+	diags = append(diags, baseDiags...)
+
+	if diags.HasErrors() {
+		return nil, diags, nil
+	}
+
+	// Everything except Week is known at this point; the expression and painting stages fill in Week.
+	out := &Output{
+		SchemaVersion: m.schemaVersion,
+		Name:          doc.Name.Value,
+		Hint:          m.hint,
+		Base:          base.ID,
+		Annotations:   m.annotations,
+	}
+	_ = out
+
+	return nil, diags, ErrNotImplemented
+}
+
+// resolveTiers maps every TIER block to its config tier.
+func resolveTiers(doc *document.Document, cfg *config.Config) ([]config.Tier, diag.List) {
+	var (
+		tiers []config.Tier
+		diags diag.List
+	)
+
+	for _, d := range doc.Tiers {
+		t, ok := cfg.Tier(d.Title.Value)
+		if !ok {
+			diags = append(diags, unknownTier(cfg, d.Title))
+
+			continue
+		}
+
+		tiers = append(tiers, t)
+	}
+
+	return tiers, diags
+}
+
+// resolveBase picks the base tier: the document's BASE, then --base, then the first configured tier.
+func resolveBase(doc *document.Document, cfg *config.Config, opts Options) (config.Tier, diag.List) {
+	switch {
+	case doc.Base != nil:
+		t, ok := cfg.Tier(doc.Base.Title.Value)
+		if !ok {
+			return config.Tier{}, diag.List{unknownTier(cfg, doc.Base.Title)}
+		}
+
+		return t, nil
+	case opts.RequireBase:
+		return config.Tier{}, diag.List{diag.Errorf(diag.Pos{}, diag.CodeMissingBase,
+			"--require-base true: the document needs a [!SCHEDULE:BASE] block")}
+	case opts.Base != "":
+		t, _ := cfg.Tier(opts.Base) // Validated by the CLI.
+
+		return t, nil
+	default:
+		return cfg.Tiers[0], nil
+	}
+}
+
+func unknownTier(cfg *config.Config, title document.Text) diag.Diagnostic {
+	ids := make([]string, 0, len(cfg.Tiers))
+	for _, t := range cfg.Tiers {
+		ids = append(ids, t.ID)
+	}
+
+	return diag.Errorf(title.Pos, diag.CodeUnknownTier, "unknown tier %q; configured tiers: %s",
+		title.Value, strings.Join(ids, ", "))
 }
