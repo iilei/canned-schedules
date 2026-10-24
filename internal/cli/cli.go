@@ -130,8 +130,20 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	}
 
 	out, evalDiags := schedule.Evaluate(src, cfg, opts.Schedule)
+	diags = append(diags, evalDiags...)
 
-	return out, append(diags, evalDiags...)
+	if out == nil {
+		return nil, diags
+	}
+
+	// The output also carries the config warnings, which Evaluate doesn't see.
+	out.Warnings = schedule.Warnings(src, diags)
+	if err := out.Finish(src); err != nil {
+		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
+			"internal error, please report it: the output fails its own schema: %v", err))
+	}
+
+	return out, diags
 }
 
 // SVG renders the preview of a successfully evaluated document with the same config overrides.

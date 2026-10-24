@@ -19,9 +19,9 @@ var outputSchema = sync.OnceValues(func() (*jsonschema.Schema, error) {
 	return schema.Compile(schema.OutputSchemaURL, schema.OutputSchema)
 })
 
-// finish computes the digests and validates the output against the embedded output schema. A validation failure is
-// a bug in this tool, not in the input.
-func (o *Output) finish(src []byte) error {
+// Finish computes the digests and validates the output against the embedded output schema. Call it again after
+// adding warnings. A validation failure is a bug in this tool, not in the input.
+func (o *Output) Finish(src []byte) error {
 	effective, err := json.Marshal(struct {
 		Base string `json:"base"`
 		Week Week   `json:"week"`

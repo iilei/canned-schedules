@@ -139,5 +139,6 @@
         "aws": "0 17 ? * SUN-WED,FRI *"
       }
     }
-  ]
+  ],
+  "warnings": []
 }

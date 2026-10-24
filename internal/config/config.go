@@ -134,8 +134,9 @@ func (c *Config) check() diag.List {
 	symbols := map[string]bool{}
 	for _, s := range c.Representation.Styles.Tiers {
 		if symbols[s.Symbol] {
-			diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeConfigDuplicateSymbol,
-				"style symbol %q is used more than once", s.Symbol))
+			diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodeConfigDuplicateSymbol,
+				"style symbol %q is used more than once: ASCII previews can tell those tiers apart only by colour",
+				s.Symbol))
 		}
 		symbols[s.Symbol] = true
 	}

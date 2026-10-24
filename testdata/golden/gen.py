@@ -117,7 +117,7 @@ def transitions(week):
     return out
 
 
-def output(base, ranges, annotations=None, name="Schedule-Name", hint=None):
+def output(base, ranges, annotations=None, name="Schedule-Name", hint=None, warnings=()):
     out = {"schema-version": "1", "name": name}
     if hint is not None:
         out["hint"] = hint
@@ -132,6 +132,8 @@ def output(base, ranges, annotations=None, name="Schedule-Name", hint=None):
         "digests": {"request": None, "effective": "sha256:" + hashlib.sha256(effective).hexdigest()},
         "week": week_runs,
         "transitions": transitions(week),
+        # Message text is not pinned: the golden runner replaces it with "…" before comparing.
+        "warnings": [{"code": code, "message": "…"} for code in warnings],
     })
     return out
 
@@ -452,7 +454,7 @@ write(
         '[{"symbol": "a", "color": {"light": "#000000", "dark": "#ffffff"}},'
         ' {"symbol": "b", "color": {"light": "#111111", "dark": "#eeeeee"}}]',
     ],
-    want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
+    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], warnings=["style-reuse"]),
     diag=[("warn", "-", "style-reuse")],
 )
 
@@ -595,12 +597,12 @@ err_doc("error/name-leading-digit", doc(META, BASE, TIER, title="2026 Plan"), "2
 err_doc("error/name-bad-character", doc(META, BASE, TIER, title="Plan: Q1"), "Plan", "invalid-name")
 err_doc("error/name-too-long", doc(META, BASE, TIER, title="N" * 81), "N" * 81, "invalid-name")
 err_doc("error/duplicate-name", doc(META, BASE, TIER, "# Second-Name\n"), "Second-Name", "duplicate-name")
-err(
-    "error/override-duplicate-symbol",
-    [META, BASE],
-    None,
-    "config-duplicate-symbol",
+write(
+    "warn/override-duplicate-symbol",
+    doc(META, BASE, TIER),
     args=["--set-config-at", "representation.styles.tiers[1].symbol", "--set-config-value", '"░"'],
+    want=output("Minimum", [("06:00", "22:00", ["MON"], "Medium")], warnings=["config-duplicate-symbol"]),
+    diag=[("warn", "-", "config-duplicate-symbol")],
 )
 err("error/report-format-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--error-output-format", "yaml"])
 err("error/report-template-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--error-report-template", "html"])

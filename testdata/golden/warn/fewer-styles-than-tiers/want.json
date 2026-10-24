@@ -139,5 +139,11 @@
         "aws": "0 22 ? * MON-FRI *"
       }
     }
+  ],
+  "warnings": [
+    {
+      "code": "style-reuse",
+      "message": "…"
+    }
   ]
 }

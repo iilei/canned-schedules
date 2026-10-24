@@ -36,6 +36,17 @@ type Output struct {
 	Digests       Digests           `json:"digests"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
+	Warnings      []Warning         `json:"warnings"`
+}
+
+// Warning is a non-fatal diagnostic carried in the canonical output. It names no file, so the output depends only on
+// the document and the flags, not on where the file lives.
+type Warning struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
+	Code    string        `json:"code"`
+	Line    int           `json:"line,omitempty"`
+	Column  int           `json:"column,omitempty"`
+	Message string        `json:"message"`
+	Excerpt *diag.Excerpt `json:"excerpt,omitempty"`
 }
 
 // Digests identify the request and the effective schedule.
@@ -71,6 +82,31 @@ type tierRange struct {
 	expr.Range
 }
 
+// Warnings converts the warnings among diags, sorted by position (those without a position first).
+func Warnings(src []byte, diags diag.List) []Warning {
+	sorted := append(diag.List(nil), diags...)
+	sorted.Sort()
+
+	lines := diag.SourceLines(src)
+	out := []Warning{}
+
+	for _, d := range sorted {
+		if d.Severity != diag.Warn {
+			continue
+		}
+
+		w := Warning{Code: d.Code, Message: diag.Sanitize(d.Message)}
+		if d.Pos != (diag.Pos{}) {
+			w.Line, w.Column = d.Pos.Line, d.Pos.Col
+			w.Excerpt = diag.MakeExcerpt(lines, d.Pos)
+		}
+
+		out = append(out, w)
+	}
+
+	return out
+}
+
 // Evaluate parses src and paints the week. The output is nil when there are errors.
 func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List) {
 	doc, diags := document.Parse(src)
@@ -102,9 +138,10 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		Annotations:   m.annotations,
 		Week:          weekRuns(week),
 		Transitions:   transitions(week),
+		Warnings:      Warnings(src, diags),
 	}
 
-	if err := out.finish(src); err != nil {
+	if err := out.Finish(src); err != nil {
 		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
 			"internal error, please report it: the output fails its own schema: %v", err))
 	}

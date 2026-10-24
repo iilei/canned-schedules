@@ -13,9 +13,9 @@ func TestFinishRejectsInvalidOutput(t *testing.T) {
 
 	good := &Output{
 		SchemaVersion: SchemaVersion, Name: "Plan", Base: "Off", Annotations: map[string]string{},
-		Week: week, Transitions: []Transition{},
+		Week: week, Transitions: []Transition{}, Warnings: []Warning{},
 	}
-	if err := good.finish([]byte("# Plan\n")); err != nil {
+	if err := good.Finish([]byte("# Plan\n")); err != nil {
 		t.Fatalf("valid output rejected: %v", err)
 	}
 
@@ -26,7 +26,7 @@ func TestFinishRejectsInvalidOutput(t *testing.T) {
 	bad := *good
 	bad.Base = "1-not-a-tier-id"
 
-	if err := bad.finish(nil); err == nil {
+	if err := bad.Finish(nil); err == nil {
 		t.Error("an output with an invalid base must fail the output schema")
 	}
 }
@@ -38,17 +38,25 @@ func TestEffectiveDigestIgnoresPresentation(t *testing.T) {
 	week := Week{MON: run, TUE: run, WED: run, THU: run, FRI: run, SAT: run, SUN: run}
 	a := &Output{
 		SchemaVersion: SchemaVersion, Name: "Plan A", Base: "Off", Annotations: map[string]string{},
-		Week: week, Transitions: []Transition{},
+		Week: week, Transitions: []Transition{}, Warnings: []Warning{},
 	}
 	b := &Output{
-		SchemaVersion: SchemaVersion, Name: "Plan B", Hint: "Other words", Base: "Off",
-		Annotations: map[string]string{"x-custom-owner": "ops"}, Week: week, Transitions: []Transition{},
+		SchemaVersion: SchemaVersion,
+		Name:          "Plan B",
+		Hint:          "Other words",
+		Base:          "Off",
+		Annotations: map[string]string{
+			"x-custom-owner": "ops",
+		},
+		Week:        week,
+		Transitions: []Transition{},
+		Warnings:    []Warning{},
 	}
 	c := *a
 	c.Base = "Minimum"
 
 	for _, o := range []*Output{a, b, &c} {
-		if err := o.finish([]byte(o.Name)); err != nil {
+		if err := o.Finish([]byte(o.Name)); err != nil {
 			t.Fatal(err)
 		}
 	}
