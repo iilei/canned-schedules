@@ -7,8 +7,8 @@ at mistakes by line and column, and turns it into canonical JSON: the tier in ef
 the moments the tier changes, with ready-made cron expressions.
 
 > [!NOTE]
-> Work in progress. The CLI and the input syntax work end to end; previews (ASCII/SVG), CI feedback on issues and
-> releases are still to come. Older files (CUE, jq, shell) are leftovers from earlier designs.
+> Work in progress. The CLI, the input syntax and error reports work end to end; previews (ASCII/SVG) and releases
+> are still to come. Older files (CUE, jq, shell) are leftovers from earlier designs.
 
 ## Example
 
@@ -69,10 +69,13 @@ Build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
 ```sh
 mise install
 go build ./cmd/canned-schedules
-./canned-schedules request.md        # or: ./canned-schedules < request.md
+./canned-schedules [flags] request.md
 ```
 
-On success the canonical JSON goes to stdout. Otherwise each problem goes to stderr and the exit code is 1:
+The input is always a regular file of at most 256 KiB, given after the flags. On success the canonical JSON goes to
+stdout and the exit code is 0. Otherwise each problem goes to stderr as `path:line:col`, with exit code 1 for errors in
+the document or in flag values and 2 for an unusable command line or environment (no file, several files, flags after
+the file, unreadable input, report not writable):
 
 ```text
 request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
@@ -85,7 +88,43 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--base <tier>`              | first tier | Base tier when the document has no BASE block                                   |
 | `--set-config-at <path>`     |            | Config path to replace, e.g. `representation.styles.tiers[0]` (repeatable)      |
 | `--set-config-value <json>`  |            | JSON value for the matching `--set-config-at` (repeatable)                      |
+| `--error-output-file <path>` | stderr     | Write the error report to this file (always, even when empty)                   |
+| `--error-output-format`      | `txt`      | Error report format: `txt` or `json`                                            |
+| `--error-report-template`    |            | Render the error report with the built-in `markdown-gfm` template instead       |
 | `--version`                  |            | Print the version                                                               |
+
+## Error reports
+
+`canned-schedules` never posts anything to GitHub or GitLab. It writes an error report that your CI job or bot can
+use, in one of three shapes:
+
+- `txt` (default): one `path:line:col: severity[code]: message` line per problem, as editors and CI annotators expect.
+- `json`: `{"schema-version", "file", "summary": {"errors", "warnings"}, "diagnostics": [...]}`; each diagnostic has
+  `severity`, `code`, `file`, `line`, `column`, a ready-made `location` (`path:line:col`), `message`, and an `excerpt`
+  (the source line with a caret under the column). Schema: [`schema/report.schema.json`](schema/report.schema.json).
+- `--error-report-template markdown-gfm`: the JSON rendered with the built-in
+  [`templates/markdown-gfm.tmpl`](templates/markdown-gfm.tmpl), ready to paste into an issue comment.
+
+```sh
+./canned-schedules --error-report-template markdown-gfm --error-output-file report.md request.md
+```
+
+There is exactly one built-in template. For your own layout, write the JSON report and render it yourself, for
+example with gomplate; the built-in template is a working starting point:
+
+```sh
+./canned-schedules --error-output-format json --error-output-file report.json request.md
+gomplate -c .=report.json -f templates/markdown-gfm.tmpl
+```
+
+Paths are reported as you pass them; absolute paths inside your home directory are shortened to `~/…`, so reports
+don't spell out your user name. In CI, pass paths relative to the repository root so annotations match the files (on
+many runners the workspace lies inside the home directory).
+
+Safety: the report file is written atomically (temporary file plus rename), so a planted symlink is replaced instead
+of written through. Control characters and bidirectional formatting characters in paths and messages are escaped,
+so a crafted file name can't forge log lines. In the Markdown, everything that comes from the document or the file
+name sits inside a fenced block, where links, HTML, `@mentions` and `#references` don't render.
 
 ## Output
 
