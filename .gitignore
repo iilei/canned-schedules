@@ -2,3 +2,4 @@
 coverage
 /canned-schedules
 /dist
+/editor/node_modules

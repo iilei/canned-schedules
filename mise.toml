@@ -54,6 +54,9 @@ rm -rf "$out"
 mkdir -p "$out"
 cp -R web/. "$out/"
 cp -R assets/fonts "$out/fonts"
+# The editor (CodeMirror 6) is bundled from editor/ with the versions locked in editor/package-lock.json.
+npm ci --prefix editor --silent
+node editor/build.mjs "$out"
 GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o "$out/app.wasm" ./cmd/canned-schedules-wasm
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" "$out/"
 # The "office hours" preset is the issue template itself, so the two never drift apart.

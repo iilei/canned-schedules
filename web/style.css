@@ -43,6 +43,22 @@
   --sx-link: #2962ff;
   --sx-note: #00b0ff;
   --sx-code-bg: #f3f4f6;
+  /* Editor syntax highlighting (editor/src/editor.js) */
+  --hl-heading: #0b5c8f;
+  --hl-mark: #8a6d00;
+  --hl-quote: #4a5361;
+  --hl-code: #0b7a68;
+  --hl-link: #2962ff;
+  --hl-key: #8250df;
+  --hl-string: #0b7a68;
+  --hl-number: #b35900;
+  --hl-keyword: #c4314b;
+  --hl-punct: #6b7280;
+  --hl-schedule: #8250df;
+  --hl-active-line: rgba(11, 122, 104, .06);
+  --hl-selection: rgba(11, 122, 104, .22);
+  --hl-error-line: rgba(196, 49, 75, .10);
+  --hl-warn-line: rgba(154, 103, 0, .10);
   color-scheme: light;
 }
 
@@ -74,6 +90,21 @@
   --sx-link: #52c3ff;
   --sx-note: #00b0ff;
   --sx-code-bg: #1a1c1e;
+  --hl-heading: #7cc4ff;
+  --hl-mark: #e3b341;
+  --hl-quote: #aab2bf;
+  --hl-code: #5ad1b8;
+  --hl-link: #52c3ff;
+  --hl-key: #c4a5ff;
+  --hl-string: #5ad1b8;
+  --hl-number: #ffab70;
+  --hl-keyword: #ff7b8f;
+  --hl-punct: #8b93a1;
+  --hl-schedule: #c4a5ff;
+  --hl-active-line: rgba(90, 209, 184, .06);
+  --hl-selection: rgba(90, 209, 184, .25);
+  --hl-error-line: rgba(255, 123, 143, .14);
+  --hl-warn-line: rgba(227, 179, 65, .12);
   color-scheme: dark;
 }
 
@@ -106,6 +137,21 @@
     --sx-link: #52c3ff;
     --sx-note: #00b0ff;
     --sx-code-bg: #1a1c1e;
+    --hl-heading: #7cc4ff;
+    --hl-mark: #e3b341;
+    --hl-quote: #aab2bf;
+    --hl-code: #5ad1b8;
+    --hl-link: #52c3ff;
+    --hl-key: #c4a5ff;
+    --hl-string: #5ad1b8;
+    --hl-number: #ffab70;
+    --hl-keyword: #ff7b8f;
+    --hl-punct: #8b93a1;
+    --hl-schedule: #c4a5ff;
+    --hl-active-line: rgba(90, 209, 184, .06);
+    --hl-selection: rgba(90, 209, 184, .25);
+    --hl-error-line: rgba(255, 123, 143, .14);
+    --hl-warn-line: rgba(227, 179, 65, .12);
     color-scheme: dark;
   }
 }
@@ -187,6 +233,22 @@ button.ghost:disabled { opacity: .5; cursor: default; }
   border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
   font-size: 15px; line-height: 1.45; tab-size: 2;
 }
+/* CodeMirror editor and JSON viewer (editor.js); the textarea and <pre> above stay as fallbacks without it. */
+.cm-host { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.cm-host .cm-editor { outline: none; }
+.cm-host.editor .cm-editor { height: 62vh; resize: vertical; overflow: hidden; }
+.cm-host.editor .cm-scroller { overflow: auto; }
+.cm-host.viewer .cm-editor { max-height: 70vh; font-size: 13.5px; }
+.cm-host .cm-editor.cm-focused { outline: 2px solid var(--focus); outline-offset: -2px; }
+.cm-diag-line-error { background-color: var(--hl-error-line); box-shadow: inset 3px 0 var(--error); }
+.cm-diag-line-warn { background-color: var(--hl-warn-line); box-shadow: inset 3px 0 var(--warn); }
+/* The markers parse as Markdown links; the descendant rule beats the link colour inside them. */
+.cm-schedule-marker, .cm-schedule-marker * { color: var(--hl-schedule) !important; font-weight: 700; }
+.cm-alert-marker, .cm-alert-marker * { color: var(--hl-mark) !important; font-weight: 700; }
+.cm-tooltip.cm-tooltip-lint { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
+.cm-panels { background: var(--surface); color: var(--text); }
+.cm-panels input, .cm-panels button { font: inherit; color: inherit; }
+
 .options { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 13px; color: var(--muted); }
 .options label { display: flex; align-items: center; gap: 6px; }
 .options select {
