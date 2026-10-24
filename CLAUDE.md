@@ -234,6 +234,42 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Directives only count at the top level.** A directive nested in a list or another container, or a bold-wrapped
   marker (`> **[!SCHEDULE:TIER]**`), is an error (`misplaced-directive`). It is never silently ignored.
 
+## Error reporting (decided and implemented 2026-10-24)
+
+- **Non-goal: the CLI never contributes to repos.** No posting of issue comments, no API calls. Integrations (CI
+  jobs, bots) take the report and do that themselves.
+- **Input:** always exactly one file after the flags (no stdin). Opened once; the *opened* file must be a regular file
+  (no directories, devices, pipes); at most 256 KiB (GitHub issue bodies are capped at 65,536 characters).
+- **Paths in messages and reports** (`report.DisplayPath`): as given, except that absolute paths inside the home
+  directory become `~/…` (OS-specific separator), so reports don't spell out the user name. Never resolved to real
+  paths: that adds no safety for a CLI running with the caller's rights, is racy (TOCTOU), breaks symlinked setups,
+  and makes paths absolute, which leaks more. OS errors are reduced to their reason (`report.Reason`), because
+  `*fs.PathError` texts repeat the full path. File access always uses the path as given. In CI, relative paths keep
+  annotations working (runner workspaces often lie inside home). If a bot ever passes attacker-derived names,
+  confinement via `os.Root` (`--root`) would be the tool; not built.
+- **Flags:** `--error-output-file <path>`, `--error-output-format txt|json` (default `txt`), `--error-report-template
+  markdown-gfm`. Format and template are mutually exclusive (`invalid-flag`).
+- **The file is always written** when `--error-output-file` is given, even with zero diagnostics, so CI never reads a
+  stale report. Without it, the report goes to stderr only when there is something to report.
+- **JSON report** (`internal/report`, `schema/report.schema.json`): `schema-version`, `file`, `summary` (errors,
+  warnings), `diagnostics` with `severity`, `code`, `file`, `line`, `column`, `location` (ready-made `path:line:col`;
+  structured fields stay because paths may contain `:`), `message`, `excerpt` (`text` + `marker` with a caret).
+  Warnings are included.
+- **Template:** exactly one, `templates/markdown-gfm.tmpl` (package `templates`, embedded). Plain Go `text/template`,
+  no functions beyond the builtins, executed on the report decoded from its own JSON, so it runs unchanged with
+  gomplate: `gomplate -c .=report.json -f templates/markdown-gfm.tmpl` is byte-identical to the built-in output
+  (verified with gomplate 5.2.0). No custom template flag; other layouts use the JSON with gomplate.
+- **Output safety:**
+  - The report file is written atomically (temp file in the same directory + rename, mode 0644). A planted symlink is
+    replaced, not written through. Directories are refused.
+  - `diag.Sanitize` escapes control characters (except tab), U+2028/U+2029 and bidi formatting characters as
+    `\uXXXX` in every echoed path and message (log-line forgery, GitHub `::` workflow commands, "Trojan Source").
+  - In the Markdown, every user-derived string (file, message, excerpt) is printed only inside a `~~~~~~` fence, so
+    Markdown, HTML, links, `@mentions` and `#references` don't render. Source lines starting with `~~~` get no excerpt,
+    so they can't close the fence.
+- **Exit codes:** 0 ok, 1 errors in the document or flag values, 2 unusable command line or environment
+  (`invalid-args`, `input-file`, report not writable).
+
 ## Open (fixtures)
 
 - [ ] **Confirm choices made while implementing `expr`** (no fixtures yet; unit tests in `internal/expr`):
@@ -260,7 +296,8 @@ The rest is cleanup for when the Go tool replaces the old code.
 - [ ] **Scratch files are tracked:** `temp.json`, `test.cue`, `test.cue.json`, `original.yaml`, `preview.md`. Ask
       before deleting them.
 - [ ] **Obsolete leftovers** from steps 1–3, including `jsonschema = "latest"` (unpinned) in `mise.toml`.
-- [ ] **Still open from plan.md §14:** time zone, CI feedback (milestone 6).
+- [ ] **Still open from plan.md §14:** time zone. (CI feedback, milestone 6, is replaced by the error report flags;
+      the CLI itself never posts to repos.)
 
 ## Future ideas (not scheduled — don't build unasked)
 
@@ -290,8 +327,9 @@ The rest is cleanup for when the Go tool replaces the old code.
   (`/canned-schedules`), golangci import prefix `github.com/iilei/canned-schedules`, release texts renamed. Test files
   have relaxed lint rules (`mnd`, `perfsprint`, complexity linters, `fieldalignment`, `rangeValCopy`/`hugeParam`).
 - **Go layout** (skeleton since 2026-10-24):
-  - `cmd/canned-schedules`: the CLI entry point (`--version`; reads a file argument or stdin; diagnostics on stderr,
-    JSON on stdout, exit 1 on errors).
+  - `cmd/canned-schedules`: the CLI entry point (`--version`): input reading, report output and exit codes (see
+    "Error reporting").
+  - `internal/report` and `templates/`: the error report (txt, JSON, built-in Markdown template) and atomic writing.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and
     `output.schema.json` (`go:embed`), plus `Compile`. Its test validates every golden `want.json` against the output
     schema.
