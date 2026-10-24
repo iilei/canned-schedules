@@ -55,7 +55,15 @@ A diagnostic points at the first character of the offending token:
   "week": {
     "MON": [{"start": "00:00", "end": "06:00", "tier": "Minimum"}, …],
     "TUE": […], "WED": […], "THU": […], "FRI": […], "SAT": […], "SUN": […]
-  }
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": ["MON", "TUE", "WED", "THU", "FRI"],
+      "tier": "Medium",
+      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
+    }
+  ]
 }
 ```
 
@@ -66,8 +74,20 @@ A diagnostic points at the first character of the offending token:
 - Times are always `HH:MM` in the output, even when the input used `H:MM` (`6:00` → `06:00`).
 - `name` comes from the H1. `hint` is the text after the META marker and is **omitted** when there is none.
 - `annotations` holds every `x-custom-*` META key verbatim (`{}` if none).
-- Not yet included: the request and effective digests, and derived transitions. They get added once the output schema
-  exists, and the fixtures will then be extended.
+- `transitions` lists every moment the active tier changes. The week is cyclic, so MON 00:00 follows SUN 23:59.
+  - Days that switch to the same tier at the same time are grouped into one entry. `days` is the full list, Monday
+    first.
+  - Order: by the group's first minute in the week (MON 00:00 first), then by tier id.
+  - A week painted in a single tier has no transitions (`[]`).
+  - `time`, `days` and `tier` are the facts. `cron` renders them for schedulers, without a time zone (wall-clock):
+    - `posix`: five-field Unix cron with **numeric** weekdays, 0 = SUN (as EC2 Auto Scaling scheduled actions use).
+      Classic cron doesn't allow ranges of names.
+    - `aws`: six-field EventBridge format (`min hour ? month weekday year`) with weekday **names**. AWS numbers run
+      1 = SUN, so names avoid off-by-one mistakes. This is not Quartz, which has a leading seconds field.
+    - Both list days Sunday-first and never wrap around the week (`FRI`–`MON` becomes `0-1,5-6` /
+      `SUN-MON,FRI-SAT`). All seven days become `*`.
+- Not yet included: the request and effective digests. The effective digest is meant to cover `week` only, so a
+  change in cron rendering never changes it.
 
 ## Built-in config assumed
 

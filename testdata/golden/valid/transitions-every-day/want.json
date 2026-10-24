@@ -1,0 +1,163 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Off",
+  "annotations": {},
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "08:15",
+        "tier": "Off"
+      },
+      {
+        "start": "08:15",
+        "end": "17:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:45",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "08:15",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "15 8 * * *",
+        "aws": "15 8 ? * * *"
+      }
+    },
+    {
+      "time": "17:45",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "45 17 * * *",
+        "aws": "45 17 ? * * *"
+      }
+    }
+  ]
+}

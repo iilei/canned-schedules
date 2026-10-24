@@ -93,5 +93,35 @@
         "tier": "Off"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "09:00",
+      "days": [
+        "MON",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 9 * * 0-1,5-6",
+        "aws": "0 9 ? * SUN-MON,FRI-SAT *"
+      }
+    },
+    {
+      "time": "17:00",
+      "days": [
+        "MON",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 17 * * 0-1,5-6",
+        "aws": "0 17 ? * SUN-MON,FRI-SAT *"
+      }
+    }
+  ]
 }

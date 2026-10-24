@@ -73,5 +73,51 @@
         "tier": "Minimum"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": [
+        "MON"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1",
+        "aws": "0 6 ? * MON *"
+      }
+    },
+    {
+      "time": "09:30",
+      "days": [
+        "MON"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "30 9 * * 1",
+        "aws": "30 9 ? * MON *"
+      }
+    },
+    {
+      "time": "00:15",
+      "days": [
+        "TUE"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "15 0 * * 2",
+        "aws": "15 0 ? * TUE *"
+      }
+    },
+    {
+      "time": "08:45",
+      "days": [
+        "TUE"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "45 8 * * 2",
+        "aws": "45 8 ? * TUE *"
+      }
+    }
+  ]
 }

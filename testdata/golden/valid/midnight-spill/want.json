@@ -63,5 +63,29 @@
         "tier": "Minimum"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "22:00",
+      "days": [
+        "FRI"
+      ],
+      "tier": "Maximum",
+      "cron": {
+        "posix": "0 22 * * 5",
+        "aws": "0 22 ? * FRI *"
+      }
+    },
+    {
+      "time": "02:00",
+      "days": [
+        "SAT"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "0 2 * * 6",
+        "aws": "0 2 ? * SAT *"
+      }
+    }
+  ]
 }

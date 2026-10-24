@@ -123,5 +123,61 @@
         "tier": "Off"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "09:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 9 * * 1-5",
+        "aws": "0 9 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "17:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 17 * * 1-5",
+        "aws": "0 17 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "10:00",
+      "days": [
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 10 * * 0,6",
+        "aws": "0 10 ? * SUN,SAT *"
+      }
+    },
+    {
+      "time": "14:00",
+      "days": [
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 14 * * 0,6",
+        "aws": "0 14 ? * SUN,SAT *"
+      }
+    }
+  ]
 }

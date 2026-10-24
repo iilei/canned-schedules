@@ -53,5 +53,29 @@
         "tier": "Off"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "00:00",
+      "days": [
+        "WED"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 0 * * 3",
+        "aws": "0 0 ? * WED *"
+      }
+    },
+    {
+      "time": "00:00",
+      "days": [
+        "THU"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 0 * * 4",
+        "aws": "0 0 ? * THU *"
+      }
+    }
+  ]
 }
