@@ -3,9 +3,7 @@
 package document
 
 import (
-	"cmp"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -111,9 +109,7 @@ func Parse(src []byte) (*Document, diag.List) {
 
 	p.scanMisplaced(root)
 
-	slices.SortStableFunc(p.diags, func(a, b diag.Diagnostic) int {
-		return cmp.Or(cmp.Compare(a.Pos.Line, b.Pos.Line), cmp.Compare(a.Pos.Col, b.Pos.Col))
-	})
+	p.diags.Sort()
 
 	return &p.doc, p.diags
 }
