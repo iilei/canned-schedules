@@ -2,7 +2,9 @@
 package diag
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strconv"
 )
 
@@ -20,11 +22,14 @@ const (
 	CodeDuplicateBlock        = "duplicate-block"
 	CodeDuplicateName         = "duplicate-name"
 	CodeEmptyTier             = "empty-tier"
+	CodeGranularity           = "granularity"
 	CodeInvalidFlag           = "invalid-flag"
 	CodeInvalidHint           = "invalid-hint"
 	CodeInvalidName           = "invalid-name"
 	CodeInvalidOverride       = "invalid-override"
 	CodeInvalidRange          = "invalid-range"
+	CodeInvalidTime           = "invalid-time"
+	CodeInvalidWeekday        = "invalid-weekday"
 	CodeMetaSchema            = "meta-schema"
 	CodeMisplacedDirective    = "misplaced-directive"
 	CodeMissingBase           = "missing-base"
@@ -100,4 +105,12 @@ func (l List) HasErrors() bool {
 	}
 
 	return false
+}
+
+// Sort orders the list by position, keeping the original order for equal positions. Diagnostics without a position
+// come first.
+func (l List) Sort() {
+	slices.SortStableFunc(l, func(a, b Diagnostic) int {
+		return cmp.Or(cmp.Compare(a.Pos.Line, b.Pos.Line), cmp.Compare(a.Pos.Col, b.Pos.Col))
+	})
 }

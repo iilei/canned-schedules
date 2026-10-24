@@ -3,7 +3,6 @@ package schedule
 import (
 	"errors"
 	"regexp"
-	"slices"
 	"strings"
 	"sync"
 
@@ -150,13 +149,7 @@ func validateMeta(obj map[string]any, byKey map[string]metaEntry, blockPos diag.
 		diags = append(diags, metaDiag(leaf, byKey, blockPos)...)
 	}
 
-	slices.SortStableFunc(diags, func(a, b diag.Diagnostic) int {
-		if a.Pos.Line != b.Pos.Line {
-			return a.Pos.Line - b.Pos.Line
-		}
-
-		return a.Pos.Col - b.Pos.Col
-	})
+	diags.Sort()
 
 	return diags
 }

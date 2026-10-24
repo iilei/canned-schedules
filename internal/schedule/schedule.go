@@ -1,7 +1,7 @@
 // Package schedule turns a schedule document into the canonical weekly output.
 //
-// Parsing, META validation and tier resolution are implemented. Time expressions and painting are not yet:
-// Evaluate returns ErrNotImplemented for documents that get that far.
+// Parsing, META validation, tier resolution and range expressions are implemented. Painting is not yet: Evaluate
+// returns ErrNotImplemented for documents that get that far.
 package schedule
 
 import (
@@ -11,6 +11,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/internal/document"
+	"github.com/iilei/canned-schedules/internal/expr"
 )
 
 // SchemaVersion is the schema version built into the binary. It applies when a document doesn't declare one.
@@ -57,6 +58,12 @@ type Run struct {
 	Tier  string `json:"tier"`
 }
 
+// tierRange is one parsed range item together with the tier it paints.
+type tierRange struct {
+	tier config.Tier
+	expr.Range
+}
+
 // Evaluate parses src and paints the week.
 func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List, error) {
 	doc, diags := document.Parse(src)
@@ -67,11 +74,13 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List,
 	m, metaDiags := decodeMeta(doc.Meta)
 	diags = append(diags, metaDiags...)
 
-	_, tierDiags := resolveTiers(doc, cfg)
+	_, tierDiags := resolveTiers(doc, cfg, opts.Granularity)
 	diags = append(diags, tierDiags...)
 
 	base, baseDiags := resolveBase(doc, cfg, opts)
 	diags = append(diags, baseDiags...)
+
+	diags.Sort()
 
 	if diags.HasErrors() {
 		return nil, diags, nil
@@ -90,25 +99,30 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List,
 	return nil, diags, ErrNotImplemented
 }
 
-// resolveTiers maps every TIER block to its config tier.
-func resolveTiers(doc *document.Document, cfg *config.Config) ([]config.Tier, diag.List) {
+// resolveTiers maps every TIER block to its config tier and parses its range items, in source order.
+func resolveTiers(doc *document.Document, cfg *config.Config, granularity int) ([]tierRange, diag.List) {
 	var (
-		tiers []config.Tier
-		diags diag.List
+		ranges []tierRange
+		diags  diag.List
 	)
 
 	for _, d := range doc.Tiers {
 		t, ok := cfg.Tier(d.Title.Value)
 		if !ok {
 			diags = append(diags, unknownTier(cfg, d.Title))
-
-			continue
 		}
 
-		tiers = append(tiers, t)
+		for _, item := range d.Items {
+			r, rangeDiags := expr.Parse(item, granularity)
+			diags = append(diags, rangeDiags...)
+
+			if ok && len(rangeDiags) == 0 {
+				ranges = append(ranges, tierRange{tier: t, Range: r})
+			}
+		}
 	}
 
-	return tiers, diags
+	return ranges, diags
 }
 
 // resolveBase picks the base tier: the document's BASE, then --base, then the first configured tier.
