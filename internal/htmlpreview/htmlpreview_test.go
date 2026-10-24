@@ -1,0 +1,108 @@
+package htmlpreview
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/iilei/canned-schedules/internal/config"
+)
+
+const doc = "# Plan\n\n" +
+	"> [!SCHEDULE:META] Office\n> - x-custom-owner: `ops`\n\n" +
+	"> [!SCHEDULE:BASE] Minimum\n\n" +
+	"> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
+	"> [!NOTE]\n> Mention MON here.\n\n" +
+	"> [!TIP] with a title\n> text\n\n" +
+	"> [!OTHER:THING] x\n\n" +
+	"Prose with MON, <script>alert(1)</script> and [a link](javascript:alert(1)).\n"
+
+func render(t *testing.T, mode string) string {
+	t.Helper()
+
+	cfg, _ := config.Load(nil)
+
+	html, err := Render([]byte(doc), cfg, mode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return html
+}
+
+func TestGitHub(t *testing.T) {
+	t.Parallel()
+
+	html := render(t, GitHub)
+
+	for _, want := range []string{
+		`<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title">Note</p>`,
+		`<blockquote>` + "\n" + `<p>[!SCHEDULE:TIER] Medium</p>`, // GitHub shows schedule directives literally.
+		`<p>[!TIP] with a title`, // A marker with a title is no GitHub alert.
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("missing %q in:\n%s", want, html)
+		}
+	}
+
+	if strings.Contains(html, "<abbr") {
+		t.Error("weekday tooltips are a Sphinx customisation")
+	}
+}
+
+func TestSphinx(t *testing.T) {
+	t.Parallel()
+
+	html := render(t, Sphinx)
+
+	for _, want := range []string{
+		`<div class="admonition schedule schedule-meta"><p class="admonition-title">Schedule: Office</p>`,
+		`<div class="admonition schedule schedule-base tier-1"><p class="admonition-title">Base tier: Minimum</p>`,
+		`<div class="admonition schedule schedule-tier tier-2"><p class="admonition-title">Medium</p>`,
+		`<code>06:00</code> to <code>22:00</code> <abbr title="Monday">MON</abbr>-<abbr title="Friday">FRI</abbr>`,
+		`<div class="admonition note"><p class="admonition-title">Note</p>`,
+		`<div class="admonition tip"><p class="admonition-title">Tip</p>`,
+		`<div class="admonition"><p class="admonition-title">OTHER:THING x</p>`,
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("missing %q in:\n%s", want, html)
+		}
+	}
+
+	if strings.Contains(html, "Mention <abbr") || strings.Contains(html, "with <abbr") {
+		t.Error("weekday tooltips only belong inside schedule admonitions")
+	}
+
+	if strings.Contains(html, "[!SCHEDULE:") {
+		t.Error("markers must not show in the Sphinx view")
+	}
+}
+
+func TestSafety(t *testing.T) {
+	t.Parallel()
+
+	for _, mode := range []string{GitHub, Sphinx} {
+		html := render(t, mode)
+		if strings.Contains(html, "<script") || strings.Contains(html, "javascript:") {
+			t.Errorf("%s: raw HTML or a dangerous link got through:\n%s", mode, html)
+		}
+	}
+}
+
+func TestStyleSheet(t *testing.T) {
+	t.Parallel()
+
+	cfg, _ := config.Load(nil)
+	css := StyleSheet(cfg, ".rendered.sphinx")
+
+	for i := range cfg.Tiers {
+		c := cfg.Style(i).Color
+		if !strings.Contains(css, c.Light) || !strings.Contains(css, c.Dark) {
+			t.Errorf("tier %d colours missing from:\n%s", i, css)
+		}
+	}
+
+	if !strings.Contains(css, `[data-theme="dark"] .rendered.sphinx .admonition.tier-0`) ||
+		!strings.Contains(css, `[data-theme="system"]`) {
+		t.Errorf("stylesheet must follow the page theme:\n%s", css)
+	}
+}
