@@ -20,13 +20,13 @@ func TestRun(t *testing.T) {
 		wantCode   int
 	}{
 		{name: "valid file", args: []string{basic}, wantCode: exitOK},
-		{name: "flags then file", args: []string{"--granularity", "60", basic}, wantCode: exitOK},
+		{name: "flags then file", args: []string{"--sample-interval", "60", basic}, wantCode: exitOK},
 		{name: "no file", args: nil, wantCode: exitUsage, wantStderr: "missing input file"},
 		{name: "stdin dash is not a file", args: []string{"-"}, wantCode: exitUsage, wantStderr: "no such file"},
 		{name: "two files", args: []string{basic, basic}, wantCode: exitUsage, wantStderr: "expected one input file"},
 		{
 			name:       "flag after file",
-			args:       []string{basic, "--granularity", "60"},
+			args:       []string{basic, "--sample-interval", "60"},
 			wantCode:   exitUsage,
 			wantStderr: "flags must come before the file",
 		},
@@ -37,7 +37,7 @@ func TestRun(t *testing.T) {
 			wantCode:   exitInvalid,
 			wantStderr: "../../testdata/golden/error/time-24-00/input.md:9:17: error[invalid-time]",
 		},
-		{name: "invalid flag value", args: []string{"--granularity", "7", basic}, wantCode: exitInvalid},
+		{name: "invalid flag value", args: []string{"--sample-interval", "7", basic}, wantCode: exitInvalid},
 		{name: "directory as input", args: []string{"."}, wantCode: exitUsage, wantStderr: "a directory"},
 		{
 			name:       "json report on stderr",

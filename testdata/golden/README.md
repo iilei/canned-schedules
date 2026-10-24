@@ -21,7 +21,7 @@ error/<case>/   input.md, want.diag, [args]
 
 - `input.md`: the document under test.
 - `args`: CLI arguments, **one per line** (no shell quoting). Omitted means defaults: built-in config,
-  `--granularity 1`, `--require-base false`, no `--base`.
+  `--sample-interval 1`, `--require-base false`, no `--base`.
 - `want.json`: the expected canonical output (draft shape, see below). Error cases have none, because errors produce
   no output.
 - `want.diag`: the expected diagnostics, one per line, in emission order:
@@ -106,7 +106,7 @@ styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-
 
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
-  `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `granularity`, `invalid-flag`, `invalid-override`,
+  `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
   `config-schema`, `config-duplicate-tier`, `config-duplicate-symbol`, `unknown-namespace`, `style-reuse`, `missing-kind`, `duplicate-block`,
   `empty-tier`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 

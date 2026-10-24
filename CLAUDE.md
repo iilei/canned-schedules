@@ -119,9 +119,10 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
     SUN, MON).
   - Whitespace from the first weekday name to the end of the line is ignored (`SAT, SUN` and `MON - FRI` are fine).
 - **Cron forms are not accepted** as input.
-- **Precision flag** (name not decided, for example `--granularity <minutes>`): default `1`. It must divide 60 evenly
-  (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60). Every time must be a multiple of it, otherwise it's an error. There is no
-  rounding.
+- **`--sample-interval <minutes>`** (renamed from `--granularity`, 2026-10-24, for one vocabulary with
+  `--preview-downsample`): default `1`. It must divide 60 evenly (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60). Every
+  time must be a multiple of it, otherwise it's an error (`sample-interval`). This is an **input rule**: there is no
+  rounding, ever.
 
 ### Evaluation (decided)
 
@@ -366,7 +367,7 @@ The rest is cleanup for when the Go tool replaces the old code.
     missing titles, and non-list content (`invalid-range` in TIER, `meta-schema` in META, `unexpected-content` in BASE).
   - `internal/expr`: implemented. Parses one TIER item into a `Range` (start/end minutes, weekday list with wrap-around
     expanded). Item shape must be code, ` to `, code, whitespace plus weekdays (`invalid-range` otherwise). Times
-    `H:MM`/`HH:MM` (`invalid-time`), multiples of `--granularity` (`granularity`), weekdays per the decided rules
+    `H:MM`/`HH:MM` (`invalid-time`), multiples of `--sample-interval` (`sample-interval`), weekdays per the decided rules
     (`invalid-weekday` at the offending word, `-` or `,`).
   - `internal/schedule`: META validation against the embedded schema (schema errors mapped to the key or value
     position), tier and base resolution, range parsing via `expr`, and painting (`paint.go`: every minute of the week

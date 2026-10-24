@@ -22,7 +22,7 @@ func evaluate(t *testing.T, src string, overrides ...config.Override) (*schedule
 		t.Fatalf("config: %v", diags)
 	}
 
-	out, diags := schedule.Evaluate([]byte(src), cfg, schedule.Options{Granularity: 1})
+	out, diags := schedule.Evaluate([]byte(src), cfg, schedule.Options{SampleInterval: 1})
 	if out == nil {
 		t.Fatalf("evaluate: %v", diags)
 	}

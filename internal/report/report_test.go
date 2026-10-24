@@ -16,7 +16,7 @@ const src = "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `10:00` to `24:00` SAT\n\t
 
 func sample() Report {
 	return Build("requests/office.md", []byte(src), diag.List{
-		diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--granularity 7: must divide 60"),
+		diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--sample-interval 7: must divide 60"),
 		diag.Errorf(diag.Pos{Line: 4, Col: 17}, diag.CodeInvalidTime, "24:00 is not a valid time"),
 		diag.Errorf(diag.Pos{Line: 5, Col: 6}, diag.CodeMisplacedDirective, "misplaced"),
 		diag.Warnf(diag.Pos{}, diag.CodeStyleReuse, "styles repeat"),
@@ -125,7 +125,7 @@ func TestRender(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantTxt := "requests/office.md: error[invalid-flag]: --granularity 7: must divide 60\n" +
+	wantTxt := "requests/office.md: error[invalid-flag]: --sample-interval 7: must divide 60\n" +
 		"requests/office.md:4:17: error[invalid-time]: 24:00 is not a valid time\n"
 	if !strings.HasPrefix(txt.String(), wantTxt) {
 		t.Errorf("txt =\n%s", txt.String())
