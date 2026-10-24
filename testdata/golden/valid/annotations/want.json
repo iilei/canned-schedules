@@ -1,5 +1,6 @@
 {
   "schema-version": "1",
+  "name": "Schedule-Name",
   "base": "Minimum",
   "annotations": {
     "x-custom-owner": "team-xyz",
