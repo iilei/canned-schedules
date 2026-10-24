@@ -1,4 +1,4 @@
 --set-config-at
-parser.namespace
+representation.theme.light.background
 --set-config-value
-"BAD--NS-"
+"red"

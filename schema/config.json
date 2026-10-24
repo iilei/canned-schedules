@@ -1,24 +1,65 @@
 {
   "$schema": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json",
   "schema-version": "1",
-  "parser": { "namespace": "SCHEDULE" },
   "tiers": [
-    { "id": "Off", "display-name": "Off" },
-    { "id": "Minimum", "display-name": "Minimum" },
-    { "id": "Medium", "display-name": "Medium" },
-    { "id": "Maximum", "display-name": "Maximum" }
+    {
+      "id": "Off",
+      "display-name": "Off"
+    },
+    {
+      "id": "Minimum",
+      "display-name": "Minimum"
+    },
+    {
+      "id": "Medium",
+      "display-name": "Medium"
+    },
+    {
+      "id": "Maximum",
+      "display-name": "Maximum"
+    }
   ],
   "representation": {
     "theme": {
-      "light": { "background": "#ffffff", "label": "#222222" },
-      "dark": { "background": "#1a1a2e", "label": "#cccccc" }
+      "light": {
+        "background": "#ffffff",
+        "label": "#222222"
+      },
+      "dark": {
+        "background": "#1a1a2e",
+        "label": "#cccccc"
+      }
     },
     "styles": {
       "tiers": [
-        { "symbol": "░", "color": { "light": "#A7DCC840", "dark": "#B9A5FF40" } },
-        { "symbol": "▒", "color": { "light": "#B8E8D9D9", "dark": "#B9A5FFD9" } },
-        { "symbol": "▓", "color": { "light": "#54C6A5D9", "dark": "#9D82EAD9" } },
-        { "symbol": "█", "color": { "light": "#087E6BD9", "dark": "#7048D6D9" } }
+        {
+          "symbol": "░",
+          "color": {
+            "light": "#A7DCC840",
+            "dark": "#B9A5FF40"
+          }
+        },
+        {
+          "symbol": "▒",
+          "color": {
+            "light": "#B8E8D9D9",
+            "dark": "#B9A5FFD9"
+          }
+        },
+        {
+          "symbol": "▓",
+          "color": {
+            "light": "#54C6A5D9",
+            "dark": "#9D82EAD9"
+          }
+        },
+        {
+          "symbol": "█",
+          "color": {
+            "light": "#087E6BD9",
+            "dark": "#7048D6D9"
+          }
+        }
       ]
     }
   }

@@ -6,7 +6,6 @@
   "additionalProperties": false,
   "required": [
     "schema-version",
-    "parser",
     "tiers",
     "representation"
   ],
@@ -16,18 +15,6 @@
     },
     "schema-version": {
       "const": "1"
-    },
-    "parser": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "namespace"
-      ],
-      "properties": {
-        "namespace": {
-          "$ref": "#/$defs/namespace"
-        }
-      }
     },
     "tiers": {
       "description": "Ordered. Index 0 is the default base. Ids must be unique case-insensitively (checked in Go).",
@@ -85,12 +72,6 @@
     }
   },
   "$defs": {
-    "namespace": {
-      "description": "Starts with a letter, ends with a letter or digit, single hyphens between. Stored uppercase.",
-      "type": "string",
-      "maxLength": 100,
-      "pattern": "^[A-Z](?:-?[A-Z0-9])*$"
-    },
     "tier-id": {
       "type": "string",
       "maxLength": 32,

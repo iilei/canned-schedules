@@ -1,4 +1,4 @@
 --set-config-at
-parser.namespace
+tiers[0].display-name
 --set-config-value
-PLAN
+Off
