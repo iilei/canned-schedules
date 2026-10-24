@@ -4,7 +4,6 @@ package cli
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"strconv"
 
@@ -88,38 +87,29 @@ func Parse(args []string) (Options, diag.List) {
 	return opts, diags
 }
 
-// Run evaluates one document. It returns the output (nil on errors), all diagnostics, and an error only for
-// failures that aren't about the input, such as a stage that isn't implemented yet.
-func Run(args []string, src []byte) (*schedule.Output, diag.List, error) {
+// Run evaluates one document. It returns the output (nil on errors) and all diagnostics.
+func Run(args []string, src []byte) (*schedule.Output, diag.List) {
 	opts, diags := Parse(args)
 	if diags.HasErrors() {
-		return nil, diags, nil
+		return nil, diags
 	}
 
 	cfg, cfgDiags := config.Load(opts.Overrides)
 	diags = append(diags, cfgDiags...)
 
 	if cfg == nil {
-		return nil, diags, nil
+		return nil, diags
 	}
 
 	if b := opts.Schedule.Base; b != "" {
 		if _, ok := cfg.Tier(b); !ok {
-			return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--base %q: no such tier", b)), nil
+			return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--base %q: no such tier", b))
 		}
 	}
 
-	out, evalDiags, err := schedule.Evaluate(src, cfg, opts.Schedule)
-	if err != nil {
-		return nil, diags, fmt.Errorf("evaluate: %w", err)
-	}
+	out, evalDiags := schedule.Evaluate(src, cfg, opts.Schedule)
 
-	diags = append(diags, evalDiags...)
-	if diags.HasErrors() {
-		return nil, diags, nil
-	}
-
-	return out, diags, nil
+	return out, append(diags, evalDiags...)
 }
 
 // parseBool accepts exactly "true" or "false"; strconv.ParseBool would also take "1", "t", "TRUE" and so on.
