@@ -18,6 +18,13 @@ import (
 	"github.com/iilei/canned-schedules/templates"
 )
 
+// SVG themes (--svg-theme).
+const (
+	ThemeAuto  = "auto"
+	ThemeLight = "light"
+	ThemeDark  = "dark"
+)
+
 // Layout in pixels. The day grid matches the old CUE/gomplate renderer: 24 px per hour, 576 px per day.
 const (
 	fontFamily = "Ubuntu Mono, 'Courier New', Courier, monospace"
@@ -64,28 +71,36 @@ var days = []string{"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"}
 
 // Model is the render model the SVG template operates on. Strings are raw; the template escapes them.
 type Model struct {
-	Theme       config.Theme `json:"theme"`
-	Font        string       `json:"font"`
-	Transitions Transitions  `json:"transitions"`
-	Labels      []Text       `json:"labels"`
-	Tiers       []Tier       `json:"tiers"`
-	Days        []Day        `json:"days"`
-	Ticks       []Line       `json:"ticks"`
-	Guides      []Line       `json:"guides"`
-	Hint        Text         `json:"hint"`
-	Title       Text         `json:"title"`
-	Legend      Legend       `json:"legend"`
-	Divider     Line         `json:"divider"`
-	Width       float64      `json:"width"`
-	Height      float64      `json:"height"`
-	Bucket      int          `json:"bucket"`
+	// Dark is the palette for prefers-color-scheme: dark; only set in auto mode.
+	Dark        *Palette    `json:"dark"`
+	Palette     Palette     `json:"palette"`
+	Scheme      string      `json:"scheme"`
+	Font        string      `json:"font"`
+	Transitions Transitions `json:"transitions"`
+	Labels      []Text      `json:"labels"`
+	Days        []Day       `json:"days"`
+	Ticks       []Line      `json:"ticks"`
+	Guides      []Line      `json:"guides"`
+	Hint        Text        `json:"hint"`
+	Title       Text        `json:"title"`
+	Legend      Legend      `json:"legend"`
+	Divider     Line        `json:"divider"`
+	Width       float64     `json:"width"`
+	Height      float64     `json:"height"`
+	Bucket      int         `json:"bucket"`
 }
 
-// Tier carries the CSS class and colours of one configured tier.
+// Tier carries the CSS class and colour of one configured tier.
 type Tier struct {
 	Class string `json:"class"`
-	Light string `json:"light"`
-	Dark  string `json:"dark"`
+	Fill  string `json:"fill"`
+}
+
+// Palette holds the page and tier colours of one colour scheme.
+type Palette struct {
+	Background string `json:"background"`
+	Label      string `json:"label"`
+	Tiers      []Tier `json:"tiers"`
 }
 
 // Text is a positioned label.
@@ -141,9 +156,10 @@ type Swatch struct {
 	Y     float64 `json:"y"`
 }
 
-// SVG renders out as SVG with buckets of size minutes, using the tier order, display names and styles from cfg.
-func SVG(out *schedule.Output, cfg *config.Config, size int) ([]byte, error) {
-	return execute(templates.ScheduleSVG, Build(out, cfg, Downsample(out, cfg, size)))
+// SVG renders out as SVG with buckets of size minutes, using the tier order, display names and styles from cfg. The
+// theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark.
+func SVG(out *schedule.Output, cfg *config.Config, size int, theme string) ([]byte, error) {
+	return execute(templates.ScheduleSVG, Build(out, cfg, Downsample(out, cfg, size), theme))
 }
 
 // execute runs tmpl on model decoded from its own JSON, the same data gomplate gets with `-c .=model.json`.
@@ -171,13 +187,18 @@ func execute(tmpl string, model any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Build computes the render model for the downsampled week p.
-func Build(out *schedule.Output, cfg *config.Config, p Preview) Model {
-	m := Model{Theme: cfg.Representation.Theme, Font: fontFamily, Bucket: p.Size}
+// Build computes the render model for the downsampled week p in the given theme.
+func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Model {
+	m := Model{Font: fontFamily, Bucket: p.Size}
 
-	for i := range cfg.Tiers {
-		s := cfg.Style(i)
-		m.Tiers = append(m.Tiers, Tier{Class: tierClass(i), Light: s.Color.Light, Dark: s.Color.Dark})
+	switch theme {
+	case ThemeLight:
+		m.Palette, m.Scheme = palette(cfg, false), "light"
+	case ThemeDark:
+		m.Palette, m.Scheme = palette(cfg, true), "dark"
+	default:
+		dark := palette(cfg, true)
+		m.Palette, m.Dark, m.Scheme = palette(cfg, false), &dark, "light dark"
 	}
 
 	week := float64(titleH + rulerH)
@@ -230,6 +251,29 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview) Model {
 	}
 
 	return m
+}
+
+// palette collects the light or dark colours of the theme and the tier styles.
+func palette(cfg *config.Config, dark bool) Palette {
+	surface := cfg.Representation.Theme.Light
+	if dark {
+		surface = cfg.Representation.Theme.Dark
+	}
+
+	p := Palette{Background: surface.Background, Label: surface.Label}
+
+	for i := range cfg.Tiers {
+		c := cfg.Style(i).Color
+		fill := c.Light
+
+		if dark {
+			fill = c.Dark
+		}
+
+		p.Tiers = append(p.Tiers, Tier{Class: tierClass(i), Fill: fill})
+	}
+
+	return p
 }
 
 // ruler adds the time scale: labels every six hours, hour ticks, minor ticks at the bucket size when it is readable,
