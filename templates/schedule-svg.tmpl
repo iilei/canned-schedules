@@ -5,27 +5,33 @@
   this template only emits markup. It uses plain Go text/template (the builtin html function escapes text), so it
   also runs with gomplate on the same model.
 
-  Light and dark: plain fill rules per tier, repeated inside prefers-color-scheme: dark. No CSS custom properties,
-  because several SVG renderers (librsvg, image converters, PDF pipelines) don't support them.
+  Light and dark: plain fill rules per tier. The auto theme repeats them inside prefers-color-scheme: dark; light and
+  dark (--svg-theme) emit one fixed palette, which pages with their own theme toggle need. No CSS custom properties,
+  because several SVG renderers (librsvg, image converters, PDF pipelines) don't support them. Every rule is scoped to
+  .canned-schedule, because an SVG inlined into HTML shares the page's style sheet.
 */ -}}
-<svg xmlns="http://www.w3.org/2000/svg" width="{{ .width }}" height="{{ .height }}" viewBox="0 0 {{ .width }} {{ .height }}" style="color-scheme: light dark" font-family="{{ html .font }}">
+<svg xmlns="http://www.w3.org/2000/svg" class="canned-schedule" width="{{ .width }}" height="{{ .height }}" viewBox="0 0 {{ .width }} {{ .height }}" style="color-scheme: {{ .scheme }}" font-family="{{ html .font }}">
   <style>
-    .background { fill: {{ html .theme.light.background }}; }
-    .label { fill: {{ html .theme.light.label }}; }
-    .divider { stroke: {{ html .theme.light.label }}; stroke-opacity: 0.3; }
-    .guide { stroke: {{ html .theme.light.label }}; stroke-opacity: 0.12; }
+    {{- with .palette }}
+    .canned-schedule .background { fill: {{ html .background }}; }
+    .canned-schedule .label { fill: {{ html .label }}; }
+    .canned-schedule .divider { stroke: {{ html .label }}; stroke-opacity: 0.3; }
+    .canned-schedule .guide { stroke: {{ html .label }}; stroke-opacity: 0.12; }
     {{- range .tiers }}
-    .{{ .class }} { fill: {{ html .light }}; }
+    .canned-schedule .{{ .class }} { fill: {{ html .fill }}; }
     {{- end }}
+    {{- end }}
+    {{- with .dark }}
     @media (prefers-color-scheme: dark) {
-      .background { fill: {{ html .theme.dark.background }}; }
-      .label { fill: {{ html .theme.dark.label }}; }
-      .divider { stroke: {{ html .theme.dark.label }}; }
-      .guide { stroke: {{ html .theme.dark.label }}; }
+      .canned-schedule .background { fill: {{ html .background }}; }
+      .canned-schedule .label { fill: {{ html .label }}; }
+      .canned-schedule .divider { stroke: {{ html .label }}; }
+      .canned-schedule .guide { stroke: {{ html .label }}; }
       {{- range .tiers }}
-      .{{ .class }} { fill: {{ html .dark }}; }
+      .canned-schedule .{{ .class }} { fill: {{ html .fill }}; }
       {{- end }}
     }
+    {{- end }}
   </style>
   <rect class="background" width="100%" height="100%"/>
   <text class="label" x="{{ .title.x }}" y="{{ .title.y }}" font-size="18" font-weight="bold">{{ html .title.text }}</text>
