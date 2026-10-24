@@ -345,6 +345,20 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (system/light/dark, saved in localStorage); `?theme=`, `?view=`, `?tab=`, `?symbols=` and `?preset=` make views
   linkable, and
   `#doc=<base64url>` opens a document (a fragment, so it never reaches the server).
+- **Editor (decided 2026-10-24): CodeMirror 6**, in `editor/` (`src/editor.js`, `build.mjs`, `package.json` with
+  exact versions and a lockfile; `.npmrc` turns install scripts off). `web:build` runs `npm ci --prefix editor` and
+  `node editor/build.mjs dist/site`, which bundles with esbuild into `editor.js` (IIFE, sets
+  `globalThis.CannedEditor`) and writes `editor-licenses.txt` for every package with code in the bundle. Only the
+  page grows (412 KB minified, ~134 KB gzip); the CLI and `app.wasm` are unaffected.
+  - Markdown via `markdownLanguage` plus the list/quote continuation commands, **not `markdown()`**: its defaults pull
+    in the HTML, CSS and JavaScript modes (569 KB). Schedule and alert markers get their own colour (they parse as
+    links). Colours are `--hl-*` CSS variables, so the theme toggle needs no reconfiguration.
+  - Diagnostics: `@codemirror/lint` squiggles (the word at `line:col`, columns in code points) with gutter icons and
+    tooltips, plus whole-line backgrounds (`cm-diag-line-error` wins over `-warn`). The JSON tab is a read-only view
+    with folding.
+  - `app.js` talks to an adapter (`value`, `onChange`, `focus`, `selectAll`, `jumpTo`, `setDiagnostics`); without
+    `editor.js` it wraps the plain textarea and `<pre>`, which stay in `index.html` as fallbacks.
+  - Versions follow the two-week rule: installed with `npm install --before=<date two weeks back>`.
 - Presets: `web/presets/index.json` lists them (id, label), `web/presets/<id>.md` holds the text. `office-hours` is
   the GitLab issue template, copied in by `web:build`, so it never drifts. `TestPresets` (internal/web) requires every
   preset to evaluate without diagnostics and the index and files to match. The dropdown replaces the editor content

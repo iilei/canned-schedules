@@ -2,12 +2,60 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const editor = $("editor");
+const editor = createEditor($("editor"));
+const jsonView = createJsonView($("json"));
 const DEFAULT_PRESET = "office-hours";
 const state = { theme: document.documentElement.dataset.theme || "system", flavour: "sphinx", tab: "rendered", svg: "", preset: "" };
 const presets = []; // [{id, label, text}], from presets/index.json
 let current = null; // the selected preset
 let ready = false;
+
+// ---- editor ------------------------------------------------------------------------------------------------------
+
+// The editor is CodeMirror (editor.js) with Markdown highlighting and diagnostics marked in place. Without editor.js
+// the plain textarea stays, behind the same small interface: value, onChange, focus, selectAll, jumpTo,
+// setDiagnostics.
+function createEditor(textarea) {
+  const listeners = [];
+  const changed = () => { for (const fn of listeners) fn(); };
+
+  if (globalThis.CannedEditor) {
+    const host = Object.assign(document.createElement("div"), { className: "cm-host editor" });
+    textarea.replaceWith(host);
+    const cm = globalThis.CannedEditor.createEditor(host, { label: textarea.getAttribute("aria-label"), onChange: changed });
+    cm.onChange = (fn) => listeners.push(fn);
+    return cm;
+  }
+
+  textarea.addEventListener("input", changed);
+  return {
+    get value() { return textarea.value; },
+    set value(text) { textarea.value = text; },
+    onChange: (fn) => listeners.push(fn),
+    focus: () => textarea.focus(),
+    selectAll: () => textarea.select(),
+    setDiagnostics() {},
+    // Columns from the tool count characters (code points); textarea offsets count UTF-16 units.
+    jumpTo(line, column) {
+      const lines = textarea.value.split("\n");
+      let offset = 0;
+      for (let i = 0; i < line - 1 && i < lines.length; i++) offset += lines[i].length + 1;
+      offset += Array.from(lines[line - 1] || "").slice(0, column - 1).join("").length;
+      textarea.focus();
+      textarea.setSelectionRange(offset, offset + 1);
+      const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 20;
+      textarea.scrollTop = Math.max(0, (line - 4) * lineHeight);
+    },
+  };
+}
+
+// The JSON tab: a read-only CodeMirror view with highlighting and folding, or the plain <pre>.
+function createJsonView(pre) {
+  if (!globalThis.CannedEditor) return { set value(text) { pre.textContent = text; } };
+  const host = Object.assign(document.createElement("div"), { className: "cm-host viewer", id: "json" });
+  pre.replaceWith(host);
+  return globalThis.CannedEditor.createViewer(host, { label: "Canonical JSON output" });
+}
 
 // ---- theme ---------------------------------------------------------------------------------------------------------
 
@@ -58,12 +106,13 @@ function render(res) {
   $("download-kit").disabled = !state.svg;
   $("rendered").innerHTML = res[state.flavour + "-html"] || "";
   $("rendered").className = "rendered " + state.flavour;
-  $("json").textContent = res.json || "No output: the request has errors (see Diagnostics).";
+  jsonView.value = res.json || "No output: the request has errors (see Diagnostics).";
   $("ascii").textContent = res.ascii || "No preview: the request has errors (see Diagnostics).";
   state.last = res;
 
   const report = JSON.parse(res.report);
   renderDiagnostics(report.diagnostics);
+  editor.setDiagnostics(report.diagnostics);
 
   const badge = $("badge");
   const count = res.errors + res.warnings;
@@ -93,7 +142,7 @@ function renderDiagnostics(list) {
       const b = text("button", "where", d.line + ":" + d.column);
       b.type = "button";
       b.title = "Show in the editor";
-      b.addEventListener("click", () => jumpTo(d.line, d.column));
+      b.addEventListener("click", () => editor.jumpTo(d.line, d.column));
       li.append(b);
     } else {
       li.append(text("span", "where", "–"));
@@ -139,18 +188,6 @@ function showStatus(kind, message) {
   const s = $("status");
   s.className = "status " + kind;
   s.replaceChildren(text("span", "dot", ""), document.createTextNode(message));
-}
-
-// Columns from the tool count characters (code points); textarea offsets count UTF-16 units.
-function jumpTo(line, column) {
-  const lines = editor.value.split("\n");
-  let offset = 0;
-  for (let i = 0; i < line - 1 && i < lines.length; i++) offset += lines[i].length + 1;
-  offset += Array.from(lines[line - 1] || "").slice(0, column - 1).join("").length;
-  editor.focus();
-  editor.setSelectionRange(offset, offset + 1);
-  const lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 20;
-  editor.scrollTop = Math.max(0, (line - 4) * lineHeight);
 }
 
 // ---- presets ------------------------------------------------------------------------------------------------------
@@ -228,7 +265,7 @@ async function copyMarkdown() {
     await navigator.clipboard.writeText(editor.value);
     b.textContent = "Copied";
   } catch (_) {
-    editor.select();
+    editor.selectAll();
     b.textContent = "Select all + copy";
   }
   setTimeout(() => { b.textContent = "Copy Markdown"; }, 1500);
@@ -245,8 +282,8 @@ function wire() {
   }
   for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => selectTab(b.dataset.tab));
   for (const id of ["downsample", "sample-interval", "symbols"]) $(id).addEventListener("change", evaluate);
-  editor.addEventListener("input", debounce(evaluate, 120));
-  editor.addEventListener("input", updateReset);
+  editor.onChange(debounce(evaluate, 120));
+  editor.onChange(updateReset);
   $("preset").addEventListener("change", () => choosePreset($("preset").value));
   $("reset").addEventListener("click", () => { if (current) load(current.text); });
   $("copy-md").addEventListener("click", copyMarkdown);

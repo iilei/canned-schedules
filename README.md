@@ -40,7 +40,8 @@ Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_
 ## Try it in the browser
 
 The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: start from a preset
-(from a bare "Medium all week" to the full issue template), edit it and see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the tier
+(from a bare "Medium all week" to the full issue template), edit it in a highlighting editor that marks errors and
+warnings on their lines, and see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the tier
 styles (downloadable as a [Sphinx kit](#sphinx)), diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
 nothing is uploaded. It is published to GitHub Pages from `master`; locally:
 
@@ -289,3 +290,7 @@ mise run fmt        # apply formatting
 The spec lives in [`testdata/golden`](testdata/golden): one directory per case with the input, optional CLI
 arguments, and the expected output or diagnostics. `python3 testdata/golden/gen.py` regenerates them from an
 independent reference implementation; review the diff like any other change. Never derive fixtures from the Go code.
+
+The page's editor is [CodeMirror 6](https://codemirror.net/), bundled from [`editor/`](editor) by `web:build` with the
+versions locked in `editor/package-lock.json` (`npm ci`, install scripts off). The licences of the bundled packages
+are published next to it as `editor-licenses.txt`. Without `editor.js` the page falls back to a plain textarea.
