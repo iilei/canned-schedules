@@ -339,8 +339,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 - A static page (`web/`) runs the pipeline compiled to WebAssembly (`cmd/canned-schedules-wasm`, a thin
   `syscall/js` wrapper around `internal/web.Evaluate`). Nothing leaves the browser.
-- Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme), the Markdown as a GitHub issue
-  or as a Sphinx page with custom admonitions (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
+- Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme), the Markdown as a Sphinx page
+  with custom admonitions (the default, left in the switch) or as a GitHub issue (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
   editor, the JSON and the ASCII preview. Options: preview buckets, sample interval, ASCII symbols. Theme toggle
   (system/light/dark, saved in localStorage); `?theme=`, `?view=`, `?tab=`, `?symbols=` and `?preset=` make views
   linkable, and
