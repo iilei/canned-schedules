@@ -1,0 +1,4 @@
+--set-config-at
+tiers[1]
+--set-config-value
+{"id": "off", "display-name": "Off again"}

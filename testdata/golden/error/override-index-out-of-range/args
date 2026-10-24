@@ -1,0 +1,4 @@
+--set-config-at
+tiers[9]
+--set-config-value
+{"id": "X", "display-name": "X"}
