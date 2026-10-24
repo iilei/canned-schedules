@@ -26,13 +26,13 @@ type Options struct {
 	RequireBase bool
 }
 
-// Output is the canonical output of a schedule document.
+// Output is the canonical output of a schedule document. Field order is the JSON key order people read.
 type Output struct {
-	Annotations   map[string]string `json:"annotations"`
 	SchemaVersion string            `json:"schema-version"`
 	Name          string            `json:"name"`
 	Hint          string            `json:"hint,omitempty"`
 	Base          string            `json:"base"`
+	Annotations   map[string]string `json:"annotations"`
 	Digests       Digests           `json:"digests"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
