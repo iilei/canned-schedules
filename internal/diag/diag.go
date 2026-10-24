@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
+	"unicode"
 )
 
 // Severities.
@@ -24,6 +26,8 @@ const (
 	CodeEmptyTier             = "empty-tier"
 	CodeGranularity           = "granularity"
 	CodeInvalidFlag           = "invalid-flag"
+	CodeInputFile             = "input-file"
+	CodeInvalidArgs           = "invalid-args"
 	CodeInvalidHint           = "invalid-hint"
 	CodeInvalidName           = "invalid-name"
 	CodeInvalidOverride       = "invalid-override"
@@ -43,6 +47,9 @@ const (
 	CodeUnknownNamespace      = "unknown-namespace"
 	CodeUnknownTier           = "unknown-tier"
 )
+
+// programName prefixes diagnostics that belong to no file.
+const programName = "canned-schedules"
 
 // Severity tells whether a diagnostic stops processing.
 type Severity string
@@ -80,13 +87,25 @@ func (d Diagnostic) Golden() string {
 	return string(d.Severity) + " " + d.where() + " " + d.Code
 }
 
-// Format renders the diagnostic for humans, prefixed with the file name.
+// Format renders the diagnostic for humans as "<file>:<line>:<col>: <severity>[<code>]: <message>". Without a
+// position the prefix is just the file, and without a file it is the program name. File and message are sanitized.
 func (d Diagnostic) Format(file string) string {
-	if d.Pos == (Pos{}) {
-		return fmt.Sprintf("%s: %s[%s]: %s", file, d.Severity, d.Code, d.Message)
+	return d.Location(file) + ": " + string(d.Severity) + "[" + d.Code + "]: " + Sanitize(d.Message)
+}
+
+// Location returns "<file>:<line>:<col>", or just the file without a position, or the program name without a file.
+// The file is sanitized.
+func (d Diagnostic) Location(file string) string {
+	if file == "" {
+		return programName
 	}
 
-	return fmt.Sprintf("%s:%d:%d: %s[%s]: %s", file, d.Pos.Line, d.Pos.Col, d.Severity, d.Code, d.Message)
+	file = Sanitize(file)
+	if d.Pos == (Pos{}) {
+		return file
+	}
+
+	return file + ":" + strconv.Itoa(d.Pos.Line) + ":" + strconv.Itoa(d.Pos.Col)
 }
 
 func (d Diagnostic) where() string {
@@ -114,4 +133,41 @@ func (l List) Sort() {
 	slices.SortStableFunc(l, func(a, b Diagnostic) int {
 		return cmp.Or(cmp.Compare(a.Pos.Line, b.Pos.Line), cmp.Compare(a.Pos.Col, b.Pos.Col))
 	})
+}
+
+// Sanitize makes s safe to echo into terminals, CI logs and reports: control characters (except tab), line and
+// paragraph separators and bidirectional formatting characters become \uXXXX escapes. A newline in a file name could
+// otherwise forge log lines (e.g. GitHub Actions "::" workflow commands), and bidi overrides can make text display
+// differently from what it is ("Trojan Source").
+func Sanitize(s string) string {
+	if !strings.ContainsFunc(s, unsafeRune) {
+		return s
+	}
+
+	var b strings.Builder
+
+	for _, r := range s {
+		if unsafeRune(r) {
+			fmt.Fprintf(&b, "\\u%04x", r)
+
+			continue
+		}
+
+		b.WriteRune(r)
+	}
+
+	return b.String()
+}
+
+func unsafeRune(r rune) bool {
+	switch {
+	case r == '\t':
+		return false
+	case unicode.IsControl(r), r == '\u2028', r == '\u2029':
+		return true
+	case r >= '\u202a' && r <= '\u202e', r >= '\u2066' && r <= '\u2069', r == '\u200e', r == '\u200f':
+		return true
+	default:
+		return false
+	}
 }

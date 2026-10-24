@@ -15,6 +15,9 @@ const ConfigSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedule
 // OutputSchemaURL is the $id of the canonical output schema.
 const OutputSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/output.schema.json"
 
+// ReportSchemaURL is the $id of the error report schema.
+const ReportSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/report.schema.json"
+
 // MetaSchemaURL is the $id of the document META schema.
 const MetaSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/meta.schema.json"
 
@@ -38,6 +41,11 @@ var (
 	//
 	//go:embed output.schema.json
 	OutputSchema []byte
+
+	// ReportSchema describes the JSON error report.
+	//
+	//go:embed report.schema.json
+	ReportSchema []byte
 )
 
 // Compile compiles the embedded schema raw under its $id url. Nothing is fetched over the network.

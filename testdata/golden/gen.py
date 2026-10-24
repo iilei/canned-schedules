@@ -602,3 +602,12 @@ err(
     "config-duplicate-symbol",
     args=["--set-config-at", "representation.styles.tiers[1].symbol", "--set-config-value", '"░"'],
 )
+err("error/report-format-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--error-output-format", "yaml"])
+err("error/report-template-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--error-report-template", "html"])
+err(
+    "error/report-format-and-template",
+    [META, BASE, TIER],
+    None,
+    "invalid-flag",
+    args=["--error-output-format", "json", "--error-report-template", "markdown-gfm"],
+)

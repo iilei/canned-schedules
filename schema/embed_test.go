@@ -47,6 +47,7 @@ func TestEmbeddedSchemasCompile(t *testing.T) {
 		ConfigSchemaURL: ConfigSchema,
 		MetaSchemaURL:   MetaSchema,
 		OutputSchemaURL: OutputSchema,
+		ReportSchemaURL: ReportSchema,
 	} {
 		if _, err := Compile(url, raw); err != nil {
 			t.Errorf("%s: %v", url, err)

@@ -27,7 +27,7 @@ func TestIssueTemplates(t *testing.T) {
 		t.Error("the GitHub and GitLab templates must have the same body; GitHub only adds frontmatter")
 	}
 
-	out, diags := Run(nil, []byte(body))
+	out, diags := parseAndRun(nil, []byte(body))
 	for _, d := range diags {
 		t.Errorf("template: %s", d.Format("template"))
 	}

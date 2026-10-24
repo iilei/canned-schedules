@@ -9,6 +9,7 @@ import (
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
 )
 
@@ -18,9 +19,20 @@ var errNotBool = errors.New(`want "true" or "false"`)
 
 // Options is the parsed command line.
 type Options struct {
+	Report    ReportOptions
 	Overrides []config.Override
 	Args      []string
 	Schedule  schedule.Options
+}
+
+// ReportOptions configure the error report.
+type ReportOptions struct {
+	// File is --error-output-file; empty means stderr.
+	File string
+	// Format is --error-output-format: txt (default) or json.
+	Format string
+	// Template is --error-report-template: empty or markdown-gfm. Mutually exclusive with Format.
+	Template string
 }
 
 // Parse parses args (without the program name). Unknown or malformed flags become invalid-flag errors.
@@ -51,6 +63,10 @@ func Parse(args []string) (Options, diag.List) {
 			return nil
 		},
 	)
+	fs.StringVar(&opts.Report.File, "error-output-file", "", "write the error report to this file instead of stderr")
+	fs.StringVar(&opts.Report.Format, "error-output-format", "", "error report format: txt (default) or json")
+	fs.StringVar(&opts.Report.Template, "error-report-template", "", "render the error report with a built-in "+
+		"template: markdown-gfm")
 	fs.Func("set-config-value", "JSON value for the matching --set-config-at (repeatable)", func(s string) error {
 		values = append(values, s)
 
@@ -79,6 +95,8 @@ func Parse(args []string) (Options, diag.List) {
 			"--granularity %d: must divide 60 (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60)", g))
 	}
 
+	diags = append(diags, reportFlags(opts.Report)...)
+
 	if opts.Schedule.RequireBase && opts.Schedule.Base != "" {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
 			"--base can't be combined with --require-base true"))
@@ -87,16 +105,9 @@ func Parse(args []string) (Options, diag.List) {
 	return opts, diags
 }
 
-// Run evaluates one document. It returns the output (nil on errors) and all diagnostics.
-func Run(args []string, src []byte) (*schedule.Output, diag.List) {
-	opts, diags := Parse(args)
-	if diags.HasErrors() {
-		return nil, diags
-	}
-
-	cfg, cfgDiags := config.Load(opts.Overrides)
-	diags = append(diags, cfgDiags...)
-
+// Run evaluates one document with parsed options. It returns the output (nil on errors) and all diagnostics.
+func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
+	cfg, diags := config.Load(opts.Overrides)
 	if cfg == nil {
 		return nil, diags
 	}
@@ -110,6 +121,32 @@ func Run(args []string, src []byte) (*schedule.Output, diag.List) {
 	out, evalDiags := schedule.Evaluate(src, cfg, opts.Schedule)
 
 	return out, append(diags, evalDiags...)
+}
+
+func reportFlags(r ReportOptions) diag.List {
+	var diags diag.List
+
+	switch r.Format {
+	case "", report.FormatTXT, report.FormatJSON:
+	default:
+		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
+			"--error-output-format %q: use txt or json", r.Format))
+	}
+
+	switch r.Template {
+	case "", report.TemplateMarkdownGFM:
+	default:
+		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
+			"--error-report-template %q: the only built-in template is markdown-gfm; for other layouts use "+
+				"--error-output-format json and your own tooling (e.g. gomplate)", r.Template))
+	}
+
+	if r.Format != "" && r.Template != "" {
+		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
+			"--error-output-format and --error-report-template can't be combined"))
+	}
+
+	return diags
 }
 
 // parseBool accepts exactly "true" or "false"; strconv.ParseBool would also take "1", "t", "TRUE" and so on.

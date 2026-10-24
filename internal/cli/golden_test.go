@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/internal/schedule"
 )
 
@@ -40,7 +41,7 @@ func runGolden(t *testing.T, dir string) {
 	src := readFile(t, filepath.Join(dir, "input.md"))
 	args := splitLines(readOptional(t, filepath.Join(dir, "args")))
 
-	out, diags := Run(args, []byte(src))
+	out, diags := parseAndRun(args, []byte(src))
 
 	gotDiag := make([]string, 0, len(diags))
 	for _, d := range diags {
@@ -142,4 +143,16 @@ func splitLines(s string) []string {
 	}
 
 	return out
+}
+
+// parseAndRun mirrors the CLI: flag errors stop before evaluation.
+func parseAndRun(args []string, src []byte) (*schedule.Output, diag.List) {
+	opts, diags := Parse(args)
+	if diags.HasErrors() {
+		return nil, diags
+	}
+
+	out, runDiags := Run(&opts, src)
+
+	return out, append(diags, runDiags...)
 }
