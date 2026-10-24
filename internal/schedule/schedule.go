@@ -188,7 +188,7 @@ func resolveBase(doc *document.Document, cfg *config.Config, opts Options) (conf
 		return t, nil
 	case opts.RequireBase:
 		return config.Tier{}, diag.List{diag.Errorf(diag.Pos{}, diag.CodeMissingBase,
-			"--require-base true: the document needs a [!SCHEDULE:BASE] block")}
+			"--require-base true: the document needs a BASE block").WithExample("> [!SCHEDULE:BASE] Minimum")}
 	case opts.Base != "":
 		t, _ := cfg.Tier(opts.Base) // Validated by the CLI.
 

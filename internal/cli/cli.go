@@ -203,7 +203,7 @@ func reportFlags(r ReportOptions) diag.List {
 	default:
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
 			"--error-report-template %q: the only built-in template is markdown-gfm; for other layouts use "+
-				"--error-output-format json and your own tooling (e.g. gomplate)", r.Template))
+				"--error-output-format json and your own tooling, such as gomplate", r.Template))
 	}
 
 	if r.Format != "" && r.Template != "" {
