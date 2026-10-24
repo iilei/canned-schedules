@@ -1,4 +1,4 @@
-package report
+package files
 
 import (
 	"errors"
@@ -7,21 +7,24 @@ import (
 	"path/filepath"
 )
 
-const fileMode = 0o644
+const (
+	fileMode    = 0o644
+	tempPattern = ".canned-schedules-*"
+)
 
 // WriteFile writes data to path atomically: it writes a temporary file in the same directory and renames it into
 // place. Readers never see a half-written report, and a symlink planted at path is replaced rather than written
 // through. A directory at path is refused. Errors name the file by display, never by path.
 func WriteFile(path, display string, data []byte) error {
 	fail := func(err error) error {
-		return fmt.Errorf("--error-output-file %s: %s", display, Reason(err))
+		return fmt.Errorf("%s: %s", display, Reason(err))
 	}
 
 	if fi, err := os.Stat(path); err == nil && fi.IsDir() {
-		return fmt.Errorf("--error-output-file %s is a directory", display)
+		return fmt.Errorf("%s is a directory", display)
 	}
 
-	tmp, err := os.CreateTemp(filepath.Dir(path), ".canned-schedules-report-*")
+	tmp, err := os.CreateTemp(filepath.Dir(path), tempPattern)
 	if err != nil {
 		return fail(err)
 	}

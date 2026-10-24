@@ -12,7 +12,9 @@ import (
 
 	"github.com/iilei/canned-schedules/internal/cli"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/files"
 	"github.com/iilei/canned-schedules/internal/report"
+	"github.com/iilei/canned-schedules/internal/schedule"
 )
 
 // Exit codes: 1 means the document (or a flag value) has errors, 2 means the command line or the environment is
@@ -65,6 +67,14 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitInvalid
 	}
 
+	if opts.SVGFile != "" {
+		if err := writeSVG(&opts, out); err != nil {
+			fmt.Fprintln(stderr, diag.Sanitize(err.Error()))
+
+			return exitUsage
+		}
+	}
+
 	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
 
@@ -77,9 +87,24 @@ func run(args []string, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
+// writeSVG writes the preview. It only runs for documents without errors, so a failed run leaves an earlier preview
+// untouched rather than replacing it with a broken one.
+func writeSVG(opts *cli.Options, out *schedule.Output) error {
+	svg, err := cli.SVG(opts, out)
+	if err != nil {
+		return fmt.Errorf("--svg-output-file: %w", err)
+	}
+
+	if err := files.WriteFile(opts.SVGFile, display(opts.SVGFile), svg); err != nil {
+		return fmt.Errorf("--svg-output-file %w", err)
+	}
+
+	return nil
+}
+
 // evaluate finds and reads the input file and, unless the flags already failed, runs the pipeline on it. The file
 // name is returned whenever it is known, so the report can name it.
-func evaluate(opts *cli.Options, flagErrors bool) (string, []byte, any, diag.List) {
+func evaluate(opts *cli.Options, flagErrors bool) (string, []byte, *schedule.Output, diag.List) {
 	file, argDiag := inputFile(opts.Args)
 	if argDiag != nil {
 		return "", nil, nil, diag.List{*argDiag}
@@ -95,9 +120,6 @@ func evaluate(opts *cli.Options, flagErrors bool) (string, []byte, any, diag.Lis
 	}
 
 	out, diags := cli.Run(opts, src)
-	if out == nil {
-		return file, src, nil, diags
-	}
 
 	return file, src, out, diags
 }
@@ -120,7 +142,11 @@ func writeReport(opts cli.ReportOptions, r report.Report, stderr io.Writer) erro
 		return err
 	}
 
-	return report.WriteFile(opts.File, display(opts.File), buf.Bytes())
+	if err := files.WriteFile(opts.File, display(opts.File), buf.Bytes()); err != nil {
+		return fmt.Errorf("--error-output-file %w", err)
+	}
+
+	return nil
 }
 
 // display shortens a path for messages and reports (home becomes "~"); file access always uses the path as given.
@@ -130,7 +156,7 @@ func display(path string) string {
 		return path
 	}
 
-	return report.DisplayPath(path, home)
+	return files.DisplayPath(path, home)
 }
 
 func usageProblem(d diag.Diagnostic) bool {
@@ -168,13 +194,13 @@ func readInput(file string) ([]byte, *diag.Diagnostic) {
 
 	f, err := os.Open(file) //nolint:gosec // Reading the file named on the command line is the point.
 	if err != nil {
-		return fail("cannot open the input file: %s", report.Reason(err))
+		return fail("cannot open the input file: %s", files.Reason(err))
 	}
 	defer f.Close()
 
 	fi, err := f.Stat()
 	if err != nil {
-		return fail("cannot read the input file: %s", report.Reason(err))
+		return fail("cannot read the input file: %s", files.Reason(err))
 	}
 
 	if !fi.Mode().IsRegular() {
@@ -183,7 +209,7 @@ func readInput(file string) ([]byte, *diag.Diagnostic) {
 
 	src, err := io.ReadAll(io.LimitReader(f, maxInputBytes+1))
 	if err != nil {
-		return fail("cannot read the input file: %s", report.Reason(err))
+		return fail("cannot read the input file: %s", files.Reason(err))
 	}
 
 	if len(src) > maxInputBytes {

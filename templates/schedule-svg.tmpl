@@ -1,0 +1,75 @@
+{{- /*
+  Schedule preview as SVG, built into canned-schedules (--svg-output-file).
+
+  The data is a render model computed by the tool: every coordinate, colour, label and tooltip is precomputed, so
+  this template only emits markup. It uses plain Go text/template (the builtin html function escapes text), so it
+  also runs with gomplate on the same model.
+
+  Light and dark: plain fill rules per tier, repeated inside prefers-color-scheme: dark. No CSS custom properties,
+  because several SVG renderers (librsvg, image converters, PDF pipelines) don't support them.
+*/ -}}
+<svg xmlns="http://www.w3.org/2000/svg" width="{{ .width }}" height="{{ .height }}" viewBox="0 0 {{ .width }} {{ .height }}" style="color-scheme: light dark" font-family="{{ html .font }}">
+  <style>
+    .background { fill: {{ html .theme.light.background }}; }
+    .label { fill: {{ html .theme.light.label }}; }
+    .divider { stroke: {{ html .theme.light.label }}; stroke-opacity: 0.3; }
+    .guide { stroke: {{ html .theme.light.label }}; stroke-opacity: 0.12; }
+    {{- range .tiers }}
+    .{{ .class }} { fill: {{ html .light }}; }
+    {{- end }}
+    @media (prefers-color-scheme: dark) {
+      .background { fill: {{ html .theme.dark.background }}; }
+      .label { fill: {{ html .theme.dark.label }}; }
+      .divider { stroke: {{ html .theme.dark.label }}; }
+      .guide { stroke: {{ html .theme.dark.label }}; }
+      {{- range .tiers }}
+      .{{ .class }} { fill: {{ html .dark }}; }
+      {{- end }}
+    }
+  </style>
+  <rect class="background" width="100%" height="100%"/>
+  <text class="label" x="{{ .title.x }}" y="{{ .title.y }}" font-size="18" font-weight="bold">{{ html .title.text }}</text>
+  {{- if .hint.text }}
+  <text class="label" x="{{ .hint.x }}" y="{{ .hint.y }}" font-size="14" font-style="italic">{{ html .hint.text }}</text>
+  {{- end }}
+  <g class="ruler">
+    {{- range .labels }}
+    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12">{{ html .text }}</text>
+    {{- end }}
+    {{- range .ticks }}
+    <line class="divider" x1="{{ .x1 }}" y1="{{ .y1 }}" x2="{{ .x2 }}" y2="{{ .y2 }}"/>
+    {{- end }}
+  </g>
+  <g class="week">
+    {{- range .days }}
+    <text class="label" x="{{ .label.x }}" y="{{ .label.y }}" font-size="14">{{ html .label.text }}</text>
+    {{- range .runs }}
+    <rect class="tier {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="{{ .width }}" height="{{ .height }}" rx="1"><title>{{ html .tooltip }}</title></rect>
+    {{- end }}
+    {{- end }}
+    {{- range .guides }}
+    <line class="guide" x1="{{ .x1 }}" y1="{{ .y1 }}" x2="{{ .x2 }}" y2="{{ .y2 }}"/>
+    {{- end }}
+  </g>
+  <line class="divider" x1="{{ .divider.x1 }}" y1="{{ .divider.y1 }}" x2="{{ .divider.x2 }}" y2="{{ .divider.y2 }}"/>
+  <g class="transitions">
+    {{- range .transitions.headers }}
+    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="14">{{ html .text }}</text>
+    {{- end }}
+    {{- range .transitions.rows }}
+    {{- range . }}
+    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12">{{ html .text }}</text>
+    {{- end }}
+    {{- end }}
+    {{- with .transitions.empty }}
+    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12">{{ html .text }}</text>
+    {{- end }}
+  </g>
+  <g class="legend">
+    <line class="divider" x1="{{ .legend.rule.x1 }}" y1="{{ .legend.rule.y1 }}" x2="{{ .legend.rule.x2 }}" y2="{{ .legend.rule.y2 }}"/>
+    {{- range .legend.swatches }}
+    <rect class="tier {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="20" height="16" rx="1"/>
+    <text class="label" x="{{ .text.x }}" y="{{ .text.y }}" font-size="12">{{ html .text.text }}</text>
+    {{- end }}
+  </g>
+</svg>

@@ -8,6 +8,7 @@ import (
 const (
 	githubTemplate = "../../.github/ISSUE_TEMPLATE/canned_schedule_request.md"
 	gitlabTemplate = "../../.gitlab/issue_templates/canned_schedule_request.md"
+	docsPreview    = "../../docs/office-hours.svg"
 )
 
 // TestIssueTemplates keeps the issue templates valid and identical. Contributors start from them, so a template
@@ -34,6 +35,32 @@ func TestIssueTemplates(t *testing.T) {
 
 	if out == nil {
 		t.Fatal("the template must produce output")
+	}
+}
+
+// TestDocsPreview keeps the README image in sync with the issue template and the SVG renderer. Regenerate with:
+// go run ./cmd/canned-schedules --svg-output-file docs/office-hours.svg \
+// .gitlab/issue_templates/canned_schedule_request.md.
+func TestDocsPreview(t *testing.T) {
+	t.Parallel()
+
+	opts, diags := Parse(nil)
+	if diags.HasErrors() {
+		t.Fatal(diags)
+	}
+
+	out, _ := Run(&opts, []byte(readFile(t, gitlabTemplate)))
+	if out == nil {
+		t.Fatal("the template must evaluate")
+	}
+
+	svg, err := SVG(&opts, out)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(svg) != readFile(t, docsPreview) {
+		t.Errorf("%s is stale; regenerate it (see the test comment)", docsPreview)
 	}
 }
 
