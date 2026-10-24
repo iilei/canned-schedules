@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>canned-schedules preflight</title>
+<meta name="description" content="Write a canned schedule request in Markdown and see it validated and rendered, entirely in your browser.">
+<link rel="preload" href="fonts/ubuntu-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ubuntu-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<style id="tier-styles"></style>
+<script>
+  // Apply the saved theme before first paint, so the page doesn't flash.
+  try {
+    const t = localStorage.getItem("theme");
+    if (t === "light" || t === "dark" || t === "system") document.documentElement.dataset.theme = t;
+  } catch (_) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">▚</span>
+    <div>
+      <h1>canned-schedules <span class="muted">preflight</span></h1>
+      <p class="tagline">Weekly capacity schedules from plain Markdown. Validated and rendered in your browser; nothing is uploaded.</p>
+    </div>
+  </div>
+  <div class="segmented" role="group" aria-label="Theme" id="theme">
+    <button type="button" data-value="system" aria-pressed="false">System</button>
+    <button type="button" data-value="light" aria-pressed="false">Light</button>
+    <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="pane editor-pane" aria-label="Schedule request">
+    <div class="pane-head">
+      <h2>Request</h2>
+      <div class="actions">
+        <button type="button" class="ghost" id="reset" title="Load the issue template again">Reset</button>
+        <button type="button" class="ghost" id="copy-md" title="Copy the Markdown, ready to paste into an issue">Copy Markdown</button>
+      </div>
+    </div>
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Schedule request in Markdown"></textarea>
+    <div class="options">
+      <label>Preview buckets
+        <select id="downsample">
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">60 min</option>
+          <option value="1">1 min (exact)</option>
+        </select>
+      </label>
+      <label>Sample interval
+        <select id="sample-interval">
+          <option value="1" selected>1 min</option>
+          <option value="5">5 min</option>
+          <option value="15">15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">60 min</option>
+        </select>
+      </label>
+      <label>ASCII symbols
+        <select id="symbols">
+          <option value="ascii" selected>ASCII</option>
+          <option value="braille">Braille</option>
+        </select>
+      </label>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite">Loading…</div>
+  </section>
+
+  <section class="pane preview-pane" aria-label="Preview">
+    <div class="card showcase">
+      <div class="pane-head">
+        <h2>Week</h2>
+        <div class="actions">
+          <button type="button" class="ghost" id="download-svg" disabled>Download SVG</button>
+        </div>
+      </div>
+      <div class="svg-frame" id="svg"><p class="placeholder">The week appears here once the request is valid.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="rendered" aria-selected="true">Rendered</button>
+        <button type="button" role="tab" data-tab="diagnostics" aria-selected="false">Diagnostics <span class="badge" id="badge" hidden></span></button>
+        <button type="button" role="tab" data-tab="json" aria-selected="false">JSON</button>
+        <button type="button" role="tab" data-tab="ascii" aria-selected="false">ASCII</button>
+      </div>
+
+      <div class="tab-panel" data-panel="rendered">
+        <div class="segmented small" role="group" aria-label="Rendering" id="flavour">
+          <button type="button" data-value="github" aria-pressed="true">GitHub issue</button>
+          <button type="button" data-value="sphinx" aria-pressed="false">Sphinx with custom admonitions</button>
+        </div>
+        <article class="rendered github" id="rendered"></article>
+      </div>
+      <div class="tab-panel" data-panel="diagnostics" hidden>
+        <ul class="diagnostics" id="diagnostics"></ul>
+      </div>
+      <div class="tab-panel" data-panel="json" hidden><pre class="code" id="json"></pre></div>
+      <div class="tab-panel" data-panel="ascii" hidden><pre class="code ascii" id="ascii"></pre></div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <a href="https://github.com/iilei/canned-schedules">github.com/iilei/canned-schedules</a>
+  <span class="muted" id="version"></span>
+</footer>
+
+<script src="wasm_exec.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

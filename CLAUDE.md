@@ -287,6 +287,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - In the Markdown, every user-derived string (file, message, excerpt) is printed only inside a `~~~~~~` fence, so
     Markdown, HTML, links, `@mentions` and `#references` don't render. Source lines starting with `~~~` get no excerpt,
     so they can't close the fence.
+- **Examples are a separate field (decided 2026-10-24):** `diag.Diagnostic.Example` holds the exact text to type
+  (Markdown, backticks included); `Message` is plain prose without "e.g." tails. txt appends `; e.g. <example>`, the
+  JSON report and the canonical JSON warnings carry `example`, the Markdown report puts it in its own `~~~~~~markdown`
+  fence, and the page shows it as code with a copy button. No control characters or markup inside messages.
 - **Exit codes:** 0 ok, 1 errors in the document or flag values, 2 unusable command line or environment
   (`invalid-args`, `input-file`, report not writable).
 
@@ -331,15 +335,46 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   the symbol is drawn in the background colour and stays as the fallback without colour. Files get colours only with
   `--color always`.
 
+## Preflight page (implemented 2026-10-24)
+
+- A static page (`web/`) runs the pipeline compiled to WebAssembly (`cmd/canned-schedules-wasm`, a thin
+  `syscall/js` wrapper around `internal/web.Evaluate`). Nothing leaves the browser.
+- Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme), the Markdown as a GitHub issue
+  or as a Sphinx page with custom admonitions (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
+  editor, the JSON and the ASCII preview. Options: preview buckets, sample interval, ASCII symbols. Theme toggle
+  (system/light/dark, saved in localStorage); `?theme=`, `?view=`, `?tab=` and `?symbols=` make views linkable, and
+  `#doc=<base64url>` opens a document (a fragment, so it never reaches the server).
+- `--svg-theme auto|light|dark` (CLI too): an inline SVG's `prefers-color-scheme` follows the OS, not the page, so
+  pages with their own toggle render a fixed palette. SVG rules are scoped under `.canned-schedule` because inline
+  SVG styles are global in HTML.
+- `internal/htmlpreview`: goldmark + GFM in safe mode (raw HTML dropped, dangerous links removed).
+  - GitHub mode: NOTE/TIP/IMPORTANT/WARNING/CAUTION become GitHub callouts (only when the marker stands alone);
+    schedule directives stay quotes with the literal marker, as GitHub really shows them.
+  - Sphinx mode: all alerts become admonitions; schedule directives get `admonition schedule schedule-tier tier-N`
+    with the tier's display name, coloured by `StyleSheet(cfg, scope)` from the config's tier styles (light, dark,
+    system); weekday names inside schedule admonitions get `<abbr>` tooltips.
+- Fonts: Ubuntu + Ubuntu Mono, **self-hosted** in `web/fonts` (Ubuntu Font Licence, `UFL.txt`): no requests to Google
+  (a German court treated Google Fonts loading as a privacy violation), works offline.
+  - Ubuntu Mono has **no braille glyphs** and narrow cells (0.5 em); fallback fonts draw braille wider, so braille rows
+    overshot the ruler. The ASCII tab therefore always uses `Schedule Braille Mono` (for every preset): a renamed subset (ASCII,
+    Latin-1, Braille Patterns, no OpenType features, 16 KB) of Cascadia Mono 2407.24, where every glyph has one width.
+    Renamed because the SIL OFL reserves the name "Cascadia Code" for unmodified fonts
+    (`fonts/OFL-schedule-braille-mono.txt`). DejaVu Sans Mono was checked first and has no braille.
+  - In terminals the user's font decides; terminals keep a fixed cell width, but the font needs braille glyphs.
+- Build: `mise run web:build` → `dist/site` (static files, `app.wasm` ~10 MB raw / ~2.4 MB gzip, Go's matching
+  `wasm_exec.js`, the GitLab template as `template.md`, `version.txt`). `mise run web:serve [--port N]` serves it on 127.0.0.1 only (default port 8080).
+- Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
+  minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
+- Deploy: `.github/workflows/pages.yml` publishes `dist/site` on pushes to `master` (SHA-pinned
+  `upload-pages-artifact`/`deploy-pages`). **One-time setup:** Settings → Pages → Source: "GitHub Actions".
+- To verify after the first deploy: whether GitHub Pages serves `app.wasm` compressed (otherwise 10 MB per visit).
+
 ## Open
 
 - Nothing open at the moment.
 
 ## Future ideas (not scheduled — don't build unasked)
 
-- **GitHub Pages single-page WASM editor** for live editing, preview and validation, giving tighter guidance than the
-  issue template. It would output Markdown ready to paste into an issue. The Go/WASM build serves it. CLI, CI and the
-  browser must reach identical verdicts, so use shared golden tests.
 - **Sphinx docs with custom tier admonitions plus build artifacts.** Schedules render as styled admonitions, and the
   same build emits the canned schedules as artifacts.
   - MyST's GFM `alert` extension handles only NOTE, TIP, IMPORTANT, WARNING and CAUTION. Custom kinds need
@@ -373,6 +408,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - `internal/report`: the error report (txt, JSON, built-in Markdown template).
   - `internal/render`: preview downsampling, the SVG and ASCII render models and rendering.
   - `internal/files`: display paths (home as `~`), path-free OS errors, atomic writes; shared by report and SVG.
+  - `internal/htmlpreview`, `internal/web`, `cmd/canned-schedules-wasm`, `web/`: the browser preflight page (see
+    "Preflight page").
   - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`, `schedule-ascii.tmpl`),
     embedded.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and

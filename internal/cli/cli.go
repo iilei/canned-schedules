@@ -165,7 +165,7 @@ func SVG(opts *Options, out *schedule.Output) ([]byte, error) {
 		return nil, err
 	}
 
-	return render.SVG(out, cfg, opts.Preview.Downsample)
+	return render.SVG(out, cfg, opts.Preview.Downsample, opts.Preview.SVGTheme)
 }
 
 // ASCII renders the ASCII preview, with ANSI colours when color is true.

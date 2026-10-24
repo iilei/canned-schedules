@@ -12,8 +12,8 @@ import (
 
 // Severities.
 const (
-	Error Severity = "error"
-	Warn  Severity = "warn"
+	Error Severity = iota + 1
+	Warn
 )
 
 // Diagnostic codes. Golden fixtures pin these, so treat them as part of the contract.
@@ -54,8 +54,9 @@ const (
 // programName prefixes diagnostics that belong to no file.
 const programName = "canned-schedules"
 
-// Severity tells whether a diagnostic stops processing.
-type Severity string
+// Severity tells whether a diagnostic stops processing. It is a single byte, which keeps Diagnostic small enough to
+// pass by value.
+type Severity uint8
 
 // Pos is a 1-based source position. Columns count runes. The zero value means "no position".
 type Pos struct {
@@ -65,10 +66,13 @@ type Pos struct {
 
 // Diagnostic is a single error or warning.
 type Diagnostic struct {
-	Severity Severity
-	Code     string
-	Message  string
+	Code string
+	// Message is plain prose. Examples go into Example, never into the message.
+	Message string
+	// Example is optional: the exact text to type (Markdown, backticks included), e.g. "`21:45` to `00:00`".
+	Example  string
 	Pos      Pos
+	Severity Severity
 }
 
 // List is an ordered collection of diagnostics.
@@ -84,16 +88,45 @@ func Warnf(pos Pos, code, format string, args ...any) Diagnostic {
 	return Diagnostic{Severity: Warn, Code: code, Message: fmt.Sprintf(format, args...), Pos: pos}
 }
 
+// String returns "error" or "warn", the spelling used in every output.
+func (s Severity) String() string {
+	switch s {
+	case Error:
+		return "error"
+	case Warn:
+		return "warn"
+	default:
+		return "unknown"
+	}
+}
+
+// WithExample returns the diagnostic with an example of what to type instead.
+func (d Diagnostic) WithExample(example string) Diagnostic {
+	d.Example = example
+
+	return d
+}
+
 // Golden renders the diagnostic in the golden fixture format: "<severity> <line>:<col> <code>".
 // Diagnostics without a position use "-" instead of "<line>:<col>".
 func (d Diagnostic) Golden() string {
-	return string(d.Severity) + " " + d.where() + " " + d.Code
+	return d.Severity.String() + " " + d.where() + " " + d.Code
 }
 
-// Format renders the diagnostic for humans as "<file>:<line>:<col>: <severity>[<code>]: <message>". Without a
-// position the prefix is just the file, and without a file it is the program name. File and message are sanitized.
+// Format renders the diagnostic for humans as "<file>:<line>:<col>: <severity>[<code>]: <message>", followed by
+// "; e.g. <example>" when there is one. Without a position the prefix is just the file, and without a file it is the
+// program name. File, message and example are sanitized.
 func (d Diagnostic) Format(file string) string {
-	return d.Location(file) + ": " + string(d.Severity) + "[" + d.Code + "]: " + Sanitize(d.Message)
+	return d.Location(file) + ": " + d.Severity.String() + "[" + d.Code + "]: " + d.Text()
+}
+
+// Text is the sanitized message plus "; e.g. <example>" when there is an example.
+func (d Diagnostic) Text() string {
+	if d.Example == "" {
+		return Sanitize(d.Message)
+	}
+
+	return Sanitize(d.Message) + "; e.g. " + Sanitize(d.Example)
 }
 
 // Location returns "<file>:<line>:<col>", or just the file without a position, or the program name without a file.

@@ -47,7 +47,7 @@ func TestGoldenSchedulesRender(t *testing.T) {
 
 		out, cfg := evaluate(t, string(src))
 
-		svg, err := SVG(out, cfg, 15)
+		svg, err := SVG(out, cfg, 15, ThemeAuto)
 		if err != nil {
 			t.Fatalf("%s: %v", in, err)
 		}
@@ -99,7 +99,7 @@ func TestEscaping(t *testing.T) {
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:TIER] Maximum\n> - `06:00` to `22:00` MON\n",
 		config.Override{Path: "tiers[3].display-name", Value: `"Max <b>&amp;</b> \"q\" \u0007"`})
 
-	svg, err := SVG(out, cfg, 15)
+	svg, err := SVG(out, cfg, 15, ThemeAuto)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestBucketTicks(t *testing.T) {
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON\n")
 
 	for size, minor := range map[int]bool{60: false, 30: true, 15: true, 5: false, 1: false} {
-		m := Build(out, cfg, Downsample(out, cfg, size))
+		m := Build(out, cfg, Downsample(out, cfg, size), ThemeAuto)
 		if got := len(m.Ticks) > hoursPerDay+1; got != minor {
 			t.Errorf("bucket %d: minor ticks = %v, want %v", size, got, minor)
 		}
@@ -224,7 +224,7 @@ func TestTooltipsAndTable(t *testing.T) {
 
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:TIER] Medium\n"+
 		"> - `06:00` to `22:00` MON-FRI\n> - `22:00` to `02:00` SAT,SUN\n")
-	m := Build(out, cfg, Downsample(out, cfg, 15))
+	m := Build(out, cfg, Downsample(out, cfg, 15), ThemeAuto)
 
 	mon := m.Days[0].Runs
 	if len(mon) != 4 || !strings.Contains(mon[2].Tooltip, "Medium · MON 06:00–22:00\nstarts: posix 0 6 * * 1-5") {
@@ -260,6 +260,42 @@ func TestCompactDays(t *testing.T) {
 	} {
 		if got := compactDays(strings.Fields(in)); got != want {
 			t.Errorf("compactDays(%s) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestSVGThemes(t *testing.T) {
+	t.Parallel()
+
+	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON\n")
+	light, dark := cfg.Representation.Theme.Light.Background, cfg.Representation.Theme.Dark.Background
+
+	for theme, want := range map[string]struct {
+		has, lacks []string
+	}{
+		ThemeAuto:  {has: []string{light, dark, "prefers-color-scheme", "color-scheme: light dark"}},
+		ThemeLight: {has: []string{light, "color-scheme: light"}, lacks: []string{dark, "prefers-color-scheme"}},
+		ThemeDark:  {has: []string{dark, "color-scheme: dark"}, lacks: []string{light, "prefers-color-scheme"}},
+	} {
+		svg, err := SVG(out, cfg, 15, theme)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, s := range want.has {
+			if !strings.Contains(string(svg), s) {
+				t.Errorf("%s: missing %q", theme, s)
+			}
+		}
+
+		for _, s := range want.lacks {
+			if strings.Contains(string(svg), s) {
+				t.Errorf("%s: must not contain %q", theme, s)
+			}
+		}
+
+		if strings.Contains(string(svg), "\n    .background") {
+			t.Errorf("%s: rules must be scoped to .canned-schedule", theme)
 		}
 	}
 }

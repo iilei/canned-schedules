@@ -1,22 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1090" height="346" viewBox="0 0 1090 346" style="color-scheme: light dark" font-family="Ubuntu Mono, &#39;Courier New&#39;, Courier, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" class="canned-schedule" width="1090" height="346" viewBox="0 0 1090 346" style="color-scheme: light dark" font-family="Ubuntu Mono, &#39;Courier New&#39;, Courier, monospace">
   <style>
-    .background { fill: #ffffff; }
-    .label { fill: #222222; }
-    .divider { stroke: #222222; stroke-opacity: 0.3; }
-    .guide { stroke: #222222; stroke-opacity: 0.12; }
-    .tier-0 { fill: #A7DCC840; }
-    .tier-1 { fill: #B8E8D9D9; }
-    .tier-2 { fill: #54C6A5D9; }
-    .tier-3 { fill: #087E6BD9; }
+    .canned-schedule .background { fill: #ffffff; }
+    .canned-schedule .label { fill: #222222; }
+    .canned-schedule .divider { stroke: #222222; stroke-opacity: 0.3; }
+    .canned-schedule .guide { stroke: #222222; stroke-opacity: 0.12; }
+    .canned-schedule .tier-0 { fill: #A7DCC840; }
+    .canned-schedule .tier-1 { fill: #B8E8D9D9; }
+    .canned-schedule .tier-2 { fill: #54C6A5D9; }
+    .canned-schedule .tier-3 { fill: #087E6BD9; }
     @media (prefers-color-scheme: dark) {
-      .background { fill: #1a1a2e; }
-      .label { fill: #cccccc; }
-      .divider { stroke: #cccccc; }
-      .guide { stroke: #cccccc; }
-      .tier-0 { fill: #B9A5FF40; }
-      .tier-1 { fill: #B9A5FFD9; }
-      .tier-2 { fill: #9D82EAD9; }
-      .tier-3 { fill: #7048D6D9; }
+      .canned-schedule .background { fill: #1a1a2e; }
+      .canned-schedule .label { fill: #cccccc; }
+      .canned-schedule .divider { stroke: #cccccc; }
+      .canned-schedule .guide { stroke: #cccccc; }
+      .canned-schedule .tier-0 { fill: #B9A5FF40; }
+      .canned-schedule .tier-1 { fill: #B9A5FFD9; }
+      .canned-schedule .tier-2 { fill: #9D82EAD9; }
+      .canned-schedule .tier-3 { fill: #7048D6D9; }
     }
   </style>
   <rect class="background" width="100%" height="100%"/>

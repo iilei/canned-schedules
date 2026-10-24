@@ -2,10 +2,13 @@ package cli
 
 import (
 	"flag"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/render"
 )
 
 // Preview flag values.
@@ -34,6 +37,8 @@ type PreviewOptions struct {
 	Color string
 	// SVGFile is --svg-output-file; empty means none.
 	SVGFile string
+	// SVGTheme is --svg-theme: auto (follow the viewer), light or dark.
+	SVGTheme string
 	// downsampleRaw is the value of an explicit --preview-downsample ("true" when bare).
 	downsampleRaw string
 	// Downsample is the bucket size in minutes (--preview-downsample[=N], --no-preview-downsample means 1).
@@ -73,6 +78,7 @@ func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 	fs.StringVar(&p.SVGFile, "svg-output-file", "", "write an SVG preview to this file (only without errors)")
 	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "write an ASCII preview to this file (only without errors)")
 	fs.StringVar(&p.Color, "color", ColorAuto, "colours in the ASCII preview: auto, always or never")
+	fs.StringVar(&p.SVGTheme, "svg-theme", render.ThemeAuto, "SVG colours: auto (follow the viewer), light or dark")
 	fs.Var(downsampleFlag{p}, "preview-downsample", "preview buckets in minutes: bare flag 15, =N for N; must "+
 		"divide 60")
 	fs.BoolVar(&p.noDownsample, "no-preview-downsample", false, "preview at 1-minute resolution (1440 columns per day)")
@@ -81,27 +87,35 @@ func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 func checkPreviewFlags(p *PreviewOptions) diag.List {
 	var diags diag.List
 
-	bad := func(format string, args ...any) {
-		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, format, args...))
+	for _, c := range []struct {
+		flag, value string
+		allowed     []string
+	}{
+		{"--output", p.Output, []string{OutputJSON, OutputASCII}},
+		{"--color", p.Color, []string{ColorAuto, ColorAlways, ColorNever}},
+		{"--svg-theme", p.SVGTheme, []string{render.ThemeAuto, render.ThemeLight, render.ThemeDark}},
+	} {
+		if !slices.Contains(c.allowed, c.value) {
+			diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "%s %q: use %s", c.flag, c.value,
+				strings.Join(c.allowed, ", ")))
+		}
 	}
 
-	if p.Output != OutputJSON && p.Output != OutputASCII {
-		bad("--output %q: use json or ascii", p.Output)
-	}
+	return append(diags, checkDownsample(p)...)
+}
 
-	if p.Color != ColorAuto && p.Color != ColorAlways && p.Color != ColorNever {
-		bad("--color %q: use auto, always or never", p.Color)
+func checkDownsample(p *PreviewOptions) diag.List {
+	bad := func(format string, args ...any) diag.List {
+		return diag.List{diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, format, args...)}
 	}
 
 	if p.downsampleSet && p.downsampleRaw != "true" {
 		n, err := strconv.Atoi(p.downsampleRaw)
 		if err != nil {
-			bad(
-				"--preview-downsample=%s: give the bucket size in minutes, e.g. --preview-downsample=30",
-				p.downsampleRaw,
-			)
+			d := bad("--preview-downsample=%s: give the bucket size in minutes", p.downsampleRaw)
+			d[0].Example = "--preview-downsample=30"
 
-			return diags
+			return d
 		}
 
 		p.Downsample = n
@@ -109,14 +123,14 @@ func checkPreviewFlags(p *PreviewOptions) diag.List {
 
 	switch {
 	case p.noDownsample && p.downsampleSet:
-		bad("--preview-downsample and --no-preview-downsample can't be combined")
+		return bad("--preview-downsample and --no-preview-downsample can't be combined")
 	case p.noDownsample:
 		p.Downsample = 1
 	case p.Downsample < 1 || minutesPerHour%p.Downsample != 0:
-		bad("--preview-downsample=%d: must divide 60 (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60)", p.Downsample)
+		return bad("--preview-downsample=%d: must divide 60 (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60)", p.Downsample)
 	}
 
-	return diags
+	return nil
 }
 
 // asciiSymbols turns --ascii-symbols into an override of representation.ascii.symbols. It comes after any

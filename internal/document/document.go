@@ -105,6 +105,7 @@ func Parse(src []byte) (*Document, diag.List) {
 
 	if !nameSeen {
 		p.errorf(diag.Pos{}, diag.CodeMissingName, "the document needs an H1 heading with the schedule name")
+		p.example("# Office Hours")
 	}
 
 	p.scanMisplaced(root)
@@ -116,6 +117,11 @@ func Parse(src []byte) (*Document, diag.List) {
 
 func (p *parser) errorf(pos diag.Pos, code, format string, args ...any) {
 	p.diags = append(p.diags, diag.Errorf(pos, code, format, args...))
+}
+
+// example adds an example to the diagnostic reported last.
+func (p *parser) example(example string) {
+	p.diags[len(p.diags)-1].Example = example
 }
 
 func (p *parser) name(h *ast.Heading, seen bool) {

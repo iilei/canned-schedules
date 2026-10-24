@@ -753,3 +753,4 @@ err(
 )
 err("error/duplicate-weekday-list", [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON,MON\n"], "MON", "duplicate-weekday", nth=2)
 err("error/duplicate-weekday-one-day-range", [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` WED-WED\n"], "WED", "duplicate-weekday", nth=2)
+err("error/svg-theme-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--svg-theme", "sepia"])

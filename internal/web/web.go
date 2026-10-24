@@ -1,0 +1,85 @@
+// Package web is the platform-independent core of the browser preflight page: one call evaluates a document and
+// returns everything the page shows. cmd/canned-schedules-wasm exposes it to JavaScript.
+package web
+
+import (
+	"bytes"
+	"encoding/json"
+
+	"github.com/iilei/canned-schedules/internal/cli"
+	"github.com/iilei/canned-schedules/internal/config"
+	"github.com/iilei/canned-schedules/internal/htmlpreview"
+	"github.com/iilei/canned-schedules/internal/report"
+)
+
+// fileName names the document in reports; the page has no file.
+const fileName = "request.md"
+
+// Result is what the page shows. Previews of the Markdown are rendered even when the document has errors; the
+// canonical JSON and the schedule previews only when it has none.
+type Result struct {
+	JSON           string `json:"json"`
+	SVG            string `json:"svg"`
+	ASCII          string `json:"ascii"`
+	Report         string `json:"report"`
+	ReportMarkdown string `json:"report-markdown"`
+	GitHubHTML     string `json:"github-html"`
+	SphinxHTML     string `json:"sphinx-html"`
+	SphinxCSS      string `json:"sphinx-css"`
+	Errors         int    `json:"errors"`
+	Warnings       int    `json:"warnings"`
+}
+
+// Evaluate runs the CLI pipeline on src with the given command-line flags (no file argument).
+func Evaluate(src []byte, args []string) Result {
+	var res Result
+
+	opts, diags := cli.Parse(args)
+	if !diags.HasErrors() {
+		out, more := cli.Run(&opts, src)
+		diags = append(diags, more...)
+
+		if out != nil {
+			res.JSON = encode(out)
+			res.SVG = string(must(cli.SVG(&opts, out)))
+			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
+		}
+	}
+
+	if cfg, _ := config.Load(opts.Overrides); cfg != nil {
+		res.GitHubHTML, _ = htmlpreview.Render(src, cfg, htmlpreview.GitHub)
+		res.SphinxHTML, _ = htmlpreview.Render(src, cfg, htmlpreview.Sphinx)
+		res.SphinxCSS = htmlpreview.StyleSheet(cfg, ".rendered.sphinx")
+	}
+
+	r := report.Build(fileName, src, diags)
+	res.Report = encode(r)
+	res.ReportMarkdown = string(must(render(r)))
+	res.Errors, res.Warnings = r.Summary.Errors, r.Summary.Warnings
+
+	return res
+}
+
+// Encode returns the result as a JSON string for JavaScript.
+func (r *Result) Encode() string { return encode(r) }
+
+func render(r report.Report) ([]byte, error) {
+	var buf bytes.Buffer
+	err := report.Render(&buf, r, "", report.TemplateMarkdownGFM)
+
+	return buf.Bytes(), err
+}
+
+func encode(v any) string {
+	var buf bytes.Buffer
+
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(v)
+
+	return buf.String()
+}
+
+// must drops the error of a rendering step that only fails on a bug; the page shows what it has.
+func must(b []byte, _ error) []byte { return b }

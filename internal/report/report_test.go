@@ -156,3 +156,44 @@ func TestRender(t *testing.T) {
 		t.Errorf("empty report = %q", empty.String())
 	}
 }
+
+func TestExamples(t *testing.T) {
+	t.Parallel()
+
+	r := Build("f.md", []byte("x\n"), diag.List{
+		diag.Errorf(diag.Pos{Line: 1, Col: 1}, diag.CodeInvalidTime, "24:00 is not a valid time").
+			WithExample("`21:45` to `00:00`"),
+	})
+
+	if r.Diagnostics[0].Example != "`21:45` to `00:00`" {
+		t.Fatalf("entry = %+v", r.Diagnostics[0])
+	}
+
+	for format, want := range map[string]string{
+		FormatTXT:  "f.md:1:1: error[invalid-time]: 24:00 is not a valid time; e.g. `21:45` to `00:00`\n",
+		FormatJSON: `"example": "` + "`21:45` to `00:00`" + `"`,
+	} {
+		var buf bytes.Buffer
+		if err := Render(&buf, r, format, ""); err != nil {
+			t.Fatal(err)
+		}
+
+		if !strings.Contains(buf.String(), want) {
+			t.Errorf("%s output lacks %q:\n%s", format, want, buf.String())
+		}
+	}
+
+	var md bytes.Buffer
+	if err := Render(&md, r, "", TemplateMarkdownGFM); err != nil {
+		t.Fatal(err)
+	}
+
+	want := "~~~~~~\n\nExample:\n\n~~~~~~markdown\n`21:45` to `00:00`\n~~~~~~"
+	if !strings.Contains(md.String(), want) {
+		t.Errorf("markdown lacks the example fence:\n%s", md.String())
+	}
+
+	if strings.Contains(md.String(), "e.g.") {
+		t.Errorf("markdown must not inline the example:\n%s", md.String())
+	}
+}

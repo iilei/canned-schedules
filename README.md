@@ -37,6 +37,17 @@ Friday `Medium` range.
 Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_schedule_request.md),
 [GitLab](.gitlab/issue_templates/canned_schedule_request.md).
 
+## Try it in the browser
+
+The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: edit a request and
+see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the tier
+styles, diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
+nothing is uploaded. It is published to GitHub Pages from `master`; locally:
+
+```sh
+mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)
+```
+
 ## Syntax
 
 A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE:…]` marker.
@@ -95,6 +106,7 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--set-config-value <json>`   |            | JSON value for the matching `--set-config-at` (repeatable)                      |
 | `--output json\|ascii`        | `json`     | What stdout carries: the canonical JSON or the ASCII preview                    |
 | `--svg-output-file <path>`    |            | Write an SVG preview (only when the document has no errors)                     |
+| `--svg-theme <theme>`         | `auto`     | SVG colours: `auto` (follow the viewer), `light` or `dark`                      |
 | `--ascii-output-file <path>`  |            | Write an ASCII preview (only when the document has no errors)                   |
 | `--preview-downsample[=N]`    | 15         | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
 | `--no-preview-downsample`     |            | Preview at 1-minute resolution (1440 columns per day)                           |
@@ -156,8 +168,9 @@ use, in one of three shapes:
 
 - `txt` (default): one `path:line:col: severity[code]: message` line per problem, as editors and CI annotators expect.
 - `json`: `{"schema-version", "file", "summary": {"errors", "warnings"}, "diagnostics": [...]}`; each diagnostic has
-  `severity`, `code`, `file`, `line`, `column`, a ready-made `location` (`path:line:col`), `message`, and an `excerpt`
-  (the source line with a caret under the column). Schema: [`schema/report.schema.json`](schema/report.schema.json).
+  `severity`, `code`, `file`, `line`, `column`, a ready-made `location` (`path:line:col`), `message` (plain prose),
+  an optional `example` (the exact Markdown to type, backticks included) and an `excerpt` (the source line with a
+  caret under the column). Schema: [`schema/report.schema.json`](schema/report.schema.json).
 - `--error-report-template markdown-gfm`: the JSON rendered with the built-in
   [`templates/markdown-gfm.tmpl`](templates/markdown-gfm.tmpl), ready to paste into an issue comment.
 
@@ -244,6 +257,8 @@ An override replaces the value at its path; the path and the array index must ex
 
 ```sh
 mise run check      # format check, vet, lint, tests (race detector), build
+mise run test:wasm  # the same tests compiled to WebAssembly, run under Node
+mise run web:serve  # build and serve the preflight page
 mise run fmt        # apply formatting
 ```
 
