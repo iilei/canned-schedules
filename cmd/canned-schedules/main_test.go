@@ -148,3 +148,45 @@ func TestSVGFile(t *testing.T) {
 		t.Error("a document with errors must not replace the preview")
 	}
 }
+
+func TestASCIIOutput(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{"--output", "ascii", basic}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+
+	if !strings.Contains(stdout.String(), "MON ▒▒▒") || strings.Contains(stdout.String(), `"schema-version"`) {
+		t.Errorf("--output ascii must print the preview instead of the JSON:\n%s", stdout.String())
+	}
+
+	if strings.Contains(stdout.String(), "\x1b") {
+		t.Error("--color auto must not colour output that isn't a terminal")
+	}
+
+	stdout.Reset()
+
+	run([]string{"--output", "ascii", "--color", "always", basic}, &stdout, &stderr)
+
+	if !strings.Contains(stdout.String(), "\x1b[38;2;") {
+		t.Error("--color always must colour the preview")
+	}
+
+	target := filepath.Join(t.TempDir(), "preview.txt")
+	stdout.Reset()
+
+	if code := run([]string{"--ascii-output-file", target, basic}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("exit code = %d", code)
+	}
+
+	b, err := os.ReadFile(target)
+	if err != nil || !strings.Contains(string(b), "MON ") || strings.Contains(string(b), "\x1b") {
+		t.Errorf("ASCII file = %q, err = %v (files get colours only with --color always)", b, err)
+	}
+
+	if !strings.Contains(stdout.String(), `"schema-version"`) {
+		t.Error("with --ascii-output-file, stdout still carries the JSON")
+	}
+}

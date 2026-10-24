@@ -12,3 +12,8 @@ var MarkdownGFM string
 //
 //go:embed schedule-svg.tmpl
 var ScheduleSVG string
+
+// ScheduleASCII renders a schedule preview as text. It operates on the ASCII model computed by internal/render.
+//
+//go:embed schedule-ascii.tmpl
+var ScheduleASCII string

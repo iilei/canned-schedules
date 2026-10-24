@@ -1,0 +1,117 @@
+package cli
+
+import (
+	"flag"
+	"strconv"
+
+	"github.com/iilei/canned-schedules/internal/diag"
+)
+
+// Preview flag values.
+const (
+	OutputJSON  = "json"
+	OutputASCII = "ascii"
+
+	ColorAuto   = "auto"
+	ColorAlways = "always"
+	ColorNever  = "never"
+
+	// DefaultDownsample is the preview bucket in minutes without --preview-downsample=N: 96 columns per day.
+	DefaultDownsample = 15
+)
+
+// PreviewOptions configure the visual outputs (SVG and ASCII). They never change the canonical JSON content, only
+// whether a preview-approximate warning is added.
+type PreviewOptions struct {
+	// Output is --output: json (default) prints the canonical JSON to stdout, ascii prints the ASCII preview instead.
+	Output string
+	// ASCIIFile is --ascii-output-file; empty means none.
+	ASCIIFile string
+	// Color is --color: auto (default), always or never.
+	Color string
+	// SVGFile is --svg-output-file; empty means none.
+	SVGFile string
+	// downsampleRaw is the value of an explicit --preview-downsample ("true" when bare).
+	downsampleRaw string
+	// Downsample is the bucket size in minutes (--preview-downsample[=N], --no-preview-downsample means 1).
+	Downsample int
+	// noDownsample records --no-preview-downsample to detect the conflicting combination.
+	noDownsample bool
+	// downsampleSet records an explicit --preview-downsample.
+	downsampleSet bool
+}
+
+// downsampleFlag implements --preview-downsample and --preview-downsample=N. As a boolean-style flag it never takes
+// the next argument, so the value must be attached with "=".
+type downsampleFlag struct{ p *PreviewOptions }
+
+func (f downsampleFlag) String() string { return "" }
+
+// IsBoolFlag lets the flag appear without a value.
+func (downsampleFlag) IsBoolFlag() bool { return true }
+
+// Requested reports whether any preview is produced.
+func (p *PreviewOptions) Requested() bool {
+	return p.SVGFile != "" || p.ASCIIFile != "" || p.Output == OutputASCII
+}
+
+// Set records the raw value; checkPreviewFlags validates it, because the flag package would word any error here as
+// an "invalid boolean value".
+func (f downsampleFlag) Set(s string) error {
+	f.p.downsampleSet = true
+	f.p.downsampleRaw = s
+
+	return nil
+}
+
+func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
+	p.Downsample = DefaultDownsample
+	fs.StringVar(&p.Output, "output", OutputJSON, "what to print on stdout: json or ascii")
+	fs.StringVar(&p.SVGFile, "svg-output-file", "", "write an SVG preview to this file (only without errors)")
+	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "write an ASCII preview to this file (only without errors)")
+	fs.StringVar(&p.Color, "color", ColorAuto, "colours in the ASCII preview: auto, always or never")
+	fs.Var(downsampleFlag{p}, "preview-downsample", "preview buckets in minutes: bare flag 15, =N for N; must "+
+		"divide 60")
+	fs.BoolVar(&p.noDownsample, "no-preview-downsample", false, "preview at 1-minute resolution (1440 columns per day)")
+}
+
+func checkPreviewFlags(p *PreviewOptions) diag.List {
+	var diags diag.List
+
+	bad := func(format string, args ...any) {
+		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, format, args...))
+	}
+
+	if p.Output != OutputJSON && p.Output != OutputASCII {
+		bad("--output %q: use json or ascii", p.Output)
+	}
+
+	if p.Color != ColorAuto && p.Color != ColorAlways && p.Color != ColorNever {
+		bad("--color %q: use auto, always or never", p.Color)
+	}
+
+	if p.downsampleSet && p.downsampleRaw != "true" {
+		n, err := strconv.Atoi(p.downsampleRaw)
+		if err != nil {
+			bad(
+				"--preview-downsample=%s: give the bucket size in minutes, e.g. --preview-downsample=30",
+				p.downsampleRaw,
+			)
+
+			return diags
+		}
+
+		p.Downsample = n
+	}
+
+	switch {
+	case p.noDownsample && p.downsampleSet:
+		bad("--preview-downsample and --no-preview-downsample can't be combined")
+	case p.noDownsample:
+		p.Downsample = 1
+	case p.Downsample < 1 || minutesPerHour%p.Downsample != 0:
+		bad("--preview-downsample=%d: must divide 60 (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60)", p.Downsample)
+	}
+
+	return diags
+}

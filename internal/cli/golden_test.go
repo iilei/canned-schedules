@@ -58,6 +58,40 @@ func runGolden(t *testing.T, dir string) {
 	}
 
 	compareOutput(t, out, readOptional(t, filepath.Join(dir, "want.json")))
+
+	if want := readOptional(t, filepath.Join(dir, "want.preview")); want != "" {
+		comparePreview(t, args, out, want)
+	}
+}
+
+// comparePreview checks the bucketed day rows of the ASCII preview (without colours) against want.preview.
+func comparePreview(t *testing.T, args []string, out *schedule.Output, want string) {
+	t.Helper()
+
+	if out == nil {
+		t.Fatal("want.preview needs output")
+	}
+
+	opts, _ := Parse(args)
+
+	text, err := ASCII(&opts, out, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var rows []string
+
+	for line := range strings.SplitSeq(string(text), "\n") {
+		for _, day := range []string{"MON ", "TUE ", "WED ", "THU ", "FRI ", "SAT ", "SUN "} {
+			if strings.HasPrefix(line, day) {
+				rows = append(rows, line)
+			}
+		}
+	}
+
+	if got := strings.Join(rows, "\n") + "\n"; got != want {
+		t.Errorf("preview rows:\n got:\n%s\nwant:\n%s", got, want)
+	}
 }
 
 func compareOutput(t *testing.T, out *schedule.Output, wantJSON string) {

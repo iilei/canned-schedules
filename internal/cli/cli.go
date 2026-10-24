@@ -21,8 +21,7 @@ var errNotBool = errors.New(`want "true" or "false"`)
 
 // Options is the parsed command line.
 type Options struct {
-	// SVGFile is --svg-output-file; empty means no preview.
-	SVGFile   string
+	Preview   PreviewOptions
 	Report    ReportOptions
 	Overrides []config.Override
 	Args      []string
@@ -72,8 +71,7 @@ func Parse(args []string) (Options, diag.List) {
 			return nil
 		},
 	)
-	fs.StringVar(&opts.SVGFile, "svg-output-file", "", "write an SVG preview of the schedule to this file (only "+
-		"when the document has no errors)")
+	registerPreviewFlags(fs, &opts.Preview)
 	fs.StringVar(&opts.Report.File, "error-output-file", "", "write the error report to this file instead of stderr")
 	fs.StringVar(&opts.Report.Format, "error-output-format", "", "error report format: txt (default) or json")
 	fs.StringVar(&opts.Report.Template, "error-report-template", "", "render the error report with a built-in "+
@@ -107,6 +105,7 @@ func Parse(args []string) (Options, diag.List) {
 	}
 
 	diags = append(diags, reportFlags(opts.Report)...)
+	diags = append(diags, checkPreviewFlags(&opts.Preview)...)
 
 	if opts.Schedule.RequireBase && opts.Schedule.Base != "" {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
@@ -136,7 +135,15 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 		return nil, diags
 	}
 
-	// The output also carries the config warnings, which Evaluate doesn't see.
+	if opts.Preview.Requested() {
+		if p := render.Downsample(out, cfg, opts.Preview.Downsample); p.Mixed > 0 {
+			diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodePreviewApproximate,
+				"the preview uses %d-minute buckets: %d of them mix tiers and show the one covering most of the "+
+					"bucket (the JSON stays exact; see --preview-downsample)", p.Size, p.Mixed))
+		}
+	}
+
+	// The output also carries the config and preview warnings, which Evaluate doesn't see.
 	out.Warnings = schedule.Warnings(src, diags)
 	if err := out.Finish(src); err != nil {
 		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
@@ -146,14 +153,34 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	return out, diags
 }
 
-// SVG renders the preview of a successfully evaluated document with the same config overrides.
+// SVG renders the SVG preview of a successfully evaluated document with the same config overrides.
 func SVG(opts *Options, out *schedule.Output) ([]byte, error) {
+	cfg, err := previewConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.SVG(out, cfg, opts.Preview.Downsample)
+}
+
+// ASCII renders the ASCII preview, with ANSI colours when color is true.
+func ASCII(opts *Options, out *schedule.Output, color bool) ([]byte, error) {
+	cfg, err := previewConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ASCII(out, cfg, opts.Preview.Downsample, color)
+}
+
+// previewConfig reloads the config; Run already validated it, so this can't fail for a document that evaluated.
+func previewConfig(opts *Options) (*config.Config, error) {
 	cfg, diags := config.Load(opts.Overrides)
 	if cfg == nil {
 		return nil, fmt.Errorf("config: %v", diags)
 	}
 
-	return render.SVG(out, cfg)
+	return cfg, nil
 }
 
 func reportFlags(r ReportOptions) diag.List {

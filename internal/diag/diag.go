@@ -40,6 +40,7 @@ const (
 	CodeMissingName           = "missing-name"
 	CodeMissingTitle          = "missing-title"
 	CodeOutputSchema          = "output-schema"
+	CodePreviewApproximate    = "preview-approximate"
 	CodeSampleInterval        = "sample-interval"
 	CodeStyleReuse            = "style-reuse"
 	CodeUnexpectedContent     = "unexpected-content"

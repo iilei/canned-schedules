@@ -90,13 +90,45 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--base <tier>`               | first tier | Base tier when the document has no BASE block                                   |
 | `--set-config-at <path>`      |            | Config path to replace, e.g. `representation.styles.tiers[0]` (repeatable)      |
 | `--set-config-value <json>`   |            | JSON value for the matching `--set-config-at` (repeatable)                      |
+| `--output json\|ascii`        | `json`     | What stdout carries: the canonical JSON or the ASCII preview                    |
 | `--svg-output-file <path>`    |            | Write an SVG preview (only when the document has no errors)                     |
+| `--ascii-output-file <path>`  |            | Write an ASCII preview (only when the document has no errors)                   |
+| `--preview-downsample[=N]`    | 15         | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
+| `--no-preview-downsample`     |            | Preview at 1-minute resolution (1440 columns per day)                           |
+| `--color auto\|always\|never` | `auto`     | Colours in the ASCII preview; auto = terminal only, and not with `NO_COLOR`     |
 | `--error-output-file <path>`  | stderr     | Write the error report to this file (always, even when empty)                   |
 | `--error-output-format`       | `txt`      | Error report format: `txt` or `json`                                            |
 | `--error-report-template`     |            | Render the error report with the built-in `markdown-gfm` template instead       |
 | `--version`                   |            | Print the version                                                               |
 
-## SVG preview
+## Previews
+
+```sh
+./canned-schedules --output ascii request.md
+```
+
+```text
+Office Hours — Weekdays with a late Friday
+
+    00:00                   06:00                   12:00                   18:00
+    ║ : | : | : | : | : | : ║ : | : | : | : | : | : ║ : | : | : | : | : | : ║ : | : | : | : | : | :
+MON ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒
+FRI ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████████████████████████████████
+SAT ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+    ░ Off   ▒ Minimum (base)   ▓ Medium   █ Maximum
+```
+
+(Rows for TUE–THU and SUN omitted here.) On a terminal the symbols are coloured with the dark theme's tier colours;
+`--color never` turns that off, `--color always` forces it (also into files).
+
+**Downsampling.** Previews show buckets of 15 minutes by default, so a day fits into 96 columns (100 with the day
+label). `--preview-downsample=N` picks another bucket size (a divisor of 60), `--no-preview-downsample` shows every
+minute. A bucket that contains more than one tier shows the one covering most of it; the tool then warns that the
+preview is approximate. Downsampling only affects previews: the JSON output stays exact. For exact previews, require
+times on the bucket grid with `--sample-interval 15`.
+
+### SVG preview
 
 `--svg-output-file preview.svg` writes a picture of the week like the one above: one row per day, a time ruler, the
 transitions with POSIX and AWS cron, and a legend with the base tier marked. Hovering a block shows its tier, its time
@@ -165,7 +197,8 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
       "tier": "Medium",
       "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
     }
-  ]
+  ],
+  "warnings": []
 }
 ```
 
@@ -173,6 +206,8 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
 - `transitions` lists every moment the tier changes, grouped by time and tier. `cron.posix` is five-field Unix cron
   (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field EventBridge format. Neither carries a time
   zone: set it where you schedule them.
+- `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
+  line, column and excerpt. No file names: the output depends only on the document and the flags.
 - `digests.request` identifies the exact input; `digests.effective` changes only when the base or the week changes.
 - The schema is [`schema/output.schema.json`](schema/output.schema.json); details in
   [`testdata/golden/README.md`](testdata/golden/README.md).

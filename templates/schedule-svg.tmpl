@@ -71,5 +71,8 @@
     <rect class="tier {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="20" height="16" rx="1"/>
     <text class="label" x="{{ .text.x }}" y="{{ .text.y }}" font-size="12">{{ html .text.text }}</text>
     {{- end }}
+    {{- with .legend.note }}
+    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12" font-style="italic">{{ html .text }}</text>
+    {{- end }}
   </g>
 </svg>

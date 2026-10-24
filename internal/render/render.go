@@ -78,7 +78,7 @@ type Model struct {
 	Divider     Line         `json:"divider"`
 	Width       float64      `json:"width"`
 	Height      float64      `json:"height"`
-	Resolution  int          `json:"resolution"`
+	Bucket      int          `json:"bucket"`
 }
 
 // Tier carries the CSS class and colours of one configured tier.
@@ -128,6 +128,7 @@ type Transitions struct {
 
 // Legend is the rule above the legend and one swatch per configured tier.
 type Legend struct {
+	Note     *Text    `json:"note"`
 	Swatches []Swatch `json:"swatches"`
 	Rule     Line     `json:"rule"`
 }
@@ -140,11 +141,14 @@ type Swatch struct {
 	Y     float64 `json:"y"`
 }
 
-// SVG renders out as SVG using the tier order, display names and styles from cfg.
-func SVG(out *schedule.Output, cfg *config.Config) ([]byte, error) {
-	m := Build(out, cfg)
+// SVG renders out as SVG with buckets of size minutes, using the tier order, display names and styles from cfg.
+func SVG(out *schedule.Output, cfg *config.Config, size int) ([]byte, error) {
+	return execute(templates.ScheduleSVG, Build(out, cfg, Downsample(out, cfg, size)))
+}
 
-	raw, err := json.Marshal(m)
+// execute runs tmpl on model decoded from its own JSON, the same data gomplate gets with `-c .=model.json`.
+func execute(tmpl string, model any) ([]byte, error) {
+	raw, err := json.Marshal(model)
 	if err != nil {
 		return nil, fmt.Errorf("encode render model: %w", err)
 	}
@@ -154,22 +158,22 @@ func SVG(out *schedule.Output, cfg *config.Config) ([]byte, error) {
 		return nil, fmt.Errorf("decode render model: %w", err)
 	}
 
-	t, err := template.New("svg").Parse(templates.ScheduleSVG)
+	t, err := template.New("preview").Parse(tmpl)
 	if err != nil {
-		return nil, fmt.Errorf("parse svg template: %w", err)
+		return nil, fmt.Errorf("parse template: %w", err)
 	}
 
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
-		return nil, fmt.Errorf("render svg: %w", err)
+		return nil, fmt.Errorf("render template: %w", err)
 	}
 
 	return buf.Bytes(), nil
 }
 
-// Build computes the render model.
-func Build(out *schedule.Output, cfg *config.Config) Model {
-	m := Model{Theme: cfg.Representation.Theme, Font: fontFamily, Resolution: resolution(out)}
+// Build computes the render model for the downsampled week p.
+func Build(out *schedule.Output, cfg *config.Config, p Preview) Model {
+	m := Model{Theme: cfg.Representation.Theme, Font: fontFamily, Bucket: p.Size}
 
 	for i := range cfg.Tiers {
 		s := cfg.Style(i)
@@ -193,15 +197,14 @@ func Build(out *schedule.Output, cfg *config.Config) Model {
 		y := week + float64(d*dayH)
 		day := Day{Label: Text{Text: name, X: margin, Y: y + blockH - dayLabelRaise}}
 
-		for _, r := range dayRuns(out, d) {
-			from, to := minutes(r.Start), endMinutes(r.End)
-			i, display := tierInfo(cfg, r.Tier)
+		for _, sg := range p.segments(d) {
+			i, display := tierInfo(cfg, sg.tier)
 			day.Runs = append(day.Runs, Run{
 				Class:   tierClass(i),
-				Tooltip: tooltip(display, name, r, starts[startKey(d, from, r.Tier)]),
-				X:       labelW + px(from),
+				Tooltip: tooltip(display, name, sg, starts[startKey(d, sg.from, sg.tier)]),
+				X:       labelW + px(sg.from),
 				Y:       y,
-				Width:   px(to - from),
+				Width:   px(sg.to - sg.from),
 				Height:  blockH,
 			})
 		}
@@ -216,7 +219,7 @@ func Build(out *schedule.Output, cfg *config.Config) Model {
 	tableBottom, right := m.table(out, cfg, columnX, week)
 	right = math.Max(right, m.Hint.X+float64(len([]rune(m.Hint.Text)))*headerCharW)
 	bottom := math.Max(weekBottom, tableBottom)
-	right = m.legend(out, cfg, bottom, right)
+	right = m.legend(out, cfg, p, bottom, right)
 
 	m.Width = math.Ceil(right + margin)
 	m.Height = bottom + legendH
@@ -229,7 +232,7 @@ func Build(out *schedule.Output, cfg *config.Config) Model {
 	return m
 }
 
-// ruler adds the time scale: labels every six hours, hour ticks, minor ticks at the resolution when it is readable,
+// ruler adds the time scale: labels every six hours, hour ticks, minor ticks at the bucket size when it is readable,
 // and faint guide lines through the week at every label.
 func (m *Model) ruler(top float64) {
 	base := top + rulerH - rulerTickBase
@@ -252,8 +255,8 @@ func (m *Model) ruler(top float64) {
 		m.Ticks = append(m.Ticks, Line{X1: x, Y1: base - tick, X2: x, Y2: base})
 	}
 
-	if m.Resolution >= minMinorTick && m.Resolution < minutesPerHour {
-		for mins := m.Resolution; mins < minutesPerDay; mins += m.Resolution {
+	if m.Bucket >= minMinorTick && m.Bucket < minutesPerHour {
+		for mins := m.Bucket; mins < minutesPerDay; mins += m.Bucket {
 			if mins%minutesPerHour != 0 {
 				x := labelW + px(mins)
 				m.Ticks = append(m.Ticks, Line{X1: x, Y1: base - tickMinor, X2: x, Y2: base})
@@ -307,8 +310,9 @@ func (m *Model) table(out *schedule.Output, cfg *config.Config, x, top float64) 
 	return top + float64(max(len(rows), 1)+1)*lineH + margin, colX - cellPadding
 }
 
-// legend adds one swatch per configured tier and returns the new right edge.
-func (m *Model) legend(out *schedule.Output, cfg *config.Config, top, right float64) float64 {
+// legend adds one swatch per configured tier, a note when the preview is approximate, and returns the new right
+// edge.
+func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top, right float64) float64 {
 	x := float64(labelW)
 
 	for i, t := range cfg.Tiers {
@@ -326,21 +330,18 @@ func (m *Model) legend(out *schedule.Output, cfg *config.Config, top, right floa
 		x += swatchW + swatchGap + float64(len([]rune(label)))*charW + legendGap
 	}
 
+	if p.Mixed > 0 {
+		note := approximateNote(p)
+		m.Legend.Note = &Text{Text: note, X: x, Y: top + swatchTextY}
+		x += float64(len([]rune(note)))*charW + legendGap
+	}
+
 	return math.Max(right, x-legendGap)
 }
 
-// resolution is the grid resolution in minutes: the GCD of every run boundary and 60, so cells divide the hour.
-func resolution(out *schedule.Output) int {
-	g := minutesPerHour
-
-	for d := range days {
-		for _, r := range dayRuns(out, d) {
-			g = gcd(g, minutes(r.Start))
-			g = gcd(g, minutes(r.End))
-		}
-	}
-
-	return g
+// approximateNote explains a lossy preview.
+func approximateNote(p Preview) string {
+	return fmt.Sprintf("≈ %d-minute buckets, %d show their majority tier", p.Size, p.Mixed)
 }
 
 func dayRuns(out *schedule.Output, d int) []schedule.Run {
@@ -370,13 +371,17 @@ func startKey(day, minute int, tier string) string {
 	return strconv.Itoa(day) + "/" + strconv.Itoa(minute) + "/" + tier
 }
 
-func tooltip(display, day string, r schedule.Run, start *schedule.Transition) string {
-	tip := display + " · " + day + " " + r.Start + "–" + r.End
+func tooltip(display, day string, sg segment, start *schedule.Transition) string {
+	tip := display + " · " + day + " " + clock(sg.from) + "–" + clock(sg.to%minutesPerDay)
 	if start != nil {
 		tip += "\nstarts: posix " + start.Cron.POSIX + " · aws " + start.Cron.AWS
 	}
 
 	return tip
+}
+
+func clock(mins int) string {
+	return fmt.Sprintf("%02d:%02d", mins/minutesPerHour, mins%minutesPerHour)
 }
 
 // tierInfo returns the configured index and sanitized display name of a tier id.
@@ -445,12 +450,4 @@ func endMinutes(hhmm string) int {
 
 func px(mins int) float64 {
 	return math.Round(float64(mins)*hourW/minutesPerHour*pixelPrecision) / pixelPrecision
-}
-
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-
-	return a
 }

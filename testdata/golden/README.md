@@ -14,7 +14,7 @@ never from the Go code.
 One directory per case, grouped by expected outcome:
 
 ```text
-valid/<case>/   input.md, want.json, [args]
+valid/<case>/   input.md, want.json, [args], [want.preview]
 warn/<case>/    input.md, want.json, want.diag, [args]
 error/<case>/   input.md, want.diag, [args]
 ```
@@ -24,6 +24,8 @@ error/<case>/   input.md, want.diag, [args]
   `--sample-interval 1`, `--require-base false`, no `--base`.
 - `want.json`: the expected canonical output (draft shape, see below). Error cases have none, because errors produce
   no output.
+- `want.preview`: the expected day rows of the ASCII preview (`MON` + one symbol per bucket, built-in symbols
+  `░▒▓█`). It pins the bucketing rule (majority, ties to the later tier), not the rest of the layout.
 - `want.diag`: the expected diagnostics, one per line, in emission order:
 
   ```text
@@ -89,6 +91,8 @@ A diagnostic points at the first character of the offending token:
       `SUN-MON,FRI-SAT`). All seven days become `*`.
 - `base` is always present, also when `transitions` is `[]`. It is the resolved base tier (document BASE, then
   `--base`, then config tier 0).
+- `warnings` lists every warning (`code`, `message`, and `line`/`column`/`excerpt` when positioned). Fixtures don't pin
+  message text: they hold `"…"`, and the golden runner replaces actual messages with it before comparing.
 - `digests`, both written `sha256:<64 lowercase hex>`:
   - `request`: SHA-256 of the exact bytes of `input.md`. Any edit, prose included, changes it.
   - `effective`: SHA-256 of `{"base": …, "week": …}` as compact JSON (no whitespace, keys in the order shown here).
@@ -107,7 +111,8 @@ styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
   `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-tier`, `config-duplicate-symbol`, `unknown-namespace`, `style-reuse`, `missing-kind`, `duplicate-block`,
+  `config-schema`, `config-duplicate-tier`, `config-duplicate-symbol` (a warning), `unknown-namespace`,
+  `style-reuse`, `preview-approximate`, `missing-kind`, `duplicate-block`,
   `empty-tier`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 
 ## Undecided: no fixtures yet
