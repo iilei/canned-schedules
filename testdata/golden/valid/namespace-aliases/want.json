@@ -45,6 +45,16 @@
       },
       {
         "start": "06:00",
+        "end": "12:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "12:00",
+        "end": "14:00",
+        "tier": "Maximum"
+      },
+      {
+        "start": "14:00",
         "end": "22:00",
         "tier": "Medium"
       },
@@ -98,6 +108,16 @@
     "SUN": [
       {
         "start": "00:00",
+        "end": "03:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "03:00",
+        "end": "04:00",
+        "tier": "Off"
+      },
+      {
+        "start": "04:00",
         "end": "00:00",
         "tier": "Minimum"
       }

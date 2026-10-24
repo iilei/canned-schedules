@@ -62,21 +62,21 @@ A diagnostic points at the first character of the offending token:
 ## Built-in config assumed
 
 The fixtures assume the tiers from `schema/config.json`: `Off`, `Minimum`, `Medium`, `Maximum` (index 0 = `Off`), four
-styles, and namespace `SCHEDULE`.
+styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-SCHEDULE`,
+`CAN-SCHED`, `CONFIG-SCHED`.
 
 ## Notes
 
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
   `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `granularity`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-tier`, `custom-namespace`, `ignored-directive`, `style-reuse`.
+  `config-schema`, `config-duplicate-tier`, `unknown-namespace`, `style-reuse`.
 
 ## Undecided: no fixtures yet
 
 These cases need a spec decision first. See "Open (fixtures)" in `CLAUDE.md`.
 
-- An unknown namespace with the **default** namespace configured (`[!SCHEDUEL:TIER]`): an error, or ignored with a
-  warning as in custom-namespace mode?
+- A marker with a namespace but no kind (`[!SCHEDULE]`, `[!SCHEDULE:]`). Proposed: an error, `missing-kind`.
 - Times without a leading zero (`6:00`).
 - More than one META or BASE block.
 - A TIER block with no range items.
