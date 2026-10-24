@@ -20,8 +20,8 @@ const SchemaVersion = "1"
 type Options struct {
 	// Base is the --base tier; empty when not given.
 	Base string
-	// Granularity is the --granularity in minutes; every time must be a multiple of it.
-	Granularity int
+	// SampleInterval is --sample-interval in minutes; every time must be a multiple of it.
+	SampleInterval int
 	// RequireBase is --require-base.
 	RequireBase bool
 }
@@ -81,7 +81,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 	m, metaDiags := decodeMeta(doc.Meta)
 	diags = append(diags, metaDiags...)
 
-	ranges, tierDiags := resolveTiers(doc, cfg, opts.Granularity)
+	ranges, tierDiags := resolveTiers(doc, cfg, opts.SampleInterval)
 	diags = append(diags, tierDiags...)
 
 	base, baseDiags := resolveBase(doc, cfg, opts)
@@ -113,7 +113,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 }
 
 // resolveTiers maps every TIER block to its config tier and parses its range items, in source order.
-func resolveTiers(doc *document.Document, cfg *config.Config, granularity int) ([]tierRange, diag.List) {
+func resolveTiers(doc *document.Document, cfg *config.Config, sampleInterval int) ([]tierRange, diag.List) {
 	var (
 		ranges []tierRange
 		diags  diag.List
@@ -126,7 +126,7 @@ func resolveTiers(doc *document.Document, cfg *config.Config, granularity int) (
 		}
 
 		for _, item := range d.Items {
-			r, rangeDiags := expr.Parse(item, granularity)
+			r, rangeDiags := expr.Parse(item, sampleInterval)
 			diags = append(diags, rangeDiags...)
 
 			if ok && len(rangeDiags) == 0 {

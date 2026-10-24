@@ -83,18 +83,18 @@ the file, unreadable input, report not writable):
 request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
 ```
 
-| Flag                         | Default    | Meaning                                                                         |
-| ---------------------------- | ---------- | ------------------------------------------------------------------------------- |
-| `--granularity <minutes>`    | `1`        | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)           |
-| `--require-base true\|false` | `false`    | `true`: the document must contain a BASE block; can't be combined with `--base` |
-| `--base <tier>`              | first tier | Base tier when the document has no BASE block                                   |
-| `--set-config-at <path>`     |            | Config path to replace, e.g. `representation.styles.tiers[0]` (repeatable)      |
-| `--set-config-value <json>`  |            | JSON value for the matching `--set-config-at` (repeatable)                      |
-| `--svg-output-file <path>`   |            | Write an SVG preview (only when the document has no errors)                     |
-| `--error-output-file <path>` | stderr     | Write the error report to this file (always, even when empty)                   |
-| `--error-output-format`      | `txt`      | Error report format: `txt` or `json`                                            |
-| `--error-report-template`    |            | Render the error report with the built-in `markdown-gfm` template instead       |
-| `--version`                  |            | Print the version                                                               |
+| Flag                          | Default    | Meaning                                                                         |
+| ----------------------------- | ---------- | ------------------------------------------------------------------------------- |
+| `--sample-interval <minutes>` | `1`        | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)           |
+| `--require-base true\|false`  | `false`    | `true`: the document must contain a BASE block; can't be combined with `--base` |
+| `--base <tier>`               | first tier | Base tier when the document has no BASE block                                   |
+| `--set-config-at <path>`      |            | Config path to replace, e.g. `representation.styles.tiers[0]` (repeatable)      |
+| `--set-config-value <json>`   |            | JSON value for the matching `--set-config-at` (repeatable)                      |
+| `--svg-output-file <path>`    |            | Write an SVG preview (only when the document has no errors)                     |
+| `--error-output-file <path>`  | stderr     | Write the error report to this file (always, even when empty)                   |
+| `--error-output-format`       | `txt`      | Error report format: `txt` or `json`                                            |
+| `--error-report-template`     |            | Render the error report with the built-in `markdown-gfm` template instead       |
+| `--version`                   |            | Print the version                                                               |
 
 ## SVG preview
 

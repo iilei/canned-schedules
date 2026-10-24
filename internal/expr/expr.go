@@ -40,8 +40,8 @@ type dayToken struct {
 	pos  diag.Pos
 }
 
-// Parse parses one range item. Every time must be a multiple of granularity minutes.
-func Parse(item document.Item, granularity int) (Range, diag.List) {
+// Parse parses one range item. Every time must be a multiple of sampleInterval minutes.
+func Parse(item document.Item, sampleInterval int) (Range, diag.List) {
 	toks := item.Tokens
 	if !wellFormed(toks) {
 		return Range{}, diag.List{diag.Errorf(item.Pos, diag.CodeInvalidRange,
@@ -54,11 +54,11 @@ func Parse(item document.Item, granularity int) (Range, diag.List) {
 		ok    bool
 	)
 
-	if r.Start, ok = parseTime(toks[0], granularity, &diags); !ok {
+	if r.Start, ok = parseTime(toks[0], sampleInterval, &diags); !ok {
 		return Range{}, diags
 	}
 
-	if r.End, ok = parseTime(toks[2], granularity, &diags); !ok {
+	if r.End, ok = parseTime(toks[2], sampleInterval, &diags); !ok {
 		return Range{}, diags
 	}
 
@@ -91,7 +91,7 @@ func wellFormed(toks []document.Token) bool {
 		strings.TrimLeft(days, " \t") != days && strings.TrimSpace(days) != ""
 }
 
-func parseTime(tok document.Token, granularity int, diags *diag.List) (int, bool) {
+func parseTime(tok document.Token, sampleInterval int, diags *diag.List) (int, bool) {
 	m := clock.FindStringSubmatch(tok.Value)
 	if m == nil {
 		*diags = append(*diags, invalidTime(tok))
@@ -103,9 +103,9 @@ func parseTime(tok document.Token, granularity int, diags *diag.List) (int, bool
 	mins, _ := strconv.Atoi(m[2])
 	total := h*minutesPerHour + mins
 
-	if total%granularity != 0 {
-		*diags = append(*diags, diag.Errorf(tok.Pos, diag.CodeGranularity,
-			"time %s is not a multiple of %d minutes (--granularity)", tok.Value, granularity))
+	if total%sampleInterval != 0 {
+		*diags = append(*diags, diag.Errorf(tok.Pos, diag.CodeSampleInterval,
+			"time %s is not a multiple of %d minutes (--sample-interval)", tok.Value, sampleInterval))
 
 		return 0, false
 	}

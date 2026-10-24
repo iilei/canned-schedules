@@ -72,10 +72,10 @@ func TestParseErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name        string
-		item        document.Item
-		granularity int
-		want        string
+		name           string
+		item           document.Item
+		sampleInterval int
+		want           string
 	}{
 		{"no space before weekdays", item("06:00", " to ", "22:00", "MON"), 1, "error 1:1 invalid-range"},
 		{"uppercase TO", item("06:00", " TO ", "22:00", " MON"), 1, "error 1:1 invalid-range"},
@@ -83,7 +83,7 @@ func TestParseErrors(t *testing.T) {
 		{"weekdays only whitespace", item("06:00", " to ", "22:00", "   "), 1, "error 1:1 invalid-range"},
 		{"two lines", item("06:00", " to\n", "22:00", " MON"), 1, "error 1:1 invalid-range"},
 		{"end time invalid", item("06:00", " to ", "25:00", " MON"), 1, "error 1:30 invalid-time"},
-		{"end time granularity", item("06:00", " to ", "22:30", " MON"), 60, "error 1:30 granularity"},
+		{"end time off the sample interval", item("06:00", " to ", "22:30", " MON"), 60, "error 1:30 sample-interval"},
 		{"trailing range dash", item("06:00", " to ", "22:00", " MON-"), 1, "error 1:40 invalid-weekday"},
 		{"leading comma", item("06:00", " to ", "22:00", " ,MON"), 1, "error 1:41 invalid-weekday"},
 		{"trailing comma", item("06:00", " to ", "22:00", " MON,"), 1, "error 1:44 invalid-weekday"},
@@ -97,7 +97,7 @@ func TestParseErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, diags := Parse(tt.item, tt.granularity)
+			_, diags := Parse(tt.item, tt.sampleInterval)
 			if len(diags) != 1 || diags[0].Golden() != tt.want {
 				t.Errorf("got %+v, want %q", diags, tt.want)
 			}

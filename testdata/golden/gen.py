@@ -347,14 +347,14 @@ write(
 )
 
 write(
-    "valid/granularity-60",
+    "valid/sample-interval-60",
     doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
-    args=["--granularity", "60"],
+    args=["--sample-interval", "60"],
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
 
 write(
-    "valid/granularity-1-odd-minutes",
+    "valid/sample-interval-1-odd-minutes",
     doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:TIER] Medium\n> - `06:07` to `21:53` MON\n"),
     want=output("Minimum", [("06:07", "21:53", ["MON"], "Medium")]),
 )
@@ -499,14 +499,14 @@ err(
     "meta-schema",
 )
 err(
-    "error/granularity-mismatch",
+    "error/sample-interval-mismatch",
     [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `06:10` to `22:00` MON\n"],
     "06:10",
-    "granularity",
-    args=["--granularity", "15"],
+    "sample-interval",
+    args=["--sample-interval", "15"],
 )
-err("error/granularity-not-divisor-of-60", [META, BASE], None, "invalid-flag", args=["--granularity", "7"])
-err("error/granularity-zero", [META, BASE], None, "invalid-flag", args=["--granularity", "0"])
+err("error/sample-interval-not-divisor-of-60", [META, BASE], None, "invalid-flag", args=["--sample-interval", "7"])
+err("error/sample-interval-zero", [META, BASE], None, "invalid-flag", args=["--sample-interval", "0"])
 err(
     "error/require-base-missing",
     [META, "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON\n"],

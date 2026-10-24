@@ -51,7 +51,12 @@ func Parse(args []string) (Options, diag.List) {
 	fs.SetOutput(io.Discard)
 
 	fs.StringVar(&opts.Schedule.Base, "base", "", "base tier when the document has no BASE block")
-	fs.IntVar(&opts.Schedule.Granularity, "granularity", 1, "minutes; must divide 60, every time must be a multiple")
+	fs.IntVar(
+		&opts.Schedule.SampleInterval,
+		"sample-interval",
+		1,
+		"minutes; must divide 60, every time must be a multiple",
+	)
 	fs.Func("require-base", "true|false (default false): the document must contain a BASE block", func(s string) error {
 		v, err := parseBool(s)
 		opts.Schedule.RequireBase = v
@@ -96,9 +101,9 @@ func Parse(args []string) (Options, diag.List) {
 		}
 	}
 
-	if g := opts.Schedule.Granularity; g < 1 || minutesPerHour%g != 0 {
+	if g := opts.Schedule.SampleInterval; g < 1 || minutesPerHour%g != 0 {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
-			"--granularity %d: must divide 60 (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60)", g))
+			"--sample-interval %d: must divide 60 (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60)", g))
 	}
 
 	diags = append(diags, reportFlags(opts.Report)...)
