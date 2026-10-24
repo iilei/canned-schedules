@@ -90,7 +90,12 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   and GitLab show custom alerts as literal text anyway, and our goldmark extension defines the grammar.
 - **META** is a list of `key: `value`` items, in one form only. A list renders the same everywhere, while `>` lines
   without a list form one paragraph, and whether they break depends on the renderer.
-  - Allowed keys: `schema-version` (mandatory) and `x-custom-*` (free-form). Nothing else for now.
+  - Allowed keys: `schema-version` and `x-custom-*` (free-form). Nothing else for now.
+  - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
+    block is absent or just lacks the key, the version built into the binary (currently `"1"`) applies.
+  - **Text after the META marker is the schedule's hint** (`[!SCHEDULE:META] Office hours only`). It is trimmed, then
+    validated with the same rule as the name (see below), and output as `hint`. A META block with a hint and no items is
+    allowed.
   - `x-custom-*` keys are allowed **only in META**. Their values are uninterpreted strings, passed through to the output
     (for example under `annotations`). They must never affect the domain model.
 - **TIER items as ranges:** in each item, the times are code spans, `to` is a literal keyword that is part of the
@@ -103,6 +108,8 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
 - **Crossing midnight:** the weekday names the start day. The part after midnight spills into the next day even if
   that day isn't listed (`22:00` to `02:00` FRI covers FRI 22:00 to SAT 02:00).
 - **`24:00` is rejected.** It is the same time as `00:00`. Valid times are `00:00`–`23:59`.
+- **Time format:** `H:MM` or `HH:MM` (decided 2026-10-24): `6:00` and `06:00` are both fine. Hours `0`–`23`, minutes
+  always two digits (`6:0` and `006:00` are rejected). The output always uses `HH:MM`.
 - **Start == end means a full 24 h** that spills into the next day: `` `08:00` to `08:00` MON `` covers MON 08:00 to
   TUE 08:00.
 - **Weekdays:** English three-letter names in uppercase only: `MON TUE WED THU FRI SAT SUN`. No aliases, no lowercase
@@ -171,7 +178,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Tier id pattern:** `^[A-Za-z](?:-?[A-Za-z0-9])*$`, max 32 chars. It's the same rule as before, written in the same
   style as the namespace alias rule.
 - **Document META** (`schema/meta.schema.json`):
-  - `schema-version` is mandatory. It is the **string** `"1"`, because every META value comes from a code span.
+  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"1"`, because every META
+    value comes from a code span.
   - Otherwise only `x-custom-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
   - At most 40 custom keys (`maxProperties: 41`). Each value is a string of at most 48 chars, so 40 × 48 = 1920 chars,
     which stays under the 2 KB budget for ASCII. JSON Schema counts code points, not bytes, so non-ASCII values can
@@ -201,15 +209,21 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   it through `$schema`. These are placeholders, possibly moving to GitHub Pages later. A branch URL can change under
   you, so consider tag-pinned URLs once there are releases.
 
+### Document structure rules (decided 2026-10-24)
+
+- **The H1 is mandatory** and becomes `name` in the output. There must be exactly one (`missing-name`,
+  `duplicate-name`).
+- **Name and hint share one text rule** (`invalid-name`, `invalid-hint`): trimmed, 1–80 chars, ASCII; starts with a
+  letter; may contain letters, digits, spaces and `-`; ends with a letter or digit. Regex:
+  `^[A-Za-z](?:[A-Za-z0-9 -]{0,78}[A-Za-z0-9])?$`.
+- **A marker with a namespace but no kind** (`[!SCHEDULE]`, `[!SCHEDULE:]`) is an error (`missing-kind`).
+- **At most one META block and one BASE block** (`duplicate-block`, reported at the second one).
+- **A TIER block must contain at least one range** (`empty-tier`).
+- **Directives only count at the top level.** A directive nested in a list or another container, or a bold-wrapped
+  marker (`> **[!SCHEDULE:TIER]**`), is an error (`misplaced-directive`). It is never silently ignored.
+
 ## Open (fixtures)
 
-Spec gaps found while writing `testdata/golden/`. Decide them, then add fixtures:
-
-- [ ] Times without a leading zero (`6:00`): accept or reject?
-- [ ] A marker with a namespace but no kind (`[!SCHEDULE]`, `[!SCHEDULE:]`). Proposed: an error, `missing-kind`.
-- [ ] More than one META or BASE block; a TIER block with no range items; a missing META block.
-- [ ] Directives nested in lists or other containers, and bold-wrapped markers.
-- [ ] H1: required? Does it become `name` in the output?
 - [ ] Canonical output: the draft shape is in `testdata/golden/README.md` (per-day runs split at midnight, config
       spelling of tier ids, `annotations`). Digests and derived transitions are still to be added, and the output
       schema (for the safety-net check) is still to be written.

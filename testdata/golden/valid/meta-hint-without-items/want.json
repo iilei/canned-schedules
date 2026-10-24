@@ -1,0 +1,78 @@
+{
+  "schema-version": "1",
+  "name": "Weekend-Shop 2026",
+  "hint": "Weekend shop",
+  "base": "Off",
+  "annotations": {},
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "10:00",
+        "tier": "Off"
+      },
+      {
+        "start": "10:00",
+        "end": "18:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "10:00",
+        "tier": "Off"
+      },
+      {
+        "start": "10:00",
+        "end": "18:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ]
+  }
+}

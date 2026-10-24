@@ -42,6 +42,8 @@ A diagnostic points at the first character of the offending token:
 ```json
 {
   "schema-version": "1",
+  "name": "Schedule-Name",
+  "hint": "Office hours only",
   "base": "Minimum",
   "annotations": {"x-custom-owner": "team-xyz"},
   "week": {
@@ -55,6 +57,8 @@ A diagnostic points at the first character of the offending token:
 - Each day is split at midnight into runs that cover `00:00`–`00:00` without gaps. Runs are half-open. An `end` of
   `00:00` means the end of that day. Adjacent runs with the same tier are merged.
 - Tier names use the **config's spelling** of the id, whatever case the document used.
+- Times are always `HH:MM` in the output, even when the input used `H:MM` (`6:00` → `06:00`).
+- `name` comes from the H1. `hint` is the text after the META marker and is **omitted** when there is none.
 - `annotations` holds every `x-custom-*` META key verbatim (`{}` if none).
 - Not yet included: the request and effective digests, and derived transitions. They get added once the output schema
   exists, and the fixtures will then be extended.
@@ -70,17 +74,11 @@ styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
   `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `granularity`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-tier`, `unknown-namespace`, `style-reuse`.
+  `config-schema`, `config-duplicate-tier`, `unknown-namespace`, `style-reuse`, `missing-kind`, `duplicate-block`,
+  `empty-tier`, `misplaced-directive`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 
 ## Undecided: no fixtures yet
 
 These cases need a spec decision first. See "Open (fixtures)" in `CLAUDE.md`.
 
-- A marker with a namespace but no kind (`[!SCHEDULE]`, `[!SCHEDULE:]`). Proposed: an error, `missing-kind`.
-- Times without a leading zero (`6:00`).
-- More than one META or BASE block.
-- A TIER block with no range items.
-- Directives nested in lists or other containers. Bold-wrapped markers (`**[!SCHEDULE:TIER]**`).
-- Whether an H1 is required, and whether it becomes the schedule `name` in the output.
-- Content after the title on the marker line for META (`[!SCHEDULE:META] foo`).
-- A missing META block: META is where `schema-version` lives, so presumably an error.
+- None at the moment.

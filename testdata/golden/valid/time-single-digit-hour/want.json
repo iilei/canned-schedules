@@ -1,0 +1,77 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Minimum",
+  "annotations": {},
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "09:30",
+        "tier": "Medium"
+      },
+      {
+        "start": "09:30",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "00:15",
+        "tier": "Minimum"
+      },
+      {
+        "start": "00:15",
+        "end": "08:45",
+        "tier": "Medium"
+      },
+      {
+        "start": "08:45",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ]
+  }
+}
