@@ -1,150 +1,153 @@
 # Canned Schedules
 
+Weekly capacity schedules from human-friendly Markdown: validate, preview and export.
+
+Teams propose a schedule in a GitHub or GitLab issue, written in plain Markdown. `canned-schedules` checks it, points
+at mistakes by line and column, and turns it into canonical JSON: the tier in effect at every minute of the week, plus
+the moments the tier changes, with ready-made cron expressions.
+
+> [!NOTE]
+> Work in progress. The CLI and the input syntax work end to end; previews (ASCII/SVG), CI feedback on issues and
+> releases are still to come. Older files (CUE, jq, shell) are leftovers from earlier designs.
+
 ## Example
 
-Given Input (located at `commonmark/lenient-expressions.md`):
+```markdown
+# Office Hours
 
-~~~markdown
----
-doctype: canned-schedule
-meta:
-    not_before: 2026-12-24
-    tiers:
-    Tier-A:
-        ref: "#/canned-tiers/tier-a"
-    Tier-B:
-        ref: "#/canned-tiers/tier-b"
-    Tier-C:
-        ref: "#/canned-tiers/tier-c"
----
+> [!SCHEDULE:META] Weekdays with a late Friday
+> - x-custom-owner: `team-xyz`
 
-# Schedule-Name
+> [!SCHEDULE:BASE] Minimum
 
-> [!TIP]
-> Definition order matters: later definitions win when transitions conflict.
+> [!SCHEDULE:TIER] Medium
+> - `06:00` to `22:00` MON-FRI
+> - `10:00` to `18:00` SAT
 
-> [!Base]
-> `Tier-A`
+> [!SCHEDULE:TIER] Maximum
+> - `16:00` to `00:00` FRI
+```
 
-> [!Tier-A]
-> `00:00 FRI`
+Read it as: the base tier is `Minimum`. `Medium` applies on weekdays from 06:00 to 22:00 and on Saturdays from 10:00
+to 18:00. `Maximum` applies on Fridays from 16:00 until midnight; it comes later, so it wins where it overlaps the
+Friday `Medium` range.
 
-> [!Tier-B]
-> `01:00 SAT`
+Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_schedule_request.md),
+[GitLab](.gitlab/issue_templates/canned_schedule_request.md).
 
-> [!Tier-A]
-> `05:00 SUN`
+## Syntax
 
-> [!Tier-C]
-> `08:00 MON-FRI`
+A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE:…]` marker.
+Everything else is free text for humans, including standard alerts such as `[!NOTE]`.
 
-> [!Tier-A]
-> `18:00 MON-FRI`
+| Block                   | Required     | Content                                                                                            |
+| ----------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| `[!SCHEDULE:META] hint` | no           | Optional hint after the marker; list items `` x-custom-<name>: `value` `` for your own bookkeeping |
+| `[!SCHEDULE:BASE] tier` | no           | The tier wherever no range applies                                                                 |
+| `[!SCHEDULE:TIER] tier` | one per tier | A list of ranges                                                                                   |
 
-~~~
+`CANNED-SCHEDULE`, `TO-SCHEDULE`, `CAN-SCHED` and `CONFIG-SCHED` work as aliases for `SCHEDULE`. Markers and tier
+names are case-insensitive.
 
-### 1st Validation and Extraction
+**Ranges** are written `` `start` to `end` WEEKDAYS ``:
 
-~~~shell
-mise run md:extract commonmark/lenient-expressions.md
-~~~
+- Times are `H:MM` or `HH:MM`, e.g. `6:15` or `21:45`.
+- The end is exclusive: `06:00` to `22:00` covers 06:00 up to, but not including, 22:00.
+- A range that runs until midnight ends at `00:00`. There is no `24:00`.
+- A range belongs to its start day and may cross midnight: `22:00` to `02:00` FRI runs into Saturday 02:00.
+- Equal start and end means a full 24 hours: `08:00` to `08:00` MON runs until Tuesday 08:00.
+- Weekdays are `MON TUE WED THU FRI SAT SUN` in uppercase, with ranges (`MON-FRI`, also across the weekend: `FRI-MON`)
+  and lists (`SAT,SUN`).
+- Later ranges win where they overlap earlier ones.
 
-Output:
+The tiers come from the configuration: `Off`, `Minimum`, `Medium` and `Maximum` by default.
+
+## Usage
+
+Build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
+
+```sh
+mise install
+go build ./cmd/canned-schedules
+./canned-schedules request.md        # or: ./canned-schedules < request.md
+```
+
+On success the canonical JSON goes to stdout. Otherwise each problem goes to stderr and the exit code is 1:
+
+```text
+request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
+```
+
+| Flag                         | Default    | Meaning                                                                         |
+| ---------------------------- | ---------- | ------------------------------------------------------------------------------- |
+| `--granularity <minutes>`    | `1`        | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)           |
+| `--require-base true\|false` | `false`    | `true`: the document must contain a BASE block; can't be combined with `--base` |
+| `--base <tier>`              | first tier | Base tier when the document has no BASE block                                   |
+| `--set-config-at <path>`     |            | Config path to replace, e.g. `representation.styles.tiers[0]` (repeatable)      |
+| `--set-config-value <json>`  |            | JSON value for the matching `--set-config-at` (repeatable)                      |
+| `--version`                  |            | Print the version                                                               |
+
+## Output
 
 ```json
 {
-  "frontmatter": {
-    "doctype": "canned-schedule",
-    "meta": {
-      "not_before": "2026-12-24",
-      "tiers": null,
-      "Tier-A": {
-        "ref": "#/canned-tiers/tier-a"
-      },
-      "Tier-B": {
-        "ref": "#/canned-tiers/tier-b"
-      },
-      "Tier-C": {
-        "ref": "#/canned-tiers/tier-c"
-      }
-    }
+  "schema-version": "1",
+  "name": "Office Hours",
+  "hint": "Weekdays with a late Friday",
+  "base": "Minimum",
+  "annotations": {"x-custom-owner": "team-xyz"},
+  "digests": {"request": "sha256:…", "effective": "sha256:…"},
+  "week": {
+    "MON": [
+      {"start": "00:00", "end": "06:00", "tier": "Minimum"},
+      {"start": "06:00", "end": "22:00", "tier": "Medium"},
+      {"start": "22:00", "end": "00:00", "tier": "Minimum"}
+    ],
+    "TUE": ["…"]
   },
-  "base": "Tier-A",
   "transitions": [
     {
-      "tier": "Tier-A",
-      "expression": "00:00 FRI"
-    },
-    {
-      "tier": "Tier-B",
-      "expression": "01:00 SAT"
-    },
-    {
-      "tier": "Tier-A",
-      "expression": "05:00 SUN"
-    },
-    {
-      "tier": "Tier-C",
-      "expression": "08:00 MON-FRI"
-    },
-    {
-      "tier": "Tier-A",
-      "expression": "18:00 MON-FRI"
+      "time": "06:00",
+      "days": ["MON", "TUE", "WED", "THU", "FRI"],
+      "tier": "Medium",
+      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
     }
   ]
 }
-
 ```
 
-### Todo: CUE
+- `week` covers every day from `00:00` to `00:00` in half-open runs; an `end` of `00:00` means the end of the day.
+- `transitions` lists every moment the tier changes, grouped by time and tier. `cron.posix` is five-field Unix cron
+  (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field EventBridge format. Neither carries a time
+  zone: set it where you schedule them.
+- `digests.request` identifies the exact input; `digests.effective` changes only when the base or the week changes.
+- The schema is [`schema/output.schema.json`](schema/output.schema.json); details in
+  [`testdata/golden/README.md`](testdata/golden/README.md).
 
-***
+Provider settings such as capacity numbers are out of scope: attach them to the tier ids downstream.
 
-# Schedule expression syntax
+## Configuration
 
-The schedule expression regex recognizes the supported input formats. It performs syntax recognition only; semantic validation belongs to CUE after normalization.
+The built-in configuration ([`schema/config.json`](schema/config.json), validated by
+[`schema/config.schema.json`](schema/config.schema.json)) defines the ordered tier list and how tiers look: page
+colours per light/dark theme and one style (symbol and colours) per tier, assigned round robin. Override any part of
+it per run:
 
-## Supported formats
+```sh
+./canned-schedules \
+  --set-config-at 'tiers[0].display-name' --set-config-value '"Switched off"' \
+  request.md
+```
 
-- **Friendly form:** `HH:MM DAY-SPEC`
-  - Example: `00:00 FRI`, `08:00 MON-FRI`, `09:30 MON,WED,FRI`
-- **Five-field cron form:** `MIN HOUR * * DAY-SPEC`
-  - Example: `0 0 * * FRI`
-- **Quartz-style six-field form:** `MIN HOUR ? * DAY-SPEC *`
-  - Example: `0 0 ? * FRI *`
+An override replaces the value at its path; the path and the array index must exist.
 
-`DAY-SPEC` consists of weekday names (`MON`, `TUE`, `WED`, `THU`, `FRI`, `SAT`, `SUN`), inclusive ranges (`MON-FRI`), or comma-separated combinations of days and ranges (`MON-WED,FRI`).
+## Development
 
-Weekday selection is mandatory. `MON-SUN` explicitly represents every day.
+```sh
+mise run check      # format check, vet, lint, tests (race detector), build
+mise run fmt        # apply formatting
+```
 
-## Tested Examples
-
-~~~
-0 0 ? * MON-WED,FRI *
-00:00 FRI
-08:00 MON-FRI
-09:30 MON,WED,FRI
-00:00 MON-WED,FRI
-0 0 * * FRI
-0 0 * * MON-FRI
-0 0 ? * FRI *
-0 0 ? * MON-WED,FRI *
-~~~
-
-## Intentionally unsupported
-
-- Step expressions, such as `2/3 2 ? * FRI *`
-- Wildcards or ranges in the minute and hour fields
-- Numeric weekday selectors
-- Advanced cron operators such as `L`, `W`, and `#`
-- Other cron extensions not explicitly listed above
-
-These forms are excluded because they can introduce recurring or otherwise more complex transition patterns. Supporting them would require explicit semantics in the schedule model and evaluator, not just a more permissive regex.
-
-## Validation responsibilities
-
-- **Regex / jq:** Recognize the supported input shapes and extract the tier and expression.
-- **Normalization:** Parse recognized expressions into structured fields such as minute, hour, and weekdays.
-- **CUE:** Validate field ranges, weekday order, duplicates, tier references, and schedule-level invariants.
-
-Do not treat regex acceptance as proof that an expression is semantically valid. Extend the accepted grammar deliberately, with corresponding normalization and validation tests.
+The spec lives in [`testdata/golden`](testdata/golden): one directory per case with the input, optional CLI
+arguments, and the expected output or diagnostics. `python3 testdata/golden/gen.py` regenerates them from an
+independent reference implementation; review the diff like any other change. Never derive fixtures from the Go code.
