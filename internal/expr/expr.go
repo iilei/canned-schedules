@@ -14,6 +14,8 @@ const (
 	minutesPerHour = 60
 	// itemTokens is the token count of a well-formed item: code, " to ", code, weekdays.
 	itemTokens = 4
+	// midnightAs24 gets its own message: it's the most likely mistake for "until midnight".
+	midnightAs24 = "24:00"
 )
 
 // Weekdays lists the accepted weekday names, Monday first. The index is the day number used in Range.Days.
@@ -92,8 +94,7 @@ func wellFormed(toks []document.Token) bool {
 func parseTime(tok document.Token, granularity int, diags *diag.List) (int, bool) {
 	m := clock.FindStringSubmatch(tok.Value)
 	if m == nil {
-		*diags = append(*diags, diag.Errorf(tok.Pos, diag.CodeInvalidTime,
-			"time %q: use H:MM or HH:MM from 0:00 to 23:59 (midnight is 00:00, not 24:00)", tok.Value))
+		*diags = append(*diags, invalidTime(tok))
 
 		return 0, false
 	}
@@ -151,6 +152,19 @@ func parseDays(tok document.Token) ([]int, diag.List) {
 	}
 
 	return days, nil
+}
+
+// invalidTime explains a malformed time. Examples stay on a 15-minute grid and avoid 23:59, which reads like a
+// recommended end of day.
+func invalidTime(tok document.Token) diag.Diagnostic {
+	if tok.Value == midnightAs24 {
+		return diag.Errorf(tok.Pos, diag.CodeInvalidTime,
+			"24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at "+
+				"00:00, e.g. `21:45` to `00:00`")
+	}
+
+	return diag.Errorf(tok.Pos, diag.CodeInvalidTime,
+		"time %q: write H:MM or HH:MM with hours 0-23 and two-digit minutes, e.g. `6:15` or `21:45`", tok.Value)
 }
 
 // dayAt returns the weekday at toks[i], or an error diagnostic.
