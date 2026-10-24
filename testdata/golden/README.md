@@ -52,6 +52,7 @@ A diagnostic points at the first character of the offending token:
   "hint": "Office hours only",
   "base": "Minimum",
   "annotations": {"x-custom-owner": "team-xyz"},
+  "digests": {"request": "sha256:6f52…", "effective": "sha256:10ab…"},
   "week": {
     "MON": [{"start": "00:00", "end": "06:00", "tier": "Minimum"}, …],
     "TUE": […], "WED": […], "THU": […], "FRI": […], "SAT": […], "SUN": […]
@@ -86,8 +87,14 @@ A diagnostic points at the first character of the offending token:
       1 = SUN, so names avoid off-by-one mistakes. This is not Quartz, which has a leading seconds field.
     - Both list days Sunday-first and never wrap around the week (`FRI`–`MON` becomes `0-1,5-6` /
       `SUN-MON,FRI-SAT`). All seven days become `*`.
-- Not yet included: the request and effective digests. The effective digest is meant to cover `week` only, so a
-  change in cron rendering never changes it.
+- `base` is always present, also when `transitions` is `[]`. It is the resolved base tier (document BASE, then
+  `--base`, then config tier 0).
+- `digests`, both written `sha256:<64 lowercase hex>`:
+  - `request`: SHA-256 of the exact bytes of `input.md`. Any edit, prose included, changes it.
+  - `effective`: SHA-256 of `{"base": …, "week": …}` as compact JSON (no whitespace, keys in the order shown here).
+    It changes only when what a consumer acts on changes, never for name, hint, annotations or cron rendering.
+- The whole output is described by `schema/output.schema.json`. The tool validates its own output against it, and a
+  test validates every `want.json` here against it.
 
 ## Built-in config assumed
 

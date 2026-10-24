@@ -3,6 +3,10 @@
   "name": "Schedule-Name",
   "base": "Medium",
   "annotations": {},
+  "digests": {
+    "request": "sha256:572107beb50f0364047fda737d9b25753e1b4b73fde2ff8ea44a097ace279113",
+    "effective": "sha256:195d31df60f8aba97e70e4eae2c6b57e04637dd4dc9d60a6fa2c582a1860704c"
+  },
   "week": {
     "MON": [
       {

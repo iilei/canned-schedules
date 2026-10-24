@@ -12,6 +12,9 @@ import (
 // ConfigSchemaURL is the $id of the config schema.
 const ConfigSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json"
 
+// OutputSchemaURL is the $id of the canonical output schema.
+const OutputSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/output.schema.json"
+
 // MetaSchemaURL is the $id of the document META schema.
 const MetaSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/meta.schema.json"
 
@@ -30,6 +33,11 @@ var (
 	//
 	//go:embed meta.schema.json
 	MetaSchema []byte
+
+	// OutputSchema describes the canonical output; the tool validates its own output against it.
+	//
+	//go:embed output.schema.json
+	OutputSchema []byte
 )
 
 // Compile compiles the embedded schema raw under its $id url. Nothing is fetched over the network.

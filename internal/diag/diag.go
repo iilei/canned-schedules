@@ -36,6 +36,7 @@ const (
 	CodeMissingKind           = "missing-kind"
 	CodeMissingName           = "missing-name"
 	CodeMissingTitle          = "missing-title"
+	CodeOutputSchema          = "output-schema"
 	CodeStyleReuse            = "style-reuse"
 	CodeUnexpectedContent     = "unexpected-content"
 	CodeUnknownKind           = "unknown-kind"

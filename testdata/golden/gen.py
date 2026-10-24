@@ -14,6 +14,7 @@ Rules:
 - The script deletes and rewrites valid/, warn/ and error/, so cases that only exist on disk are removed.
 """
 
+import hashlib
 import json
 import os
 import shutil
@@ -121,10 +122,15 @@ def output(base, ranges, annotations=None, name="Schedule-Name", hint=None):
     if hint is not None:
         out["hint"] = hint
     week = paint_minutes(base, ranges)
+    week_runs = paint(base, ranges)
+    # The effective digest covers what a consumer acts on: the base tier and the painted week.
+    effective = json.dumps({"base": base, "week": week_runs}, separators=(",", ":"), ensure_ascii=False).encode()
     out.update({
         "base": base,
         "annotations": annotations or {},
-        "week": paint(base, ranges),
+        # The request digest needs the input bytes; write() fills it in.
+        "digests": {"request": None, "effective": "sha256:" + hashlib.sha256(effective).hexdigest()},
+        "week": week_runs,
         "transitions": transitions(week),
     })
     return out
@@ -148,6 +154,7 @@ def write(name, md, args=(), want=None, diag=()):
         with open(os.path.join(d, "args"), "w") as f:
             f.write("\n".join(args) + "\n")
     if want is not None:
+        want["digests"]["request"] = "sha256:" + hashlib.sha256(md.encode()).hexdigest()
         with open(os.path.join(d, "want.json"), "w") as f:
             f.write(json.dumps(want, indent=2, ensure_ascii=False) + "\n")
     if diag:
