@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/meta.schema.json",
+  "title": "canned-schedules document META",
+  "type": "object",
+  "required": ["schema-version"],
+  "maxProperties": 41,
+  "properties": {
+    "schema-version": { "const": "1" }
+  },
+  "patternProperties": {
+    "^x-custom-[a-z0-9](?:-?[a-z0-9]){0,39}$": { "type": "string", "maxLength": 48 }
+  },
+  "additionalProperties": false
+}

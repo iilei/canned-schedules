@@ -1,0 +1,251 @@
+# Agent steering — canned-schedules (work in progress)
+
+This repo is mid-migration. Many files are leftovers from earlier designs. Read this before changing anything.
+
+**All existing CUE, jq, Markdown/AST and shell code, up to and including commit `3ec7494`, is work-in-progress churn**
+(decided 2026-10-24). It sets no contract, needs no backward compatibility and is not a reference oracle. The
+decisions and the syntax below are the spec. Old code is at most a source of ideas or test cases.
+Update the "Decisions" and "Open" sections when an item is resolved or a new one appears.
+
+## Goal
+
+Contributors propose weekly capacity schedules through a GitHub/GitLab **issue template** written in simple Markdown.
+The Markdown is parsed, validated and rendered as a preview (ASCII/SVG). The core model has to work with any cloud
+provider. The first target is AWS ASG scheduled actions. **Readability for humans comes first**: the input contract
+should read like prose, with backticks marking only the values a machine has to read precisely.
+
+## How the design evolved (newest last)
+
+1. **CUE catalog (churn).** `schedule-schema.cue`, `schedule-core.cue` and `schedules.cue` hold schedules as 48-char
+   slot strings per weekday plus tiers, legend and theme. `render.sh`, `proposal.sh` and `*.tpl` render tables and
+   SVGs from it. Tasks: `check`, `vet-proposal`, `preview-proposal`, `render-*`.
+2. **Range-based Markdown (`7d9edcb`, churn).** One `## Tier` heading per tier, then `**MON-FRI**`, then a list of
+   ranges. Leftovers: `TODO.md`, `commonmark/extract_times.jq`, `commonmark/tests/task-list.md*`,
+   `commonmark/ast.jsonschema.json`, tasks `markdown-extract-times` and `validate-schema`.
+3. **Admonition transitions (`3ec7494`, churn).** Spec `plan.md`, sample `commonmark/lenient-expressions.md`,
+   pipeline `mise run md:extract` (markdown-tool → jq filters + `schedule.pattern` → yq frontmatter).
+4. **Target design (2026-10-24, not implemented yet):** a single Go binary, the namespaced `[!SCHEDULE:*]` syntax with
+   ranges, a painting evaluator, and a JSON config validated by JSON Schema. Everything below.
+
+## Decisions — architecture
+
+- **One Go binary (decided).** No CUE (dropped 2026-10-24), no jq, yq, gomplate, `markdown-tool` or sh glue at
+  runtime. `rumdl` and `mise` stay as development tools.
+  - **Parsing with goldmark:** byte offsets from goldmark segments make `file:line:col` errors possible. Block nodes:
+    `Lines()` segments. Code spans: the segments of their text children. Inline nodes other than text take their
+    position from their first text child. Count columns in runes.
+  - **Validation with JSON Schema everywhere:** the config, document META, and the tool's own generated output (as a
+    safety net). Pick a maintained Go JSON Schema library (for example `santhosh-tekuri/jsonschema`; check the current
+    version and draft support first).
+  - **Rendering with `text/template`.** The old templates use only `add`, `sub`, `strings.Repeat`, `tmpl.Exec` and
+    `test.Fail`, so they port with a small FuncMap if any are reused.
+  - **Same code builds as a CLI and as WASM.** Dropping CUE keeps the WASM file small.
+  - **Build stage by stage** (parse → normalise → evaluate → validate → render), with golden fixtures written from this
+    spec. Remove the old mise tasks when the Go tool replaces them.
+  - YAML isn't needed any more. If it comes back: `go.yaml.in/yaml/v3` parses YAML only, not frontmatter, so split it
+    off yourself and use `yaml.Node` for line numbers.
+- **Raw input vs distilled output (proposed).** Keep the raw input as provenance, never embedded in the output.
+  - Layout: `schedules/<name>/source.md` next to a generated `schedule.json`.
+  - `schedule.json` carries `source: {path, sha256}` (the request identity) plus its own digest over the canonical
+    content (the effective identity). Prose-only edits change only the request digest.
+  - Consumers read only `schedule.json`.
+- **Linting (proposed).** rumdl has no custom rules, and a markdownlint-cli2 JS rule would be a second parser.
+  - Use rumdl for generic style only. Add a per-file ignore for MD028 on schedule files, because adjacent alerts
+    trigger it.
+  - Add a `lint-schedule` mise task that wraps the Go validator and prints rumdl's concise format,
+    `file:line:col CODE message`.
+
+## Input syntax
+
+No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespace (configurable).
+
+```markdown
+# Schedule-Name
+
+> [!SCHEDULE:META]
+> - schema-version: `1`
+> - x-custom-owner: `team-xyz`
+
+> [!SCHEDULE:BASE] Minimum
+
+> [!SCHEDULE:TIER] Regular
+> - `06:00` to `22:00` MON-FRI
+> - `10:00` to `00:00` SAT,SUN
+
+> [!SCHEDULE:TIER] Maximum
+> - `22:00` to `02:00` FRI
+```
+
+### Structure (decided)
+
+- **Namespace:** an alert type containing `:` is a schedule directive. Other alerts (NOTE, TIP, …) are prose for humans
+  and are ignored. An unknown kind in our namespace is a hard error, so a typo like `SCHEDUEL:TIER` gets a "did you
+  mean" hint rather than being ignored.
+- **Title on the marker line** carries the name (`TIER`, `BASE`). That isn't GFM alert syntax, but it's harmless: GitHub
+  and GitLab show custom alerts as literal text anyway, and our goldmark extension defines the grammar.
+- **META** is a list of `key: `value`` items, in one form only. A list renders the same everywhere, while `>` lines
+  without a list form one paragraph, and whether they break depends on the renderer.
+  - Allowed keys: `schema-version` (mandatory) and `x-custom-*` (free-form). Nothing else for now.
+  - `x-custom-*` keys are allowed **only in META**. Their values are uninterpreted strings, passed through to the output
+    (for example under `annotations`). They must never affect the domain model.
+- **TIER items as ranges:** in each item, the times are code spans, `to` is a literal keyword that is part of the
+  contract, and the weekday expression is plain text. In goldmark, an item is `Code, Text(" to "), Code, Text(days)`.
+  Only `to` is accepted (no `-`, `–` or `until`).
+
+### Time and weekday rules (decided)
+
+- **Ranges are half-open**, `[start, end)`: `00:00` to `06:00` means `[00:00, 06:00)`.
+- **Crossing midnight:** the weekday names the start day. The part after midnight spills into the next day even if
+  that day isn't listed (`22:00` to `02:00` FRI covers FRI 22:00 to SAT 02:00).
+- **`24:00` is rejected.** It is the same time as `00:00`. Valid times are `00:00`–`23:59`.
+- **Start == end means a full 24 h** that spills into the next day: `` `08:00` to `08:00` MON `` covers MON 08:00 to
+  TUE 08:00.
+- **Weekdays:** English three-letter names in uppercase only: `MON TUE WED THU FRI SAT SUN`. No aliases, no lowercase
+  or mixed case, no trailing dots, no other variants.
+  - Ranges (`MON-FRI`) and comma lists (`SAT,SUN`) are allowed. Wrap-around ranges are allowed (`FRI-MON` = FRI, SAT,
+    SUN, MON).
+  - Whitespace from the first weekday name to the end of the line is ignored (`SAT, SUN` and `MON - FRI` are fine).
+- **Cron forms are not accepted** as input.
+- **Precision flag** (name not decided, for example `--granularity <minutes>`): default `1`. It must divide 60 evenly
+  (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60). Every time must be a multiple of it, otherwise it's an error. There is no
+  rounding.
+
+### Evaluation (decided)
+
+- **Painting in minutes:** start with every minute of the week set to BASE, then paint each range in source order,
+  with later ranges winning where they overlap. Every minute gets exactly one tier. The transitions for ASG scheduled
+  actions are derived from the painted week as an output, not written by the user.
+- **BASE via CLI flags:**
+  - `--require-base true`: the document must contain `[!SCHEDULE:BASE]`. `--base` must not be given (error).
+  - `--require-base false` (**the default**): the base comes from the first of these that exists: the document's
+    BASE, then `--base <tier>` (must name a valid tier), then the first tier (index 0) in the config.
+- **Output resolution:** grid-shaped outputs (ASCII, SVG) use a cell size equal to the GCD of all range start/end
+  times (minutes since midnight) **and 60**. Cells then divide the hour evenly, so hour ticks, rulers, time scales and
+  tooltips line up. A canonical output listing `{start, end, tier}` runs is compact at any resolution.
+
+### Tier names (decided)
+
+- Pattern `^[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$`, 1–32 chars, ASCII, hyphen as the only separator. Names work
+  directly as MyST/CSS classes.
+- Case-insensitive. Canonical key = upper-cased name. Reject configs whose tier ids collide after upper-casing. Display
+  name = `display-name` from the config.
+- Rejected: base64-encoding names (`markdown-tool` upper-cased them, which corrupts base64, and the result is
+  unreadable).
+
+## Config (decided)
+
+Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.schema.json`, `schema/config.json`
+(defaults taken from the old CUE values), `schema/meta.schema.json`. JSON Schema draft 2020-12.
+
+- **A repo-level JSON file with a JSON Schema next to it**, both embedded in the binary with `go:embed`. The built-in
+  config is validated by **tests**, not at runtime.
+- **No custom schema.** The schema is fixed. Extension happens only through `x-custom-*` keys in document META.
+- **Shape:** domain and representation are kept separate.
+
+  ```text
+  schema-version            const "1"
+  parser.namespace          default "SCHEDULE"
+  tiers[]                   {id, display-name}: ordered, index 0 = default base
+  representation.theme      {light, dark} × {background, label}: page-level colours
+  representation.styles.tiers[]
+                            {symbol, color: {light, dark}}: round robin, no tier id
+  ```
+
+  - Styles carry **no tier id**, so round robin works: tier *i* gets `styles.tiers[i mod len]`. Users steer the
+    mapping by ordering both lists.
+  - Colours: `#RRGGBB` or `#RRGGBBAA` (`"color": {"light": "#54C6A5D9", "dark": "#9D82EAD9"}`, as in the old
+    `temp.json`).
+  - `symbol` is one character, used for ASCII grids and the legend.
+  - Every object has `additionalProperties: false`. `x-custom-*` is not allowed in the config.
+- **Checks JSON Schema can't express** (done in Go, covered by tests):
+  - tier ids unique after upper-casing;
+  - symbols unique across styles;
+  - **WARN** if `len(styles) < len(tiers)`: round robin then repeats symbols and colours, so the ASCII grid and legend
+    become ambiguous.
+- **Namespace pattern:** `^[A-Z](?:-?[A-Z0-9])*$`, max 100 chars. It starts with a letter, ends with a letter or
+  digit, and allows single hyphens between characters. It's written in RE2-compatible form (no lookahead), so Go
+  regexp-based validators accept it. Stored uppercase in the config. Documents are read case-insensitively and coerced
+  to uppercase.
+  - With a custom namespace, the CLI writes a **WARN** to stderr. It also warns about ambiguous definitions, such as
+    directives in another namespace that are therefore ignored.
+- **Tier id pattern:** `^[A-Za-z](?:-?[A-Za-z0-9])*$`, max 32 chars. It's the same rule as before, written in the same
+  style as the namespace pattern.
+- **Document META** (`schema/meta.schema.json`):
+  - `schema-version` is mandatory. It is the **string** `"1"`, because every META value comes from a code span.
+  - Otherwise only `x-custom-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
+  - At most 40 custom keys (`maxProperties: 41`). Each value is a string of at most 48 chars, so 40 × 48 = 1920 chars,
+    which stays under the 2 KB budget for ASCII. JSON Schema counts code points, not bytes, so non-ASCII values can
+    exceed 2 KB slightly. That was accepted in exchange for checking everything in the schema.
+- **Overrides via repeatable flag pairs** `--set-config-at <path>` / `--set-config-value <json>`. File paths are not
+  accepted. Users who want a file can pass `"$(cat file.json)"`.
+
+  ```sh
+  --set-config-at 'representation.styles.tiers[0]' \
+  --set-config-value '{"symbol": "░", "color": {"light": "#A7DCC840", "dark": "#B9A5FF40"}}'
+  ```
+
+  - The pairs are matched by position: the n-th `-at` goes with the n-th `-value`. Unequal counts are an error.
+  - The path syntax is dot-separated keys plus `[index]`.
+  - The full config is validated against the embedded schema **after** all overrides are applied, when the tool is
+    invoked.
+- The `_` protected-key convention is **dropped**.
+- **Override semantics:** replace the value at the path, never deep-merge. Pairs are applied in order. An index must
+  already exist, and an unknown key in the path is an error, so a typo can't create a key. To add or remove tiers,
+  replace the whole list (`--set-config-at tiers`).
+- **Out of scope:** capacity numbers and any other provider-specific settings (for example ASG `min`/`desired`/`max`).
+  **Tier ids are the integration edge:** downstream tooling attaches provider config to tier ids. Never add such fields
+  to the config or the output.
+- **`schema-version` is a string** (`"1"`) everywhere: config, META and output.
+- **Schema `$id`s** point to the raw files on GitHub, for example
+  `https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json`. `config.json` references
+  it through `$schema`. These are placeholders, possibly moving to GitHub Pages later. A branch URL can change under
+  you, so consider tag-pinned URLs once there are releases.
+
+## Open ends in the current code
+
+The old code is churn, so don't fix it. The bugs below are useful as negative test cases for the Go implementation.
+The rest is cleanup for when the Go tool replaces the old code.
+
+- [ ] **The issue template is stale.** `.github/ISSUE_TEMPLATE/canned_schedule_request.md` uses the format from step 2.
+      Rewrite it in the new syntax.
+- [ ] **Bugs found by probing `md:extract` (2026-10-24), to use as negative tests:**
+      - Alert names handled in two ways by `markdown-tool` (upper-cased native alert vs LinkReference, depending on a
+      hyphen).
+      - Prose before the code span silently dropped (`> switch at `08:00 MON`` accepted).
+      - A standard alert with a code span treated as a tier (`[!NOTE]` → tier `Note`).
+      - Unknown BASE values and tier names accepted.
+      - Bold markers and alerts nested in lists dropped silently.
+      - Frontmatter parsed as a ThematicBreak plus a Setext heading.
+- [ ] **The README** documents the old pipeline. Its example is also broken (the frontmatter is mis-indented, and the
+      output shows `"tiers": null`).
+- [ ] **`PLAN.md` vs `plan.md`** collide on case-insensitive filesystems. `PLAN.md` (ordered rules) is close to the
+      painting model. `plan.md` is the transition spec. Merge them or remove one (ask the user first).
+- [ ] **Scratch files are tracked:** `temp.json`, `test.cue`, `test.cue.json`, `original.yaml`, `preview.md`. Ask
+      before deleting them.
+- [ ] **Obsolete leftovers** from steps 1–3, including `jsonschema = "latest"` (unpinned) in `mise.toml`.
+- [ ] **Still open from plan.md §14:** time zone, CI feedback (milestone 6).
+
+## Future ideas (not scheduled — don't build unasked)
+
+- **GitHub Pages single-page WASM editor** for live editing, preview and validation, giving tighter guidance than the
+  issue template. It would output Markdown ready to paste into an issue. The Go/WASM build serves it. CLI, CI and the
+  browser must reach identical verdicts, so use shared golden tests.
+- **Sphinx docs with custom tier admonitions plus build artifacts.** Schedules render as styled admonitions, and the
+  same build emits the canned schedules as artifacts.
+  - MyST's GFM `alert` extension handles only NOTE, TIP, IMPORTANT, WARNING and CAUTION. Custom kinds need
+    `:::{admonition} …` with `:class:`.
+  - Generate the MyST from the canonical JSON with a template, rather than having Sphinx parse the issue Markdown.
+    That keeps one parser.
+  - Styles come from the config (`representation.styles…`), not duplicated in CSS.
+  - Wrap weekday names in MyST's `{abbr}` role (``{abbr}`MON (Monday)` ``).
+  - Show the equivalent cron expression as a tooltip.
+  - Open: where the docs live, in this repo or in a consumer repo.
+
+## Working conventions
+
+- Tools are pinned through `mise` (currently cue, jq, yq, gomplate, markdown-tool, rumdl; Go to be added). Run
+  everything with `mise run …`.
+- Run `mise run fmt` and `mise run lint-markdown` after editing Markdown.
+- Generated files (`**/*.ast.json`, `output/**`, `*.generated-*`) are gitignored. Never commit them.
+- Commits follow conventional style (`feat:`, `feat!:` for breaking changes, `docs:`).
+- An earlier AI-assisted authoring skill was removed on purpose (`8f556d4`). Don't reintroduce it unasked.
