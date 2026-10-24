@@ -38,7 +38,6 @@ func TestParseValid(t *testing.T) {
 			item("09:00", " to ", "17:00", " SAT-TUE"),
 			Range{Start: 540, End: 1020, Days: []int{5, 6, 0, 1}},
 		},
-		{"same day range", item("09:00", " to ", "17:00", " WED-WED"), Range{Start: 540, End: 1020, Days: []int{2}}},
 		{
 			"list and range",
 			item("09:00", " to ", "17:00", " MON-TUE,FRI"),
@@ -49,7 +48,6 @@ func TestParseValid(t *testing.T) {
 			item("09:00", "\tto  ", "17:00", "  MON - TUE ,  FRI  "),
 			Range{Start: 540, End: 1020, Days: []int{0, 1, 4}},
 		},
-		{"repeated days", item("09:00", " to ", "17:00", " MON,MON"), Range{Start: 540, End: 1020, Days: []int{0, 0}}},
 	}
 
 	for _, tt := range tests {
@@ -91,6 +89,9 @@ func TestParseErrors(t *testing.T) {
 		{"chained range", item("06:00", " to ", "22:00", " MON-TUE-WED"), 1, "error 1:48 invalid-weekday"},
 		{"missing comma", item("06:00", " to ", "22:00", " MON TUE"), 1, "error 1:45 invalid-weekday"},
 		{"bad second day", item("06:00", " to ", "22:00", " MON-fri"), 1, "error 1:45 invalid-weekday"},
+		{"one-day range", item("06:00", " to ", "22:00", " WED-WED"), 1, "error 1:45 duplicate-weekday"},
+		{"day listed twice", item("06:00", " to ", "22:00", " MON,TUE,MON"), 1, "error 1:49 duplicate-weekday"},
+		{"range end listed again", item("06:00", " to ", "22:00", " MON-WED,WED"), 1, "error 1:49 duplicate-weekday"},
 	}
 
 	for _, tt := range tests {
@@ -117,5 +118,30 @@ func TestInvalidTimeMessages(t *testing.T) {
 	_, diags = Parse(item("noon", " to ", "14:00", " SAT"), 1)
 	if len(diags) != 1 || strings.Contains(diags[0].Message, "23:59") {
 		t.Errorf("examples must not suggest 23:59, got %+v", diags)
+	}
+}
+
+func TestRepeatedWeekdayWarns(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		days string
+		want string
+		span []int
+	}{
+		{days: " MON-WED,TUE", want: "warn 1:49 repeated-weekday", span: []int{0, 1, 2, 1}},
+		{days: " FRI-MON,SUN", want: "warn 1:49 repeated-weekday", span: []int{4, 5, 6, 0, 6}},
+		{days: " MON-THU,TUE,WED", want: "warn 1:49 repeated-weekday", span: []int{0, 1, 2, 3, 1, 2}},
+	}
+
+	for _, tt := range tests {
+		r, diags := Parse(item("09:00", " to ", "17:00", tt.days), 1)
+		if len(diags) != 1 || diags[0].Golden() != tt.want {
+			t.Errorf("%s: got %+v, want one %q", tt.days, diags, tt.want)
+		}
+
+		if !reflect.DeepEqual(r.Days, tt.span) {
+			t.Errorf("%s: a warning must keep the range: days = %v, want %v", tt.days, r.Days, tt.span)
+		}
 	}
 }

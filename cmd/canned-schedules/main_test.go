@@ -196,9 +196,18 @@ func TestJSONIsNotHTMLEscaped(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 
+	run([]string{"../../testdata/golden/warn/repeated-weekday-overlap/input.md"}, &stdout, &stderr)
+
+	if !strings.Contains(stdout.String(), `"text": "> - `) || strings.Contains(stdout.String(), `\u003e`) {
+		t.Errorf("excerpts must keep their \">\":\n%s", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+
 	run([]string{"--error-output-format", "json", "../../testdata/golden/error/time-24-00/input.md"}, &stdout, &stderr)
 
-	if !strings.Contains(stderr.String(), `"text": "> - `) || strings.Contains(stderr.String(), `\u003e`) {
-		t.Errorf("the JSON report must keep the \">\" of excerpts:\n%s", stderr.String())
+	if strings.Contains(stderr.String(), `\u003e`) {
+		t.Errorf("the JSON report must not HTML-escape:\n%s", stderr.String())
 	}
 }

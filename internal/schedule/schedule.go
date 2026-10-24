@@ -166,7 +166,7 @@ func resolveTiers(doc *document.Document, cfg *config.Config, sampleInterval int
 			r, rangeDiags := expr.Parse(item, sampleInterval)
 			diags = append(diags, rangeDiags...)
 
-			if ok && len(rangeDiags) == 0 {
+			if ok && !rangeDiags.HasErrors() {
 				ranges = append(ranges, tierRange{tier: t, Range: r})
 			}
 		}

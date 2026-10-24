@@ -1,0 +1,143 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Off",
+  "annotations": {},
+  "digests": {
+    "request": "sha256:16b0f234afcea597bbf1fbd8f8861619f6ae4b96942c8edbec5700290f78d807",
+    "effective": "sha256:84a3b8d738d86f8e56b3d95e6b6507a2a9f6f98a2b1f751444e013a833fcea96"
+  },
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "09:00",
+      "days": [
+        "MON",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 9 * * 0-1,5-6",
+        "aws": "0 9 ? * SUN-MON,FRI-SAT *"
+      }
+    },
+    {
+      "time": "17:00",
+      "days": [
+        "MON",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 17 * * 0-1,5-6",
+        "aws": "0 17 ? * SUN-MON,FRI-SAT *"
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "repeated-weekday",
+      "line": 9,
+      "column": 32,
+      "message": "…",
+      "excerpt": {
+        "text": "> - `09:00` to `17:00` FRI-MON,SUN",
+        "marker": "                               ^"
+      }
+    }
+  ]
+}

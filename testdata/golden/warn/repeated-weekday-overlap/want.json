@@ -1,0 +1,131 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Off",
+  "annotations": {},
+  "digests": {
+    "request": "sha256:1e0855f8182aa6dd914e46d7a31295ed0696b9280917dfb74ae5c0ba2f76bdb4",
+    "effective": "sha256:f680c640ff1f2545ae41f39016e6ef3126d1e32c578653bd3570670b3c8d206e"
+  },
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "09:00",
+        "tier": "Off"
+      },
+      {
+        "start": "09:00",
+        "end": "17:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "17:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Off"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "09:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 9 * * 1-3",
+        "aws": "0 9 ? * MON-WED *"
+      }
+    },
+    {
+      "time": "17:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 17 * * 1-3",
+        "aws": "0 17 ? * MON-WED *"
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "repeated-weekday",
+      "line": 9,
+      "column": 32,
+      "message": "…",
+      "excerpt": {
+        "text": "> - `09:00` to `17:00` MON-WED,TUE",
+        "marker": "                               ^"
+      }
+    }
+  ]
+}

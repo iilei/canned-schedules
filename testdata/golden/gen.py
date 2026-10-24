@@ -132,8 +132,10 @@ def output(base, ranges, annotations=None, name="Schedule-Name", hint=None, warn
         "digests": {"request": None, "effective": "sha256:" + hashlib.sha256(effective).hexdigest()},
         "week": week_runs,
         "transitions": transitions(week),
-        # Message text is not pinned: the golden runner replaces it with "…" before comparing.
-        "warnings": [{"code": code, "message": "…"} for code in warnings],
+        # Message text is not pinned: the golden runner replaces it with "…" before comparing. Positioned warnings
+        # are given as (code, marker[, nth]) and get line, column and excerpt in write(), which knows the input.
+        "warnings": [{"code": w, "message": "…"} if isinstance(w, str) else {"code": w[0], "at": w[1:]}
+                     for w in warnings],
     })
     return out
 
@@ -179,6 +181,13 @@ def write(name, md, args=(), want=None, diag=(), preview=None):
             f.write("\n".join(args) + "\n")
     if want is not None:
         want["digests"]["request"] = "sha256:" + hashlib.sha256(md.encode()).hexdigest()
+        for i, w in enumerate(want["warnings"]):
+            if "at" in w:
+                line, col = (int(x) for x in pos(md, *w["at"]).split(":"))
+                text = md.split("\n")[line - 1]
+                marker = "".join("\t" if ch == "\t" else " " for ch in text[:col - 1]) + "^"
+                want["warnings"][i] = {"code": w["code"], "line": line, "column": col, "message": "…",
+                                       "excerpt": {"text": text, "marker": marker}}
         with open(os.path.join(d, "want.json"), "w") as f:
             f.write(json.dumps(want, indent=2, ensure_ascii=False) + "\n")
     if preview is not None:
@@ -549,6 +558,24 @@ write(
     diag=[("warn", "-", "style-reuse")],
 )
 
+md = doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:TIER] Medium\n> - `09:00` to `17:00` MON-WED,TUE\n")
+write(
+    "warn/repeated-weekday-overlap",
+    md,
+    want=output("Off", [("09:00", "17:00", ["MON", "TUE", "WED"], "Medium")],
+                warnings=[("repeated-weekday", "TUE\n")]),
+    diag=[("warn", pos(md, "TUE\n"), "repeated-weekday")],
+)
+
+md = doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:TIER] Medium\n> - `09:00` to `17:00` FRI-MON,SUN\n")
+write(
+    "warn/repeated-weekday-wraparound",
+    md,
+    want=output("Off", [("09:00", "17:00", ["FRI", "SAT", "SUN", "MON"], "Medium")],
+                warnings=[("repeated-weekday", "SUN\n")]),
+    diag=[("warn", pos(md, "SUN\n"), "repeated-weekday")],
+)
+
 # ---------------------------------------------------------------- errors (no output)
 
 def err(name, blocks, marker, code, args=(), nth=1):
@@ -724,3 +751,5 @@ err(
     "config-schema",
     args=["--set-config-at", "representation.ascii.symbols", "--set-config-value", '"blocks"'],
 )
+err("error/duplicate-weekday-list", [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON,MON\n"], "MON", "duplicate-weekday", nth=2)
+err("error/duplicate-weekday-one-day-range", [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` WED-WED\n"], "WED", "duplicate-weekday", nth=2)
