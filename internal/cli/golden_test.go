@@ -210,3 +210,28 @@ func parseAndRun(args []string, src []byte) (*schedule.Output, diag.List) {
 
 	return out, append(diags, runDiags...)
 }
+
+// TestMessagesHoldNoExamples keeps examples out of message prose: they belong in Diagnostic.Example, so every output
+// (txt, JSON, Markdown, the page) can show them as code.
+func TestMessagesHoldNoExamples(t *testing.T) {
+	t.Parallel()
+
+	inputs, err := filepath.Glob(filepath.Join(goldenDir, "*", "*", "input.md"))
+	if err != nil || len(inputs) == 0 {
+		t.Fatalf("no fixtures: %v", err)
+	}
+
+	for _, in := range inputs {
+		dir := filepath.Dir(in)
+		_, diags := parseAndRun(splitLines(readOptional(t, filepath.Join(dir, "args"))), []byte(readFile(t, in)))
+
+		for _, d := range diags {
+			for _, bad := range []string{"e.g.", " like ", "for example", "`"} {
+				if strings.Contains(d.Message, bad) {
+					t.Errorf("%s: %s message contains %q; move the example to Diagnostic.Example: %q", dir, d.Code,
+						bad, d.Message)
+				}
+			}
+		}
+	}
+}

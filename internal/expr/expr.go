@@ -248,7 +248,8 @@ func dayAt(toks []dayToken, i int, src document.Token) (int, *diag.Diagnostic) {
 
 func badDay(t dayToken) diag.Diagnostic {
 	return diag.Errorf(t.pos, diag.CodeInvalidWeekday,
-		"%q: use MON TUE WED THU FRI SAT SUN (uppercase), ranges like MON-FRI and lists like SAT,SUN", t.text)
+		"%q is not a weekday: use the uppercase names MON TUE WED THU FRI SAT SUN, in ranges and comma lists",
+		t.text).WithExample("MON-FRI,SAT")
 }
 
 // expand returns the days from..to inclusive, wrapping around the week (FRI-MON = FRI SAT SUN MON).

@@ -65,6 +65,7 @@ func (p *parser) kind(typ, ns, kindName string, hasColon bool, pos diag.Pos) (Ki
 	case !isNamespace(ns):
 		p.errorf(pos, diag.CodeUnknownNamespace, "unknown namespace %q in [!%s]; use one of %s",
 			ns, typ, strings.Join(Namespaces, ", "))
+		p.example("> [!SCHEDULE:TIER] Medium")
 	case !hasColon || kindName == "":
 		p.errorf(pos, diag.CodeMissingKind, "[!%s] needs a kind: META, BASE or TIER", typ)
 		p.example("> [!SCHEDULE:TIER] Medium")
@@ -74,6 +75,7 @@ func (p *parser) kind(typ, ns, kindName string, hasColon bool, pos diag.Pos) (Ki
 		}
 
 		p.errorf(pos, diag.CodeUnknownKind, "unknown kind %q in [!%s]; use META, BASE or TIER", kindName, typ)
+		p.example("> [!SCHEDULE:TIER] Medium")
 	}
 
 	return "", false

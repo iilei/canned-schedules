@@ -30,7 +30,8 @@ const kib = 1 << 10
 // maxInputBytes caps the input. GitHub issue bodies are limited to 65,536 characters, so this is generous.
 const maxInputBytes = 256 * kib
 
-const usage = "usage: canned-schedules [flags] <file>"
+// usageExample is the example attached to command-line usage errors.
+const usageExample = "canned-schedules [flags] request.md"
 
 // Set by goreleaser via -ldflags.
 var (
@@ -224,14 +225,15 @@ func inputFile(positional []string) (string, *diag.Diagnostic) {
 	case len(positional) == 1:
 		return positional[0], nil
 	case len(positional) == 0:
-		d = diag.Errorf(diag.Pos{}, diag.CodeInvalidArgs, "missing input file; %s", usage)
+		d = diag.Errorf(diag.Pos{}, diag.CodeInvalidArgs, "missing input file")
 	case strings.HasPrefix(positional[1], "-"):
-		d = diag.Errorf(diag.Pos{}, diag.CodeInvalidArgs, "flags must come before the file, got %q after %q; %s",
-			positional[1], positional[0], usage)
+		d = diag.Errorf(diag.Pos{}, diag.CodeInvalidArgs, "flags must come before the file, got %q after %q",
+			positional[1], positional[0])
 	default:
-		d = diag.Errorf(diag.Pos{}, diag.CodeInvalidArgs, "expected one input file, got %d; %s", len(positional),
-			usage)
+		d = diag.Errorf(diag.Pos{}, diag.CodeInvalidArgs, "expected one input file, got %d", len(positional))
 	}
+
+	d.Example = usageExample
 
 	return "", &d
 }
