@@ -30,6 +30,7 @@
       "additionalProperties": false,
       "required": [
         "theme",
+        "ascii",
         "styles"
       ],
       "properties": {
@@ -47,6 +48,23 @@
             },
             "dark": {
               "$ref": "#/$defs/surface"
+            }
+          }
+        },
+        "ascii": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "symbols"
+          ],
+          "properties": {
+            "symbols": {
+              "description": "Symbols for the ASCII preview, by tier order: ascii = . : = # (pure ASCII, default), braille = ⠀ ⣀ ⣤ ⣶ ⣿ (Unicode, neutral width), styles = each style's own symbol.",
+              "enum": [
+                "ascii",
+                "braille",
+                "styles"
+              ]
             }
           }
         },
@@ -141,7 +159,7 @@
       ],
       "properties": {
         "symbol": {
-          "description": "One character for ASCII grids. Unique across styles (checked in Go).",
+          "description": "One character, used by the ASCII preview when representation.ascii.symbols is styles. Repeats only warn.",
           "type": "string",
           "minLength": 1,
           "maxLength": 1

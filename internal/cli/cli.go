@@ -41,9 +41,10 @@ type ReportOptions struct {
 // Parse parses args (without the program name). Unknown or malformed flags become invalid-flag errors.
 func Parse(args []string) (Options, diag.List) {
 	var (
-		opts   Options
-		at     []string
-		values []string
+		opts    Options
+		at      []string
+		values  []string
+		symbols string
 	)
 
 	fs := flag.NewFlagSet("canned-schedules", flag.ContinueOnError)
@@ -72,6 +73,8 @@ func Parse(args []string) (Options, diag.List) {
 		},
 	)
 	registerPreviewFlags(fs, &opts.Preview)
+	fs.StringVar(&symbols, "ascii-symbols", "", "symbol preset for the ASCII preview: ascii, braille or styles "+
+		"(shorthand for --set-config-at representation.ascii.symbols)")
 	fs.StringVar(&opts.Report.File, "error-output-file", "", "write the error report to this file instead of stderr")
 	fs.StringVar(&opts.Report.Format, "error-output-format", "", "error report format: txt (default) or json")
 	fs.StringVar(&opts.Report.Template, "error-report-template", "", "render the error report with a built-in "+
@@ -98,6 +101,8 @@ func Parse(args []string) (Options, diag.List) {
 			opts.Overrides = append(opts.Overrides, config.Override{Path: at[i], Value: values[i]})
 		}
 	}
+
+	diags = append(diags, asciiSymbols(&opts, symbols)...)
 
 	if g := opts.Schedule.SampleInterval; g < 1 || minutesPerHour%g != 0 {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,

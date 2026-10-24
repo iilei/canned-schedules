@@ -76,3 +76,28 @@ func TestLoadBuiltIn(t *testing.T) {
 		t.Errorf("styles must repeat round robin: got %+v, want %+v", got, want)
 	}
 }
+
+func TestSymbolPresets(t *testing.T) {
+	t.Parallel()
+
+	cfg, _ := Load(nil)
+	if got := cfg.Symbol(0) + cfg.Symbol(1) + cfg.Symbol(2) + cfg.Symbol(3) + cfg.Symbol(4); got != ".:=#." {
+		t.Errorf("default ascii preset = %q, want .:=#. (round robin)", got)
+	}
+
+	braille, _ := Load([]Override{{Path: "representation.ascii.symbols", Value: `"braille"`}})
+	if got := braille.Symbol(4) + braille.Symbol(5); got != "⣿⠀" {
+		t.Errorf("braille preset = %q", got)
+	}
+
+	dup := Override{Path: "representation.styles.tiers[1].symbol", Value: `"."`}
+
+	if _, diags := Load([]Override{dup}); len(diags) != 0 {
+		t.Errorf("repeated style symbols don't matter with a preset, got %+v", diags)
+	}
+
+	styles, diags := Load([]Override{dup, {Path: "representation.ascii.symbols", Value: `"styles"`}})
+	if len(diags) != 1 || diags[0].Code != "config-duplicate-symbol" || styles.Symbol(1) != "." {
+		t.Errorf("styles preset: diags = %+v", diags)
+	}
+}

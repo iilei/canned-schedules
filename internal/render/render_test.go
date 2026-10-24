@@ -170,7 +170,7 @@ func TestASCII(t *testing.T) {
 	}
 
 	lines := strings.Split(string(text), "\n")
-	if lines[0] != "Plan — Office" || !strings.HasPrefix(lines[2], "    00:00") {
+	if lines[0] != "Plan - Office" || !strings.HasPrefix(lines[2], "    00:00") {
 		t.Errorf("header = %q", lines[:3])
 	}
 
@@ -180,7 +180,7 @@ func TestASCII(t *testing.T) {
 		}
 	}
 
-	if want := "MON " + strings.Repeat("▒", 24) + strings.Repeat("▓", 64) + strings.Repeat("▒", 8); lines[4] != want {
+	if want := "MON " + strings.Repeat(":", 24) + strings.Repeat("=", 64) + strings.Repeat(":", 8); lines[4] != want {
 		t.Errorf("MON row = %q", lines[4])
 	}
 
@@ -188,12 +188,18 @@ func TestASCII(t *testing.T) {
 		t.Error("no colour codes without color")
 	}
 
+	for _, r := range string(text) {
+		if r > 127 {
+			t.Fatalf("the default preview must be pure ASCII, found %q", r)
+		}
+	}
+
 	colored, err := ASCII(out, cfg, 15, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !strings.Contains(string(colored), "\x1b[38;2;") || !strings.Contains(string(colored), ansiReset) {
+	if !strings.Contains(string(colored), "\x1b[48;2;") || !strings.Contains(string(colored), ansiReset) {
 		t.Error("colour codes missing with color")
 	}
 }

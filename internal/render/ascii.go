@@ -51,7 +51,7 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 	m := ASCIIModel{Title: diag.Sanitize(out.Name), Ruler: asciiRuler(p.Size)}
 
 	if out.Hint != "" {
-		m.Title += " — " + diag.Sanitize(out.Hint)
+		m.Title += " - " + diag.Sanitize(out.Hint)
 	}
 
 	for d, name := range days {
@@ -59,7 +59,7 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 
 		for _, sg := range p.segments(d) {
 			i, _ := tierInfo(cfg, sg.tier)
-			cells.WriteString(paint(i, strings.Repeat(cfg.Style(i).Symbol, (sg.to-sg.from)/p.Size)))
+			cells.WriteString(paint(i, strings.Repeat(cfg.Symbol(i), (sg.to-sg.from)/p.Size)))
 		}
 
 		m.Rows = append(m.Rows, ASCIIRow{Label: name, Cells: cells.String()})
@@ -67,7 +67,7 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 
 	entries := make([]string, 0, len(cfg.Tiers))
 	for i, t := range cfg.Tiers {
-		entry := paint(i, cfg.Style(i).Symbol) + " " + diag.Sanitize(t.DisplayName)
+		entry := paint(i, cfg.Symbol(i)) + " " + diag.Sanitize(t.DisplayName)
 		if strings.EqualFold(t.ID, out.Base) {
 			entry += " (base)"
 		}
@@ -78,14 +78,14 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 	m.Legend = strings.Repeat(" ", asciiLabelW) + strings.Join(entries, "   ")
 
 	if p.Mixed > 0 {
-		m.Note = strings.Repeat(" ", asciiLabelW) + approximateNote(p)
+		m.Note = strings.Repeat(" ", asciiLabelW) + "~ " + approximateText(p)
 	}
 
 	return m
 }
 
-// asciiRuler returns the label line (every six hours) and the tick line: ║ every six hours, | every hour, : every
-// half hour when a bucket is at most 30 minutes.
+// asciiRuler returns the label line (every six hours) and the tick line: + every six hours, | every hour, : every
+// half hour when a bucket is at most 30 minutes. Pure ASCII, so it is single-width in every terminal.
 func asciiRuler(size int) []string {
 	cols := minutesPerDay / size
 	labels := []rune(strings.Repeat(" ", cols))
@@ -94,7 +94,7 @@ func asciiRuler(size int) []string {
 	for c := range cols {
 		switch mins := c * size; {
 		case mins%(labelEvery*minutesPerHour) == 0:
-			ticks[c] = '║'
+			ticks[c] = '+'
 
 			if c+labelLen <= cols {
 				copy(labels[c:], []rune(fmt.Sprintf("%02d:00", mins/minutesPerHour)))
@@ -127,7 +127,9 @@ func painter(cfg *config.Config, color bool) func(int, string) string {
 
 		r, g, b := blend(fg, bg)
 
-		return fmt.Sprintf("\x1b[38;2;%d;%d;%dm%s%s", r, g, b, s, ansiReset)
+		// The cell background carries the tier colour; the symbol, drawn in the page background colour, stays as the
+		// fallback for readers without colour.
+		return fmt.Sprintf("\x1b[48;2;%d;%d;%dm\x1b[38;2;%d;%d;%dm%s%s", r, g, b, bg[0], bg[1], bg[2], s, ansiReset)
 	}
 }
 

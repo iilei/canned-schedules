@@ -13,6 +13,21 @@ import (
 	"github.com/iilei/canned-schedules/schema"
 )
 
+// Symbol presets (representation.ascii.symbols).
+const (
+	SymbolsASCII   = "ascii"
+	SymbolsBraille = "braille"
+	SymbolsStyles  = "styles"
+)
+
+// Symbol presets for representation.ascii.symbols. Both are single-width in every terminal: plain ASCII, and braille,
+// whose East Asian Width is neutral (block elements like ▒▓█ are "ambiguous" and turn double-width in CJK
+// terminals). The styles preset has no entry: it uses each style's own symbol.
+var symbolPresets = map[string][]string{
+	SymbolsASCII:   {".", ":", "=", "#"},
+	SymbolsBraille: {"⠀", "⣀", "⣤", "⣶", "⣿"},
+}
+
 // Override replaces the value at Path with the JSON document in Value.
 type Override struct {
 	Path  string
@@ -34,8 +49,15 @@ type Tier struct {
 
 // Representation holds everything visual.
 type Representation struct {
+	ASCII  ASCII  `json:"ascii"`
 	Theme  Theme  `json:"theme"`
 	Styles Styles `json:"styles"`
+}
+
+// ASCII configures the ASCII preview.
+type ASCII struct {
+	// Symbols picks the symbol preset: ascii (default), braille or styles.
+	Symbols string `json:"symbols"`
 }
 
 // Theme holds page-level colours.
@@ -110,6 +132,17 @@ func (c *Config) Tier(name string) (Tier, bool) {
 	return Tier{}, false
 }
 
+// Symbol returns the ASCII preview symbol for the tier at index i: from the preset in representation.ascii.symbols
+// by tier order (round robin), or the style's own symbol for the styles preset.
+func (c *Config) Symbol(i int) string {
+	preset := symbolPresets[c.Representation.ASCII.Symbols]
+	if preset == nil {
+		return c.Style(i).Symbol
+	}
+
+	return preset[i%len(preset)]
+}
+
 // Style returns the style assigned to the tier at index i (round robin).
 func (c *Config) Style(i int) Style {
 	styles := c.Representation.Styles.Tiers
@@ -133,6 +166,10 @@ func (c *Config) check() diag.List {
 
 	symbols := map[string]bool{}
 	for _, s := range c.Representation.Styles.Tiers {
+		if c.Representation.ASCII.Symbols != SymbolsStyles {
+			break // Style symbols are only used by the styles preset.
+		}
+
 		if symbols[s.Symbol] {
 			diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodeConfigDuplicateSymbol,
 				"style symbol %q is used more than once: ASCII previews can tell those tiers apart only by colour",

@@ -147,10 +147,11 @@ def pos(text, marker, nth=1):
     return f"{line}:{col}"
 
 
-SYMBOLS = ["░", "▒", "▓", "█"]  # Built-in styles, one per tier in TIERS order.
+# Symbol presets (representation.ascii.symbols), assigned by tier order in TIERS, round robin.
+PRESETS = {"ascii": [".", ":", "=", "#"], "braille": ["⠀", "⣀", "⣤", "⣶", "⣿"]}
 
 
-def preview_rows(base, ranges, size=15):
+def preview_rows(base, ranges, size=15, symbols="ascii"):
     """Reference downsampling: each bucket shows the tier covering most of its minutes; ties go to the later tier
     in TIERS. Returns the day rows and the number of buckets that mix tiers."""
     week = paint_minutes(base, ranges)
@@ -162,7 +163,8 @@ def preview_rows(base, ranges, size=15):
             counts = {t: bucket.count(t) for t in set(bucket)}
             best = max(counts, key=lambda t: (counts[t], TIERS.index(t)))
             mixed += len(counts) > 1
-            cells += SYMBOLS[TIERS.index(best)]
+            preset = PRESETS[symbols]
+            cells += preset[TIERS.index(best) % len(preset)]
         rows.append(f"{day} {cells}")
     return rows, mixed
 
@@ -515,6 +517,15 @@ write(
     preview=rows,
 )
 
+rows, _ = preview_rows("Minimum", basic_ranges, symbols="braille")
+write(
+    "valid/preview-braille",
+    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    args=["--ascii-symbols", "braille", "--output", "ascii"],
+    want=output("Minimum", basic_ranges),
+    preview=rows,
+)
+
 write(
     "valid/preview-warning-only-with-preview",
     odd_doc,
@@ -680,7 +691,8 @@ err_doc("error/duplicate-name", doc(META, BASE, TIER, "# Second-Name\n"), "Secon
 write(
     "warn/override-duplicate-symbol",
     doc(META, BASE, TIER),
-    args=["--set-config-at", "representation.styles.tiers[1].symbol", "--set-config-value", '"░"'],
+    args=["--ascii-symbols", "styles", "--set-config-at", "representation.styles.tiers[1].symbol",
+          "--set-config-value", '"."'],
     want=output("Minimum", [("06:00", "22:00", ["MON"], "Medium")], warnings=["config-duplicate-symbol"]),
     diag=[("warn", "-", "config-duplicate-symbol")],
 )
@@ -704,3 +716,11 @@ err(
 )
 err("error/output-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--output", "yaml"])
 err("error/color-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--color", "sometimes"])
+err("error/ascii-symbols-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--ascii-symbols", "blocks"])
+err(
+    "error/ascii-symbols-config-unknown",
+    [META, BASE, TIER],
+    None,
+    "config-schema",
+    args=["--set-config-at", "representation.ascii.symbols", "--set-config-value", '"blocks"'],
+)

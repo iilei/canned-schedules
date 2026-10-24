@@ -158,7 +158,7 @@ func TestASCIIOutput(t *testing.T) {
 		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
 	}
 
-	if !strings.Contains(stdout.String(), "MON ▒▒▒") || strings.Contains(stdout.String(), `"schema-version"`) {
+	if !strings.Contains(stdout.String(), "MON :::") || strings.Contains(stdout.String(), `"schema-version"`) {
 		t.Errorf("--output ascii must print the preview instead of the JSON:\n%s", stdout.String())
 	}
 
@@ -170,7 +170,7 @@ func TestASCIIOutput(t *testing.T) {
 
 	run([]string{"--output", "ascii", "--color", "always", basic}, &stdout, &stderr)
 
-	if !strings.Contains(stdout.String(), "\x1b[38;2;") {
+	if !strings.Contains(stdout.String(), "\x1b[48;2;") {
 		t.Error("--color always must colour the preview")
 	}
 

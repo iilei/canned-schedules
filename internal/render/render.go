@@ -339,9 +339,14 @@ func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top,
 	return math.Max(right, x-legendGap)
 }
 
-// approximateNote explains a lossy preview.
+// approximateNote explains a lossy preview in the SVG.
 func approximateNote(p Preview) string {
-	return fmt.Sprintf("≈ %d-minute buckets, %d show their majority tier", p.Size, p.Mixed)
+	return "≈ " + approximateText(p)
+}
+
+// approximateText is the shared wording; the ASCII preview prefixes it with "~" to stay pure ASCII.
+func approximateText(p Preview) string {
+	return fmt.Sprintf("%d-minute buckets, %d show their majority tier", p.Size, p.Mixed)
 }
 
 func dayRuns(out *schedule.Output, d int) []schedule.Run {

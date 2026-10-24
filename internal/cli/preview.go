@@ -4,6 +4,7 @@ import (
 	"flag"
 	"strconv"
 
+	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
 )
 
@@ -15,6 +16,8 @@ const (
 	ColorAuto   = "auto"
 	ColorAlways = "always"
 	ColorNever  = "never"
+
+	asciiSymbolsPath = "representation.ascii.symbols"
 
 	// DefaultDownsample is the preview bucket in minutes without --preview-downsample=N: 96 columns per day.
 	DefaultDownsample = 15
@@ -114,4 +117,20 @@ func checkPreviewFlags(p *PreviewOptions) diag.List {
 	}
 
 	return diags
+}
+
+// asciiSymbols turns --ascii-symbols into an override of representation.ascii.symbols. It comes after any
+// --set-config-at pairs, so the dedicated flag wins.
+func asciiSymbols(opts *Options, preset string) diag.List {
+	switch preset {
+	case "":
+		return nil
+	case config.SymbolsASCII, config.SymbolsBraille, config.SymbolsStyles:
+		opts.Overrides = append(opts.Overrides, config.Override{Path: asciiSymbolsPath, Value: strconv.Quote(preset)})
+
+		return nil
+	default:
+		return diag.List{diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
+			"--ascii-symbols %q: use ascii, braille or styles", preset)}
+	}
 }

@@ -95,6 +95,7 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--ascii-output-file <path>`  |            | Write an ASCII preview (only when the document has no errors)                   |
 | `--preview-downsample[=N]`    | 15         | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
 | `--no-preview-downsample`     |            | Preview at 1-minute resolution (1440 columns per day)                           |
+| `--ascii-symbols <preset>`    | `ascii`    | Symbols in the ASCII preview: `ascii`, `braille` or `styles`                    |
 | `--color auto\|always\|never` | `auto`     | Colours in the ASCII preview; auto = terminal only, and not with `NO_COLOR`     |
 | `--error-output-file <path>`  | stderr     | Write the error report to this file (always, even when empty)                   |
 | `--error-output-format`       | `txt`      | Error report format: `txt` or `json`                                            |
@@ -108,19 +109,25 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 ```
 
 ```text
-Office Hours — Weekdays with a late Friday
+Office Hours - Weekdays with a late Friday
 
     00:00                   06:00                   12:00                   18:00
-    ║ : | : | : | : | : | : ║ : | : | : | : | : | : ║ : | : | : | : | : | : ║ : | : | : | : | : | :
-MON ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒
-FRI ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████████████████████████████████
-SAT ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | :
+MON ::::::::::::::::::::::::================================================================::::::::
+FRI ::::::::::::::::::::::::========================================################################
+SAT ::::::::::::::::::::::::::::::::::::::::================================::::::::::::::::::::::::
 
-    ░ Off   ▒ Minimum (base)   ▓ Medium   █ Maximum
+    . Off   : Minimum (base)   = Medium   # Maximum
 ```
 
-(Rows for TUE–THU and SUN omitted here.) On a terminal the symbols are coloured with the dark theme's tier colours;
+(Rows for TUE–THU and SUN omitted here.) On a terminal each cell gets the dark theme's tier colour as its background;
 `--color never` turns that off, `--color always` forces it (also into files).
+
+**Symbols.** By default the preview is pure ASCII (`.` `:` `=` `#` by tier order), so it lines up in every terminal,
+log and email. `--ascii-symbols braille` switches to `⠀` `⣀` `⣤` `⣶` `⣿`, a denser look that is still single-width
+everywhere (unlike block characters such as `▒`, which CJK terminals draw double-width). `--ascii-symbols styles`
+uses each configured style's own `symbol`. The flag is shorthand for
+`--set-config-at representation.ascii.symbols`.
 
 **Downsampling.** Previews show buckets of 15 minutes by default, so a day fits into 96 columns (100 with the day
 label). `--preview-downsample=N` picks another bucket size (a divisor of 60), `--no-preview-downsample` shows every
@@ -218,7 +225,8 @@ Provider settings such as capacity numbers are out of scope: attach them to the 
 
 The built-in configuration ([`schema/config.json`](schema/config.json), validated by
 [`schema/config.schema.json`](schema/config.schema.json)) defines the ordered tier list and how tiers look: page
-colours per light/dark theme and one style (symbol and colours) per tier, assigned round robin. Override any part of
+colours per light/dark theme, one style (symbol and colours) per tier assigned round robin, and the symbol preset of
+the ASCII preview (`representation.ascii.symbols`). Override any part of
 it per run:
 
 ```sh
