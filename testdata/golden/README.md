@@ -3,6 +3,12 @@
 These fixtures are the executable form of the spec in `CLAUDE.md`. They were written before any Go code, so when the
 implementation and a fixture disagree, check the spec first. Don't regenerate the fixture to match the code.
 
+## Generating
+
+`gen.py` writes every case: run `python3 testdata/golden/gen.py` from the repo root and review the diff. It replaces
+`valid/`, `warn/` and `error/` completely. Expected outputs come from a small reference painter inside the script,
+never from the Go code.
+
 ## Layout
 
 One directory per case, grouped by expected outcome:
@@ -74,7 +80,7 @@ styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
   `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `granularity`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-tier`, `unknown-namespace`, `style-reuse`, `missing-kind`, `duplicate-block`,
+  `config-schema`, `config-duplicate-tier`, `config-duplicate-symbol`, `unknown-namespace`, `style-reuse`, `missing-kind`, `duplicate-block`,
   `empty-tier`, `misplaced-directive`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 
 ## Undecided: no fixtures yet

@@ -1,0 +1,4 @@
+--set-config-at
+representation.styles.tiers[1].symbol
+--set-config-value
+"░"
