@@ -16,4 +16,4 @@ output/**
 
 *coverage.txt
 coverage
-canned-schedules
+/canned-schedules

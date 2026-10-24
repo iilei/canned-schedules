@@ -6,9 +6,9 @@ before:
     - go test ./...
 
 builds:
-  - id: humancron-linux
-    main: ./cmd/humancron
-    binary: humancron
+  - id: canned-schedules-linux
+    main: ./cmd/canned-schedules
+    binary: canned-schedules
     env:
       - CGO_ENABLED=0
     goos:
@@ -25,9 +25,9 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-  - id: humancron-darwin
-    main: ./cmd/humancron
-    binary: humancron
+  - id: canned-schedules-darwin
+    main: ./cmd/canned-schedules
+    binary: canned-schedules
     env:
       - CGO_ENABLED=0
     goos:
@@ -41,9 +41,9 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-  - id: humancron-windows
-    main: ./cmd/humancron
-    binary: humancron
+  - id: canned-schedules-windows
+    main: ./cmd/canned-schedules
+    binary: canned-schedules
     env:
       - CGO_ENABLED=0
     goos:
@@ -60,8 +60,8 @@ builds:
 archives:
   - id: unix-archives
     ids:
-      - humancron-linux
-      - humancron-darwin
+      - canned-schedules-linux
+      - canned-schedules-darwin
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_
       {{- if and (eq .Os "darwin") (eq .Arch "all") -}}
@@ -82,7 +82,7 @@ archives:
 
   - id: windows-archives
     ids:
-      - humancron-windows
+      - canned-schedules-windows
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     formats:
       - zip
@@ -91,9 +91,9 @@ archives:
       - LICENSE
 
 universal_binaries:
-  - id: humancron-darwin
+  - id: canned-schedules-darwin
     ids:
-      - humancron-darwin
+      - canned-schedules-darwin
     replace: true
 
 checksum:
@@ -141,11 +141,11 @@ release:
   make_latest: true
   mode: replace
   header: |
-    ## humancron {{ .Tag }} ({{ .Date }})
+    ## canned-schedules {{ .Tag }} ({{ .Date }})
 
-    Phonetic identifier generator - converts numbers to pronounceable identifiers.
+    Weekly capacity schedules from human-friendly Markdown - validate, preview and export.
   footer: |
-    **Full Changelog**: https://github.com/iilei/humancron/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/iilei/canned-schedules/compare/{{ .PreviousTag }}...{{ .Tag }}
 
     ## Installation
 
@@ -154,5 +154,5 @@ release:
 
     ### Using Go
     ```bash
-    go install github.com/iilei/humancron/cmd/humancron@{{ .Tag }}
+    go install github.com/iilei/canned-schedules/cmd/canned-schedules@{{ .Tag }}
     ```

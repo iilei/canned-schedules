@@ -150,6 +150,28 @@ linters:
           # test (not a wrapped error from a chain), so a direct type assertion
           # is correct here; errors.As adds no value over err.(*ExitCodeError).
           - errorlint
+          # Expected values in test tables are literal on purpose (mnd), failure
+          # messages favour readable fmt.Sprintf over micro-optimised concatenation
+          # (perfsprint), and table/golden runners branch per case kind, which
+          # inflates complexity scores without making the tests harder to read
+          # (gocognit, gocyclo, nestif).
+          - mnd
+          - perfsprint
+          - gocognit
+          - gocyclo
+          - nestif
+      # Table-driven tests define ad-hoc case structs and range over them by
+      # value; memory layout (fieldalignment) and per-iteration copies
+      # (rangeValCopy, hugeParam) are irrelevant there. Other govet and gocritic
+      # checks stay active in tests.
+      - path: '_test\.go'
+        linters:
+          - govet
+        text: 'fieldalignment'
+      - path: '_test\.go'
+        linters:
+          - gocritic
+        text: '(rangeValCopy|hugeParam)'
       - path: 'cmd/'
         linters:
           - errcheck
@@ -174,10 +196,10 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(github.com/iilei/convergenci-cli)
+        - prefix(github.com/iilei/canned-schedules)
     goimports:
       local-prefixes:
-        - github.com/iilei/convergenci-cli
+        - github.com/iilei/canned-schedules
     golines:
       max-len: 120
     # gofumpt's "extra rules" (ExtraRules) is a single all-or-nothing switch,
