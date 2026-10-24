@@ -44,7 +44,8 @@ func (p *parser) scanBlock(n ast.Node) {
 		for _, m := range directiveLike.FindAllIndex(masked[seg.Start:seg.Stop], -1) {
 			pos := p.lines.pos(seg.Start + m[0] + len("[!"))
 			p.errorf(pos, diag.CodeMisplacedDirective,
-				"directives must be top-level blockquotes starting with the marker, e.g. > [!SCHEDULE:TIER] Medium")
+				"directives must be top-level blockquotes that start with the marker")
+			p.example("> [!SCHEDULE:TIER] Medium")
 		}
 	}
 }

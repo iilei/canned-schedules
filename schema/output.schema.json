@@ -235,6 +235,11 @@
           "type": "string",
           "minLength": 1
         },
+        "example": {
+          "description": "Optional: the exact text to type instead (Markdown, backticks included).",
+          "type": "string",
+          "minLength": 1
+        },
         "excerpt": {
           "type": "object",
           "additionalProperties": false,

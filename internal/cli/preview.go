@@ -112,8 +112,10 @@ func checkDownsample(p *PreviewOptions) diag.List {
 	if p.downsampleSet && p.downsampleRaw != "true" {
 		n, err := strconv.Atoi(p.downsampleRaw)
 		if err != nil {
-			return bad("--preview-downsample=%s: give the bucket size in minutes, e.g. --preview-downsample=30",
-				p.downsampleRaw)
+			d := bad("--preview-downsample=%s: give the bucket size in minutes", p.downsampleRaw)
+			d[0].Example = "--preview-downsample=30"
+
+			return d
 		}
 
 		p.Downsample = n

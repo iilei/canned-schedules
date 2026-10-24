@@ -48,6 +48,7 @@ type Entry struct { //nolint:govet // fieldalignment: field order is the JSON ke
 	Line     int           `json:"line,omitempty"`
 	Column   int           `json:"column,omitempty"`
 	Message  string        `json:"message"`
+	Example  string        `json:"example,omitempty"`
 	Excerpt  *diag.Excerpt `json:"excerpt,omitempty"`
 }
 
@@ -64,7 +65,10 @@ func Build(file string, src []byte, diags diag.List) Report {
 			r.Summary.Warnings++
 		}
 
-		e := Entry{Severity: string(d.Severity), Code: d.Code, File: r.File, Message: diag.Sanitize(d.Message)}
+		e := Entry{
+			Severity: d.Severity.String(), Code: d.Code, File: r.File,
+			Message: diag.Sanitize(d.Message), Example: diag.Sanitize(d.Example),
+		}
 		if d.Pos != (diag.Pos{}) {
 			e.Line, e.Column = d.Pos.Line, d.Pos.Col
 			e.Location = d.Location(file)
@@ -118,7 +122,12 @@ func txtLine(e *Entry) string {
 		prefix = "canned-schedules"
 	}
 
-	return prefix + ": " + e.Severity + "[" + e.Code + "]: " + e.Message
+	line := prefix + ": " + e.Severity + "[" + e.Code + "]: " + e.Message
+	if e.Example != "" {
+		line += "; e.g. " + e.Example
+	}
+
+	return line
 }
 
 // renderTemplate executes tmpl on the report decoded from its own JSON, so the template sees exactly the JSON shape

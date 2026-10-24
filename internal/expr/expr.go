@@ -15,6 +15,8 @@ const (
 	minutesPerHour = 60
 	// itemTokens is the token count of a well-formed item: code, " to ", code, weekdays.
 	itemTokens = 4
+	// rangeExample is the example shown for a malformed range item.
+	rangeExample = "- `06:00` to `22:00` MON-FRI"
 	// midnightAs24 gets its own message: it's the most likely mistake for "until midnight".
 	midnightAs24 = "24:00"
 )
@@ -59,7 +61,7 @@ func Parse(item document.Item, sampleInterval int) (Range, diag.List) {
 	toks := item.Tokens
 	if !wellFormed(toks) {
 		return Range{}, diag.List{diag.Errorf(item.Pos, diag.CodeInvalidRange,
-			"expected `HH:MM` to `HH:MM` WEEKDAYS, e.g. - `06:00` to `22:00` MON-FRI")}
+			`a range is a start time, "to", an end time and the weekdays`).WithExample(rangeExample)}
 	}
 
 	var (
@@ -217,11 +219,11 @@ func invalidTime(tok document.Token) diag.Diagnostic {
 	if tok.Value == midnightAs24 {
 		return diag.Errorf(tok.Pos, diag.CodeInvalidTime,
 			"24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at "+
-				"00:00, e.g. `21:45` to `00:00`")
+				"00:00").WithExample("`21:45` to `00:00`")
 	}
 
 	return diag.Errorf(tok.Pos, diag.CodeInvalidTime,
-		"time %q: write H:MM or HH:MM with hours 0-23 and two-digit minutes, e.g. `6:15` or `21:45`", tok.Value)
+		"time %q: write H:MM or HH:MM with hours 0-23 and two-digit minutes", tok.Value).WithExample("`21:45`")
 }
 
 // dayAt returns the weekday at toks[i], or an error diagnostic.

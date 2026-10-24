@@ -66,7 +66,8 @@ func (p *parser) kind(typ, ns, kindName string, hasColon bool, pos diag.Pos) (Ki
 		p.errorf(pos, diag.CodeUnknownNamespace, "unknown namespace %q in [!%s]; use one of %s",
 			ns, typ, strings.Join(Namespaces, ", "))
 	case !hasColon || kindName == "":
-		p.errorf(pos, diag.CodeMissingKind, "[!%s] needs a kind: META, BASE or TIER, e.g. [!SCHEDULE:TIER]", typ)
+		p.errorf(pos, diag.CodeMissingKind, "[!%s] needs a kind: META, BASE or TIER", typ)
+		p.example("> [!SCHEDULE:TIER] Medium")
 	default:
 		if k, ok := kinds[strings.ToUpper(kindName)]; ok {
 			return k, true
@@ -134,9 +135,11 @@ func (p *parser) item(d *Directive, li ast.Node) {
 func (p *parser) unexpected(d *Directive, pos diag.Pos) {
 	switch d.Kind {
 	case KindTier:
-		p.errorf(pos, diag.CodeInvalidRange, "expected a list item like - `06:00` to `22:00` MON-FRI")
+		p.errorf(pos, diag.CodeInvalidRange, "a TIER block holds a list of ranges")
+		p.example("- `06:00` to `22:00` MON-FRI")
 	case KindMeta:
-		p.errorf(pos, diag.CodeMetaSchema, "expected a list item like - x-custom-owner: `team-xyz`")
+		p.errorf(pos, diag.CodeMetaSchema, "a META block holds a list of key: value items")
+		p.example("- x-custom-owner: `team-xyz`")
 	case KindBase:
 		p.errorf(pos, diag.CodeUnexpectedContent, "BASE takes only a tier name on the marker line")
 	}
@@ -194,8 +197,8 @@ func (p *parser) titled(d *Directive) bool {
 		return true
 	}
 
-	p.errorf(d.KindPos, diag.CodeMissingTitle, "%s needs a tier name after the marker, e.g. [!SCHEDULE:%s] Medium",
-		d.Kind, d.Kind)
+	p.errorf(d.KindPos, diag.CodeMissingTitle, "%s needs a tier name after the marker", d.Kind)
+	p.example("> [!SCHEDULE:" + string(d.Kind) + "] Medium")
 
 	return false
 }

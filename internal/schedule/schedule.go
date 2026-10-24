@@ -46,6 +46,7 @@ type Warning struct { //nolint:govet // fieldalignment: field order is the JSON 
 	Line    int           `json:"line,omitempty"`
 	Column  int           `json:"column,omitempty"`
 	Message string        `json:"message"`
+	Example string        `json:"example,omitempty"`
 	Excerpt *diag.Excerpt `json:"excerpt,omitempty"`
 }
 
@@ -95,7 +96,7 @@ func Warnings(src []byte, diags diag.List) []Warning {
 			continue
 		}
 
-		w := Warning{Code: d.Code, Message: diag.Sanitize(d.Message)}
+		w := Warning{Code: d.Code, Message: diag.Sanitize(d.Message), Example: diag.Sanitize(d.Example)}
 		if d.Pos != (diag.Pos{}) {
 			w.Line, w.Column = d.Pos.Line, d.Pos.Col
 			w.Excerpt = diag.MakeExcerpt(lines, d.Pos)
