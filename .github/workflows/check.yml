@@ -33,8 +33,15 @@ jobs:
             exit 1
           fi
 
-      # Installs the tools pinned in mise.toml (Go, golangci-lint) and caches them.
+      # Installs the tools pinned in mise.toml (Go, golangci-lint, Node) and caches them.
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
 
       # fmt:check, vet, lint, test (race detector) and build.
       - run: mise run check
+
+      # The same test suites compiled to WebAssembly and run under Node: the browser page must give the same results
+      # as the CLI.
+      - run: mise run test:wasm
+
+      # The preflight page builds (WebAssembly, static files).
+      - run: mise run web:build
