@@ -6,6 +6,10 @@
   "annotations": {
     "x-custom-owner": "team-xyz"
   },
+  "digests": {
+    "request": "sha256:cb72b6270cb727b8dbf262e7908fdc374a68e6b5c2fa0aa9cf5a91089abae84e",
+    "effective": "sha256:a85f161b74a226c35cf4c66d14277475da30128b23df4ad36812b1b8648ebd36"
+  },
   "week": {
     "MON": [
       {

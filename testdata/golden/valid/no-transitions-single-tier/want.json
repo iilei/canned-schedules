@@ -3,6 +3,10 @@
   "name": "Schedule-Name",
   "base": "Off",
   "annotations": {},
+  "digests": {
+    "request": "sha256:2d70ff85f0f5c06b85c151cf65654b662abfa7767f533fcdf3f67fcf7bb1f057",
+    "effective": "sha256:96e19c736b1bd5ccd8fcd13c8e2b5d5ad0026ff369c0a60928923d6bf9160681"
+  },
   "week": {
     "MON": [
       {

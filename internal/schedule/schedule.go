@@ -33,8 +33,18 @@ type Output struct {
 	Name          string            `json:"name"`
 	Hint          string            `json:"hint,omitempty"`
 	Base          string            `json:"base"`
+	Digests       Digests           `json:"digests"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
+}
+
+// Digests identify the request and the effective schedule.
+type Digests struct {
+	// Request is the SHA-256 of the exact input bytes: any edit, prose included, changes it.
+	Request string `json:"request"`
+	// Effective is the SHA-256 of the base tier and the painted week: it changes only when what a consumer acts on
+	// changes, never for name, hint, annotations or cron rendering.
+	Effective string `json:"effective"`
 }
 
 // Week lists the runs of each day, Monday first. Field order defines the JSON key order.
@@ -84,8 +94,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 	}
 
 	week := paint(base, ranges)
-
-	return &Output{
+	out := &Output{
 		SchemaVersion: m.schemaVersion,
 		Name:          doc.Name.Value,
 		Hint:          m.hint,
@@ -93,7 +102,14 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		Annotations:   m.annotations,
 		Week:          weekRuns(week),
 		Transitions:   transitions(week),
-	}, diags
+	}
+
+	if err := out.finish(src); err != nil {
+		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
+			"internal error, please report it: the output fails its own schema: %v", err))
+	}
+
+	return out, diags
 }
 
 // resolveTiers maps every TIER block to its config tier and parses its range items, in source order.

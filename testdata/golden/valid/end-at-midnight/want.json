@@ -3,6 +3,10 @@
   "name": "Schedule-Name",
   "base": "Minimum",
   "annotations": {},
+  "digests": {
+    "request": "sha256:75cfe1b6689d83b878f1701ee1bc36f1fef897af486cca7ba3e0cb206ed58109",
+    "effective": "sha256:005b80e4234613401f7da39c3c52485033f10f4e9a15775dfb1aa6617f0a942b"
+  },
   "week": {
     "MON": [
       {
