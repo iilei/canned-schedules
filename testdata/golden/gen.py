@@ -147,7 +147,27 @@ def pos(text, marker, nth=1):
     return f"{line}:{col}"
 
 
-def write(name, md, args=(), want=None, diag=()):
+SYMBOLS = ["░", "▒", "▓", "█"]  # Built-in styles, one per tier in TIERS order.
+
+
+def preview_rows(base, ranges, size=15):
+    """Reference downsampling: each bucket shows the tier covering most of its minutes; ties go to the later tier
+    in TIERS. Returns the day rows and the number of buckets that mix tiers."""
+    week = paint_minutes(base, ranges)
+    rows, mixed = [], 0
+    for d, day in enumerate(DAYS):
+        cells = ""
+        for start in range(0, 1440, size):
+            bucket = week[d * 1440 + start:d * 1440 + start + size]
+            counts = {t: bucket.count(t) for t in set(bucket)}
+            best = max(counts, key=lambda t: (counts[t], TIERS.index(t)))
+            mixed += len(counts) > 1
+            cells += SYMBOLS[TIERS.index(best)]
+        rows.append(f"{day} {cells}")
+    return rows, mixed
+
+
+def write(name, md, args=(), want=None, diag=(), preview=None):
     d = os.path.join(OUT, name)
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, "input.md"), "w") as f:
@@ -159,6 +179,9 @@ def write(name, md, args=(), want=None, diag=()):
         want["digests"]["request"] = "sha256:" + hashlib.sha256(md.encode()).hexdigest()
         with open(os.path.join(d, "want.json"), "w") as f:
             f.write(json.dumps(want, indent=2, ensure_ascii=False) + "\n")
+    if preview is not None:
+        with open(os.path.join(d, "want.preview"), "w") as f:
+            f.write("\n".join(preview) + "\n")
     if diag:
         lines = []
         for sev, where, code in diag:
@@ -441,6 +464,63 @@ write(
     want=output("Off", [("08:15", "17:45", DAYS, "Medium")]),
 )
 
+# ---------------------------------------------------------------- previews (want.preview pins the bucketed day rows)
+
+basic_ranges = [("06:00", "22:00", WD, "Medium")]
+rows, _ = preview_rows("Minimum", basic_ranges)
+write(
+    "valid/preview-default",
+    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    args=["--output", "ascii"],
+    want=output("Minimum", basic_ranges),
+    preview=rows,
+)
+
+odd_ranges = [("06:07", "09:52", ["MON"], "Medium")]
+odd_doc = doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:TIER] Medium\n> - `06:07` to `09:52` MON\n")
+rows, mixed = preview_rows("Off", odd_ranges)
+assert mixed == 2
+write(
+    "valid/preview-approximate",
+    odd_doc,
+    args=["--output", "ascii"],
+    want=output("Off", odd_ranges, warnings=["preview-approximate"]),
+    diag=[("warn", "-", "preview-approximate")],
+    preview=rows,
+)
+
+rows, mixed = preview_rows("Off", odd_ranges, size=1)
+assert mixed == 0
+write(
+    "valid/preview-no-downsample",
+    odd_doc,
+    args=["--no-preview-downsample", "--output", "ascii"],
+    want=output("Off", odd_ranges),
+    preview=rows,
+)
+
+tie_ranges = [("23:00", "01:30", ["SUN"], "Maximum"), ("21:30", "05:30", WD, "Medium")]
+rows, mixed = preview_rows("Off", tie_ranges, size=60)
+write(
+    "valid/preview-downsample-60-ties",
+    doc(
+        META,
+        "> [!SCHEDULE:BASE] Off\n",
+        "> [!SCHEDULE:TIER] Maximum\n> - `23:00` to `01:30` SUN\n",
+        "> [!SCHEDULE:TIER] Medium\n> - `21:30` to `05:30` MON-FRI\n",
+    ),
+    args=["--preview-downsample=60", "--output", "ascii"],
+    want=output("Off", tie_ranges, warnings=["preview-approximate"]),
+    diag=[("warn", "-", "preview-approximate")],
+    preview=rows,
+)
+
+write(
+    "valid/preview-warning-only-with-preview",
+    odd_doc,
+    want=output("Off", odd_ranges),
+)
+
 # ---------------------------------------------------------------- warnings (valid output + diagnostics)
 
 md = doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n")
@@ -613,3 +693,14 @@ err(
     "invalid-flag",
     args=["--error-output-format", "json", "--error-report-template", "markdown-gfm"],
 )
+err("error/preview-downsample-not-divisor-of-60", [META, BASE, TIER], None, "invalid-flag", args=["--preview-downsample=7"])
+err("error/preview-downsample-not-a-number", [META, BASE, TIER], None, "invalid-flag", args=["--preview-downsample=x"])
+err(
+    "error/preview-downsample-conflict",
+    [META, BASE, TIER],
+    None,
+    "invalid-flag",
+    args=["--preview-downsample=30", "--no-preview-downsample"],
+)
+err("error/output-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--output", "yaml"])
+err("error/color-unknown", [META, BASE, TIER], None, "invalid-flag", args=["--color", "sometimes"])

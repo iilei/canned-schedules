@@ -1,0 +1,16 @@
+{{- /*
+  Schedule preview as text, built into canned-schedules (--output ascii, --ascii-output-file).
+
+  The data is a render model computed by the tool: the ruler, one row of symbols per day (ANSI colour codes included
+  when colours are on) and the legend. This template only arranges the lines; it uses plain Go text/template, so it
+  also runs with gomplate on the same model.
+*/ -}}
+{{ .title }}
+
+{{ range .ruler }}{{ . }}
+{{ end }}{{ range .rows }}{{ .label }} {{ .cells }}
+{{ end }}
+{{ .legend }}
+{{- with .note }}
+{{ . }}
+{{- end }}

@@ -1,0 +1,144 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Minimum",
+  "annotations": {},
+  "digests": {
+    "request": "sha256:6f524726bd0575f407125860f9e2de1b9a076fac115f1954ce227fc5b8154447",
+    "effective": "sha256:a85f161b74a226c35cf4c66d14277475da30128b23df4ad36812b1b8648ebd36"
+  },
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "tier": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "tier": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "tier": "Minimum"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1-5",
+        "aws": "0 6 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "22:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "0 22 * * 1-5",
+        "aws": "0 22 ? * MON-FRI *"
+      }
+    }
+  ],
+  "warnings": []
+}

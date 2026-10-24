@@ -133,9 +133,17 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   - `--require-base true`: the document must contain `[!SCHEDULE:BASE]`. `--base` must not be given (error).
   - `--require-base false` (**the default**): the base comes from the first of these that exists: the document's
     BASE, then `--base <tier>` (must name a valid tier), then the first tier (index 0) in the config.
-- **Output resolution:** grid-shaped outputs (ASCII, SVG) use a cell size equal to the GCD of all range start/end
-  times (minutes since midnight) **and 60**. Cells then divide the hour evenly, so hour ticks, rulers, time scales and
-  tooltips line up. A canonical output listing `{start, end, tier}` runs is compact at any resolution.
+- **Preview downsampling (visual only, decided 2026-10-24; supersedes the earlier GCD-based grid):** previews (SVG
+  and ASCII) show buckets of N minutes. (none) or `--preview-downsample` → 15 (96 columns, `MON` + 96 = 100
+  characters); `--preview-downsample=N` → N (must divide 60; the value must be attached with `=`);
+  `--no-preview-downsample` → 1 (1440 columns). Combining the last two is `invalid-flag`.
+  - **Never applied to the canonical JSON** (week, transitions, digests stay exact) and never to input reading.
+  - A bucket shows the tier covering most of its minutes; ties go to the tier that comes later in the config. When
+    buckets mix tiers, a `preview-approximate` warning says how many; it appears only when a preview is requested.
+  - Anyone who needs exact previews sets `--sample-interval` to a multiple of the bucket size (e.g. 15).
+- **Warnings in the canonical JSON (decided 2026-10-24):** `warnings` lists every warning (`code`, `message`, and
+  `line`/`column`/`excerpt` when positioned), sorted by position. No file names, so the output doesn't depend on where
+  the file lives. Not part of the effective digest. Golden fixtures don't pin warning messages (`"…"`).
 
 ### Tier names (decided)
 
@@ -172,7 +180,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - Every object has `additionalProperties: false`. `x-custom-*` is not allowed in the config.
 - **Checks JSON Schema can't express** (done in Go, covered by tests):
   - tier ids unique after upper-casing;
-  - symbols unique across styles;
+  - repeated style symbols are a **warning** (`config-duplicate-symbol`, decided 2026-10-24: permissive), because
+    colours can still tell tiers apart;
   - **WARN** if `len(styles) < len(tiers)`: round robin then repeats symbols and colours, so the ASCII grid and legend
     become ambiguous.
 - **No namespace in the config** any more (`parser.namespace` was removed). The aliases are a constant in the Go code.
@@ -280,8 +289,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   coordinate, colour, label and tooltip); the template only emits markup and escapes text with the builtin `html`.
 - Visual design follows the old renderer: monospace labels, one row per day (24 px per hour), a ruler with labels every
   6 h, faint guides, the transition table (POSIX + AWS cron), a legend with the base tier marked, tooltips (tier, range,
-  starting cron). Days are drawn as runs, not minute blocks; the grid resolution (GCD of all run boundaries and 60)
-  only adds minor ruler ticks when it is 15–30 minutes.
+  starting cron). Days are drawn as merged bucket segments (see preview downsampling); minor ruler ticks appear at
+  the bucket size when it is 15–30 minutes. An approximate preview shows a note in the legend line; the transition
+  table always stays exact.
 - Colours: plain per-tier `fill` rules, repeated in `@media (prefers-color-scheme: dark)`. **No CSS custom
   properties**: librsvg (and other converters / PDF pipelines) render them black.
 - **Templates must be gomplate-compatible:** builtins only, and Go executes them with the default strict
@@ -289,6 +299,18 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `index`. Verified byte-identical with gomplate 5.2.0 (`gomplate -c .=model.json -f templates/schedule-svg.tmpl`).
 - `docs/office-hours.svg` is the README image, rendered from the issue template; `TestDocsPreview` fails when it is
   stale.
+
+## ASCII preview (implemented 2026-10-24)
+
+- `--output json|ascii`: what stdout carries (default `json`). `--ascii-output-file <path>`: saves the preview
+  (atomic, only without errors, like the SVG). With `--output ascii` and errors, stdout stays empty.
+- Layout: title (name — hint), a ruler (labels every 6 h; `║` every 6 h, `|` every hour, `:` every half hour), one row
+  per day (`MON` + one style symbol per bucket), a legend with the base tier marked, and the approximation note.
+  Rendered through `templates/schedule-ascii.tmpl` on a model computed in `internal/render` (same gomplate rules).
+- Colours: `--color auto|always|never` (default `auto`: only on a terminal, and only when `NO_COLOR` is unset or
+  empty). 24-bit ANSI colours from the **dark** theme's tier colours, alpha-blended over the dark background. Files
+  get colours only with `--color always`.
+- Block symbols (`░▒▓█`) are "ambiguous width" in Unicode; CJK terminals may draw them double-width.
 
 ## Open (fixtures)
 
@@ -350,9 +372,10 @@ The rest is cleanup for when the Go tool replaces the old code.
   - `cmd/canned-schedules`: the CLI entry point (`--version`): input reading, report output and exit codes (see
     "Error reporting").
   - `internal/report`: the error report (txt, JSON, built-in Markdown template).
-  - `internal/render`: the SVG render model and rendering.
+  - `internal/render`: preview downsampling, the SVG and ASCII render models and rendering.
   - `internal/files`: display paths (home as `~`), path-free OS errors, atomic writes; shared by report and SVG.
-  - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`), embedded.
+  - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`, `schedule-ascii.tmpl`),
+    embedded.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and
     `output.schema.json` (`go:embed`), plus `Compile`. Its test validates every golden `want.json` against the output
     schema.
@@ -374,7 +397,8 @@ The rest is cleanup for when the Go tool replaces the old code.
     starts as base, ranges are painted in source order, then split into per-day runs), transitions with cron
     (`transitions.go`), digests and the self-check against the output schema (`output.go`; a failure is reported as
     `output-schema`, an internal error). `Evaluate` returns the canonical output or diagnostics.
-  - `internal/cli/golden_test.go` runs every fixture: **all 88 pass** (31 valid, 1 warn, 56 error). There is no skip logic any more; a failing fixture fails the build.
+  - `internal/cli/golden_test.go` runs every fixture (101 at the time of the ASCII preview), including `want.preview`
+    (the bucketed day rows of the ASCII preview). There is no skip logic any more; a failing fixture fails the build.
 - **Issue templates:** `.github/ISSUE_TEMPLATE/canned_schedule_request.md` (with GitHub frontmatter) and
   `.gitlab/issue_templates/canned_schedule_request.md` share one body. `internal/cli/templates_test.go` requires the
   bodies to be identical and the template to evaluate without diagnostics, so keep the template a valid example.

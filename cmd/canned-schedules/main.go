@@ -67,12 +67,25 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitInvalid
 	}
 
-	if opts.SVGFile != "" {
-		if err := writeSVG(&opts, out); err != nil {
-			fmt.Fprintln(stderr, diag.Sanitize(err.Error()))
+	if err := writePreviews(&opts, out); err != nil {
+		fmt.Fprintln(stderr, diag.Sanitize(err.Error()))
 
-			return exitUsage
+		return exitUsage
+	}
+
+	if opts.Preview.Output == cli.OutputASCII {
+		text, err := cli.ASCII(&opts, out, colorOn(opts.Preview.Color, stdout))
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+
+			return exitInvalid
 		}
+
+		if _, err := stdout.Write(text); err != nil {
+			return exitInvalid
+		}
+
+		return exitOK
 	}
 
 	enc := json.NewEncoder(stdout)
@@ -87,19 +100,57 @@ func run(args []string, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
-// writeSVG writes the preview. It only runs for documents without errors, so a failed run leaves an earlier preview
-// untouched rather than replacing it with a broken one.
-func writeSVG(opts *cli.Options, out *schedule.Output) error {
-	svg, err := cli.SVG(opts, out)
-	if err != nil {
-		return fmt.Errorf("--svg-output-file: %w", err)
+// writePreviews writes the SVG and ASCII preview files. It only runs for documents without errors, so a failed run
+// leaves earlier previews untouched rather than replacing them with broken ones. Files get colours only with
+// --color always.
+func writePreviews(opts *cli.Options, out *schedule.Output) error {
+	if p := opts.Preview.SVGFile; p != "" {
+		svg, err := cli.SVG(opts, out)
+		if err != nil {
+			return fmt.Errorf("--svg-output-file: %w", err)
+		}
+
+		if err := files.WriteFile(p, display(p), svg); err != nil {
+			return fmt.Errorf("--svg-output-file %w", err)
+		}
 	}
 
-	if err := files.WriteFile(opts.SVGFile, display(opts.SVGFile), svg); err != nil {
-		return fmt.Errorf("--svg-output-file %w", err)
+	if p := opts.Preview.ASCIIFile; p != "" {
+		text, err := cli.ASCII(opts, out, opts.Preview.Color == cli.ColorAlways)
+		if err != nil {
+			return fmt.Errorf("--ascii-output-file: %w", err)
+		}
+
+		if err := files.WriteFile(p, display(p), text); err != nil {
+			return fmt.Errorf("--ascii-output-file %w", err)
+		}
 	}
 
 	return nil
+}
+
+// colorOn decides colours for the ASCII preview on w: always, never, or (auto) only on a terminal and only when
+// NO_COLOR is unset or empty (https://no-color.org).
+func colorOn(mode string, w io.Writer) bool {
+	switch mode {
+	case cli.ColorAlways:
+		return true
+	case cli.ColorNever:
+		return false
+	}
+
+	if os.Getenv("NO_COLOR") != "" {
+		return false
+	}
+
+	f, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+
+	fi, err := f.Stat()
+
+	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }
 
 // evaluate finds and reads the input file and, unless the flags already failed, runs the pipeline on it. The file
