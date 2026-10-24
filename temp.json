@@ -137,10 +137,10 @@
             "min": 1,
             "desired": 2,
             "max": 4,
-            "color": {
-                "light": "#54C6A5D9",
-                "dark": "#9D82EAD9"
-            }
+             "color": {
+                 "light": "#54C6A5D9",
+                 "dark": "#9D82EAD9"
+             }
         },
         "Maximum": {
             "min": 4,

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json",
+  "title": "canned-schedules config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema-version",
+    "parser",
+    "tiers",
+    "representation"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema-version": {
+      "const": "1"
+    },
+    "parser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace"
+      ],
+      "properties": {
+        "namespace": {
+          "$ref": "#/$defs/namespace"
+        }
+      }
+    },
+    "tiers": {
+      "description": "Ordered. Index 0 is the default base. Ids must be unique case-insensitively (checked in Go).",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/tier"
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme",
+        "styles"
+      ],
+      "properties": {
+        "theme": {
+          "description": "Page-level colours, independent of tiers.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "light",
+            "dark"
+          ],
+          "properties": {
+            "light": {
+              "$ref": "#/$defs/surface"
+            },
+            "dark": {
+              "$ref": "#/$defs/surface"
+            }
+          }
+        },
+        "styles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tiers"
+          ],
+          "properties": {
+            "tiers": {
+              "description": "Assigned to tiers round robin: tier i gets styles.tiers[i mod len].",
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/tier-style"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "namespace": {
+      "description": "Starts with a letter, ends with a letter or digit, single hyphens between. Stored uppercase.",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[A-Z](?:-?[A-Z0-9])*$"
+    },
+    "tier-id": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^[A-Za-z](?:-?[A-Za-z0-9])*$"
+    },
+    "tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display-name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/tier-id"
+        },
+        "display-name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "hex-color": {
+      "description": "#RRGGBB or #RRGGBBAA",
+      "type": "string",
+      "pattern": "^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+    },
+    "color-pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "light",
+        "dark"
+      ],
+      "properties": {
+        "light": {
+          "$ref": "#/$defs/hex-color"
+        },
+        "dark": {
+          "$ref": "#/$defs/hex-color"
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "label"
+      ],
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/hex-color"
+        },
+        "label": {
+          "$ref": "#/$defs/hex-color"
+        }
+      }
+    },
+    "tier-style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol",
+        "color"
+      ],
+      "properties": {
+        "symbol": {
+          "description": "One character for ASCII grids. Unique across styles (checked in Go).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1
+        },
+        "color": {
+          "$ref": "#/$defs/color-pair"
+        }
+      }
+    }
+  }
+}
