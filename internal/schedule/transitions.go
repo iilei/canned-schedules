@@ -14,11 +14,11 @@ var sundayFirst = []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}
 
 // Transition is a moment when the active tier changes. All days that switch to the same tier at the same time are
 // grouped. Time, Days and Tier are the facts; Cron renders them for schedulers.
-type Transition struct {
-	Cron Cron     `json:"cron"`
+type Transition struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
 	Time string   `json:"time"`
-	Tier string   `json:"tier"`
 	Days []string `json:"days"`
+	Tier string   `json:"tier"`
+	Cron Cron     `json:"cron"`
 }
 
 // Cron holds the transition in two cron dialects. Neither carries a time zone: they are wall-clock times.

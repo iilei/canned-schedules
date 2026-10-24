@@ -88,9 +88,20 @@ func compareOutput(t *testing.T, out *schedule.Output, wantJSON string) {
 		t.Fatal(err)
 	}
 
+	pretty, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if !reflect.DeepEqual(got, want) {
-		pretty, _ := json.MarshalIndent(out, "", "  ")
 		t.Errorf("output mismatch:\n got: %s\nwant: %s", pretty, wantJSON)
+
+		return
+	}
+
+	// Same content; also pin key order and layout, because people read this JSON.
+	if string(pretty)+"\n" != wantJSON {
+		t.Errorf("output matches but key order or layout differs:\n got: %s\nwant: %s", pretty, wantJSON)
 	}
 }
 
