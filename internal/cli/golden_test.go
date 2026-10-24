@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"os"
@@ -134,10 +135,18 @@ func compareOutput(t *testing.T, out *schedule.Output, wantJSON string) {
 		t.Fatal(err)
 	}
 
-	pretty, err := json.MarshalIndent(out, "", "  ")
-	if err != nil {
+	// Same encoding as the CLI: indented, no HTML escaping.
+	var buf bytes.Buffer
+
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+
+	if err := enc.Encode(out); err != nil {
 		t.Fatal(err)
 	}
+
+	pretty := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
 
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("output mismatch:\n got: %s\nwant: %s", pretty, wantJSON)

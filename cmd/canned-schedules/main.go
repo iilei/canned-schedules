@@ -90,6 +90,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	enc := json.NewEncoder(stdout)
 	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false) // Excerpts start with ">"; this JSON is not embedded in HTML.
 
 	if err := enc.Encode(out); err != nil {
 		fmt.Fprintln(stderr, err)
