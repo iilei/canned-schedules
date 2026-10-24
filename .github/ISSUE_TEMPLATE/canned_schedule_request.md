@@ -1,70 +1,61 @@
 ---
 name: Schedule Request
-about: Request a Schedule
+about: Propose a canned capacity schedule
 title: "[schedule-contrib]: "
 labels: ["Schedule", "triage"]
 assignees: ""
 ---
 
-# Schedule Tiers
+# Office Hours
 
-See below for the proposed Weekdays and hours for a proposed *canned schedule*.
+<!--
+How to edit this request
 
-> **How to edit:**
->
-> Follow the example below, treat line breaks and Lines starting with `#` (hashmark character)
-> as mandated sections. These Tier-determining lines are displayed as 2nd order headlines in preview.
+- Replace the name above (the H1). Letters, digits, spaces and hyphens; up to 80 characters.
+- Keep each block as its own quote: a line starting with `> [!SCHEDULE:…]`, followed by its list.
+- Change the tiers, times and weekdays below. Add or remove TIER blocks as needed.
+- Everything outside these blocks is free text for reviewers: explain why you need this schedule.
 
-## :card_index_dividers: Offline
+The full syntax reference is at the end of this request.
+-->
 
-Capacity scaled to zero.
+> [!SCHEDULE:META] Weekdays with a late Friday
+> - x-custom-owner: `team-xyz`
 
-**ALL-WEEK**
+> [!SCHEDULE:BASE] Minimum
 
-+ n/a
+> [!SCHEDULE:TIER] Medium
+> - `06:00` to `22:00` MON-FRI
+> - `10:00` to `18:00` SAT
 
-## :card_index_dividers: Minimum
+> [!SCHEDULE:TIER] Maximum
+> - `16:00` to `00:00` FRI
 
-Capacity scaled down, in service.
+## Why this schedule
 
-**ALL-WEEK**
+<!-- Describe the workload and why these hours fit it. -->
 
-+ full-day
-
-## :card_index_dividers: Regular
-
-Capacity suitable for regular load.
-
-**MON-FRI**
-
-+ 06:00-22:00
-
-**SAT,SUN**
-
-+ 10:00-24:00
-
-## :card_index_dividers: Maximum
-
-Capacity suitable for extraordinary high load.
-
-**ALL-WEEK**
-
-+ full-day
-
-***
-
-Weekday patterns and time ranges are freely editable. Ranges are half-open ([start, end)): the start is included, the end is
-not — so `00:00-06:00` means `[00:00, 06:00)`.
-
-A time slot may span midnight. The portion after midnight is treated as belonging to the following day, even if that day is not
-included in the configuration's weekday set.
+## Syntax reference
 
 > [!NOTE]
+> **Blocks**
 >
-> **Chose from Tiers:**
+> - `[!SCHEDULE:META]` (optional): text after the marker is a short hint. List items are free-form entries for
+>   your own bookkeeping, written like `` x-custom-owner: `team-xyz` ``.
+> - `[!SCHEDULE:BASE] <tier>` (optional): the tier wherever no range applies.
+> - `[!SCHEDULE:TIER] <tier>`: one block per tier, each with a list of ranges.
 >
-> + Offline
-> + Minimum
-> + Regular
-> + Maximum
+> **Tiers:** `Off`, `Minimum`, `Medium`, `Maximum`.
 >
+> **Ranges:** `` `start` to `end` WEEKDAYS ``
+>
+> - Times are `H:MM` or `HH:MM`, e.g. `6:15` or `21:45`.
+> - The end is exclusive: `06:00` to `22:00` covers 06:00 up to, but not including, 22:00.
+> - A range that runs until midnight ends at `00:00`. There is no `24:00`.
+> - A range may cross midnight: `22:00` to `02:00` FRI runs from Friday 22:00 into Saturday 02:00.
+> - Equal start and end means a full 24 hours: `08:00` to `08:00` MON runs until Tuesday 08:00.
+>
+> **Weekdays:** `MON TUE WED THU FRI SAT SUN`, uppercase. Ranges like `MON-FRI` (also across the weekend,
+> `FRI-MON`) and lists like `SAT,SUN`.
+>
+> **Overlaps:** later ranges win where they overlap earlier ones.
