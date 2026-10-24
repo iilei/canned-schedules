@@ -115,6 +115,10 @@ func TestInvalidTimeMessages(t *testing.T) {
 		t.Errorf("24:00 must explain the exclusive end and point to 00:00, got %+v", diags)
 	}
 
+	if diags[0].Example != "`21:45` to `00:00`" || strings.Contains(diags[0].Message, "e.g.") {
+		t.Errorf("the example belongs in Example, not in the message: %+v", diags[0])
+	}
+
 	_, diags = Parse(item("noon", " to ", "14:00", " SAT"), 1)
 	if len(diags) != 1 || strings.Contains(diags[0].Message, "23:59") {
 		t.Errorf("examples must not suggest 23:59, got %+v", diags)

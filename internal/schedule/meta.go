@@ -84,7 +84,7 @@ func metaEntries(d *document.Directive) ([]metaEntry, diag.List) {
 		e, ok := metaItem(item)
 		if !ok {
 			diags = append(diags, diag.Errorf(item.Pos, diag.CodeMetaSchema,
-				"expected a META item like - x-custom-owner: `team-xyz`"))
+				"a META item is a key, a colon and a value in backticks").WithExample("- x-custom-owner: `team-xyz`"))
 
 			continue
 		}
