@@ -106,5 +106,37 @@
         "tier": "Minimum"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1-5",
+        "aws": "0 6 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "22:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "0 22 * * 1-5",
+        "aws": "0 22 ? * MON-FRI *"
+      }
+    }
+  ]
 }

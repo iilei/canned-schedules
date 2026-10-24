@@ -57,11 +57,76 @@ def paint(base, ranges):
     return out
 
 
+def paint_minutes(base, ranges):
+    week = [base] * WEEK
+    for start, end, days, tier in ranges:
+        sh, sm = start.split(":")
+        eh, em = end.split(":")
+        s = int(sh) * 60 + int(sm)
+        e = int(eh) * 60 + int(em)
+        length = (e - s) % 1440 or 1440
+        for d in days:
+            off = DAYS.index(d) * 1440 + s
+            for i in range(length):
+                week[(off + i) % WEEK] = tier
+    return week
+
+
+# Sunday-first order, as both cron dialects number days.
+SUN_FIRST = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+
+
+def compress(indexes, label):
+    """Render sorted Sunday-first day indexes as ranges and lists, never wrapping around the week."""
+    if len(indexes) == 7:
+        return "*"
+    parts, run = [], [indexes[0]]
+    for i in indexes[1:]:
+        if i == run[-1] + 1:
+            run.append(i)
+        else:
+            parts.append(run)
+            run = [i]
+    parts.append(run)
+    return ",".join(label(r[0]) if len(r) == 1 else f"{label(r[0])}-{label(r[-1])}" for r in parts)
+
+
+def transitions(week):
+    """Every minute where the tier changes (cyclic), grouped by (time of day, tier)."""
+    groups = {}
+    for m in range(WEEK):
+        if week[m] == week[m - 1]:
+            continue
+        key = (m % 1440, week[m])
+        groups.setdefault(key, []).append(m)
+    out = []
+    for (tod, tier), minutes in sorted(groups.items(), key=lambda kv: (min(kv[1]), kv[0][1])):
+        days = sorted({m // 1440 for m in minutes})
+        sun_first = sorted(SUN_FIRST.index(DAYS[d]) for d in days)
+        h, mi = divmod(tod, 60)
+        out.append({
+            "time": hm(tod),
+            "days": [DAYS[d] for d in days],
+            "tier": tier,
+            "cron": {
+                "posix": f"{mi} {h} * * {compress(sun_first, str)}",
+                "aws": f"{mi} {h} ? * {compress(sun_first, lambda i: SUN_FIRST[i])} *",
+            },
+        })
+    return out
+
+
 def output(base, ranges, annotations=None, name="Schedule-Name", hint=None):
     out = {"schema-version": "1", "name": name}
     if hint is not None:
         out["hint"] = hint
-    out.update({"base": base, "annotations": annotations or {}, "week": paint(base, ranges)})
+    week = paint_minutes(base, ranges)
+    out.update({
+        "base": base,
+        "annotations": annotations or {},
+        "week": paint(base, ranges),
+        "transitions": transitions(week),
+    })
     return out
 
 
@@ -347,6 +412,24 @@ write(
         "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-custom-owner": "team-xyz"}, hint="Office hours"),
+)
+
+write(
+    "valid/no-transitions-all-base",
+    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:TIER] Minimum\n> - `00:00` to `00:00` MON-SUN\n"),
+    want=output("Minimum", [("00:00", "00:00", DAYS, "Minimum")]),
+)
+
+write(
+    "valid/no-transitions-single-tier",
+    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:TIER] Medium\n> - `00:00` to `00:00` MON-SUN\n"),
+    want=output("Off", [("00:00", "00:00", DAYS, "Medium")]),
+)
+
+write(
+    "valid/transitions-every-day",
+    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:TIER] Medium\n> - `8:15` to `17:45` MON-SUN\n"),
+    want=output("Off", [("08:15", "17:45", DAYS, "Medium")]),
 )
 
 # ---------------------------------------------------------------- warnings (valid output + diagnostics)

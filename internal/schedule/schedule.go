@@ -34,6 +34,7 @@ type Output struct {
 	Hint          string            `json:"hint,omitempty"`
 	Base          string            `json:"base"`
 	Week          Week              `json:"week"`
+	Transitions   []Transition      `json:"transitions"`
 }
 
 // Week lists the runs of each day, Monday first. Field order defines the JSON key order.
@@ -82,13 +83,16 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		return nil, diags
 	}
 
+	week := paint(base, ranges)
+
 	return &Output{
 		SchemaVersion: m.schemaVersion,
 		Name:          doc.Name.Value,
 		Hint:          m.hint,
 		Base:          base.ID,
 		Annotations:   m.annotations,
-		Week:          paint(base, ranges),
+		Week:          weekRuns(week),
+		Transitions:   transitions(week),
 	}, diags
 }
 

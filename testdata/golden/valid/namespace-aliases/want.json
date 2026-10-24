@@ -123,5 +123,81 @@
         "tier": "Minimum"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1-5",
+        "aws": "0 6 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "22:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "0 22 * * 1-5",
+        "aws": "0 22 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "12:00",
+      "days": [
+        "WED"
+      ],
+      "tier": "Maximum",
+      "cron": {
+        "posix": "0 12 * * 3",
+        "aws": "0 12 ? * WED *"
+      }
+    },
+    {
+      "time": "14:00",
+      "days": [
+        "WED"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 14 * * 3",
+        "aws": "0 14 ? * WED *"
+      }
+    },
+    {
+      "time": "03:00",
+      "days": [
+        "SUN"
+      ],
+      "tier": "Off",
+      "cron": {
+        "posix": "0 3 * * 0",
+        "aws": "0 3 ? * SUN *"
+      }
+    },
+    {
+      "time": "04:00",
+      "days": [
+        "SUN"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "0 4 * * 0",
+        "aws": "0 4 ? * SUN *"
+      }
+    }
+  ]
 }

@@ -63,5 +63,29 @@
         "tier": "Minimum"
       }
     ]
-  }
+  },
+  "transitions": [
+    {
+      "time": "08:00",
+      "days": [
+        "MON"
+      ],
+      "tier": "Medium",
+      "cron": {
+        "posix": "0 8 * * 1",
+        "aws": "0 8 ? * MON *"
+      }
+    },
+    {
+      "time": "08:00",
+      "days": [
+        "TUE"
+      ],
+      "tier": "Minimum",
+      "cron": {
+        "posix": "0 8 * * 2",
+        "aws": "0 8 ? * TUE *"
+      }
+    }
+  ]
 }

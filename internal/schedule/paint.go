@@ -13,10 +13,10 @@ const (
 )
 
 // paint fills every minute of the week with base, then paints the ranges in source order: later ranges win where
-// they overlap. A range belongs to its start day and spills past midnight (and from SUN into MON) as needed.
-func paint(base config.Tier, ranges []tierRange) Week {
-	days := len(expr.Weekdays)
-	week := make([]string, days*minutesPerDay)
+// they overlap. A range belongs to its start day and spills past midnight (and from SUN into MON) as needed. The
+// result holds one tier id per minute, starting MON 00:00.
+func paint(base config.Tier, ranges []tierRange) []string {
+	week := make([]string, len(expr.Weekdays)*minutesPerDay)
 
 	for i := range week {
 		week[i] = base.ID
@@ -36,8 +36,13 @@ func paint(base config.Tier, ranges []tierRange) Week {
 		}
 	}
 
-	runs := make([][]Run, days)
-	for d := range days {
+	return week
+}
+
+// weekRuns splits the painted week into per-day runs.
+func weekRuns(week []string) Week {
+	runs := make([][]Run, len(expr.Weekdays))
+	for d := range runs {
 		runs[d] = dayRuns(week[d*minutesPerDay : (d+1)*minutesPerDay])
 	}
 
