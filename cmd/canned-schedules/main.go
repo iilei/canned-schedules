@@ -68,7 +68,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitInvalid
 	}
 
-	if err := writePreviews(&opts, out); err != nil {
+	if err := writeOutputs(&opts, out, src); err != nil {
 		fmt.Fprintln(stderr, diag.Sanitize(err.Error()))
 
 		return exitUsage
@@ -102,29 +102,39 @@ func run(args []string, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
-// writePreviews writes the SVG and ASCII preview files. It only runs for documents without errors, so a failed run
-// leaves earlier previews untouched rather than replacing them with broken ones. Files get colours only with
-// --color always.
-func writePreviews(opts *cli.Options, out *schedule.Output) error {
-	if p := opts.Preview.SVGFile; p != "" {
-		svg, err := cli.SVG(opts, out)
+// writeOutputs writes the requested output files: SVG and ASCII previews, MyST and the Sphinx kit. It only runs for
+// documents without errors, so a failed run leaves earlier files untouched rather than replacing them with broken
+// ones. The ASCII file gets colours only with --color always.
+func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
+	for _, o := range []struct {
+		render func() ([]byte, error)
+		flag   string
+		path   string
+	}{
+		{flag: "--svg-output-file", path: opts.Preview.SVGFile, render: func() ([]byte, error) {
+			return cli.SVG(opts, out)
+		}},
+		{flag: "--ascii-output-file", path: opts.Preview.ASCIIFile, render: func() ([]byte, error) {
+			return cli.ASCII(opts, out, opts.Preview.Color == cli.ColorAlways)
+		}},
+		{flag: "--myst-output-file", path: opts.Sphinx.MySTFile, render: func() ([]byte, error) {
+			return cli.MyST(opts, src)
+		}},
+		{flag: "--sphinx-kit-output-file", path: opts.Sphinx.KitFile, render: func() ([]byte, error) {
+			return cli.SphinxKit(opts, src, "canned-schedules "+version)
+		}},
+	} {
+		if o.path == "" {
+			continue
+		}
+
+		data, err := o.render()
 		if err != nil {
-			return fmt.Errorf("--svg-output-file: %w", err)
+			return fmt.Errorf("%s: %w", o.flag, err)
 		}
 
-		if err := files.WriteFile(p, display(p), svg); err != nil {
-			return fmt.Errorf("--svg-output-file %w", err)
-		}
-	}
-
-	if p := opts.Preview.ASCIIFile; p != "" {
-		text, err := cli.ASCII(opts, out, opts.Preview.Color == cli.ColorAlways)
-		if err != nil {
-			return fmt.Errorf("--ascii-output-file: %w", err)
-		}
-
-		if err := files.WriteFile(p, display(p), text); err != nil {
-			return fmt.Errorf("--ascii-output-file %w", err)
+		if err := files.WriteFile(o.path, display(o.path), data); err != nil {
+			return fmt.Errorf("%s %w", o.flag, err)
 		}
 	}
 

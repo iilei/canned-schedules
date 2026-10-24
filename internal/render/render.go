@@ -4,13 +4,10 @@
 package render
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
-	"text/template"
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
@@ -162,29 +159,9 @@ func SVG(out *schedule.Output, cfg *config.Config, size int, theme string) ([]by
 	return execute(templates.ScheduleSVG, Build(out, cfg, Downsample(out, cfg, size), theme))
 }
 
-// execute runs tmpl on model decoded from its own JSON, the same data gomplate gets with `-c .=model.json`.
+// execute renders a preview template; see templates.Execute.
 func execute(tmpl string, model any) ([]byte, error) {
-	raw, err := json.Marshal(model)
-	if err != nil {
-		return nil, fmt.Errorf("encode render model: %w", err)
-	}
-
-	var data any
-	if err := json.Unmarshal(raw, &data); err != nil {
-		return nil, fmt.Errorf("decode render model: %w", err)
-	}
-
-	t, err := template.New("preview").Parse(tmpl)
-	if err != nil {
-		return nil, fmt.Errorf("parse template: %w", err)
-	}
-
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, data); err != nil {
-		return nil, fmt.Errorf("render template: %w", err)
-	}
-
-	return buf.Bytes(), nil
+	return templates.Execute(tmpl, model)
 }
 
 // Build computes the render model for the downsampled week p in the given theme.

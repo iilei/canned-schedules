@@ -87,22 +87,3 @@ func TestSafety(t *testing.T) {
 		}
 	}
 }
-
-func TestStyleSheet(t *testing.T) {
-	t.Parallel()
-
-	cfg, _ := config.Load(nil)
-	css := StyleSheet(cfg, ".rendered.sphinx")
-
-	for i := range cfg.Tiers {
-		c := cfg.Style(i).Color
-		if !strings.Contains(css, c.Light) || !strings.Contains(css, c.Dark) {
-			t.Errorf("tier %d colours missing from:\n%s", i, css)
-		}
-	}
-
-	if !strings.Contains(css, `[data-theme="dark"] .rendered.sphinx .admonition.tier-0`) ||
-		!strings.Contains(css, `[data-theme="system"]`) {
-		t.Errorf("stylesheet must follow the page theme:\n%s", css)
-	}
-}

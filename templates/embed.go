@@ -1,7 +1,13 @@
 // Package templates embeds the repo-baked report templates.
 package templates
 
-import _ "embed" // Required for go:embed.
+import (
+	"bytes"
+	_ "embed" // Required for go:embed.
+	"encoding/json"
+	"fmt"
+	"text/template"
+)
 
 // MarkdownGFM renders the error report as GitHub-flavoured Markdown. It operates on the JSON report's data shape.
 //
@@ -17,3 +23,34 @@ var ScheduleSVG string
 //
 //go:embed schedule-ascii.tmpl
 var ScheduleASCII string
+
+// SphinxScheduleCSS styles schedule admonitions in Sphinx (Furo) and in the page's Sphinx view.
+//
+//go:embed sphinx-schedule.css.tmpl
+var SphinxScheduleCSS string
+
+// Execute runs tmpl on model decoded from its own JSON, so the template sees exactly the JSON shape: the same data
+// gomplate gets with `-c .=model.json`. Missing keys are errors, as in gomplate.
+func Execute(tmpl string, model any) ([]byte, error) {
+	raw, err := json.Marshal(model)
+	if err != nil {
+		return nil, fmt.Errorf("encode template data: %w", err)
+	}
+
+	var data any
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return nil, fmt.Errorf("decode template data: %w", err)
+	}
+
+	t, err := template.New("template").Parse(tmpl)
+	if err != nil {
+		return nil, fmt.Errorf("parse template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, data); err != nil {
+		return nil, fmt.Errorf("render template: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}

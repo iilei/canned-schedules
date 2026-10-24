@@ -55,6 +55,7 @@ function render(res) {
   // mode (raw HTML dropped, dangerous links removed).
   $("svg").innerHTML = state.svg || '<p class="placeholder">Fix the errors to see the week.</p>';
   $("download-svg").disabled = !state.svg;
+  $("download-kit").disabled = !state.svg;
   $("rendered").innerHTML = res[state.flavour + "-html"] || "";
   $("rendered").className = "rendered " + state.flavour;
   $("json").textContent = res.json || "No output: the request has errors (see Diagnostics).";
@@ -211,6 +212,16 @@ function download(name, type, content) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current request as MyST.
+function downloadKit() {
+  const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args());
+  if (typeof zip === "string") {
+    showStatus("err", zip);
+    return;
+  }
+  download("canned-schedules-sphinx-kit.zip", "application/zip", zip);
+}
+
 async function copyMarkdown() {
   const b = $("copy-md");
   try {
@@ -240,6 +251,7 @@ function wire() {
   $("reset").addEventListener("click", () => { if (current) load(current.text); });
   $("copy-md").addEventListener("click", copyMarkdown);
   $("download-svg").addEventListener("click", () => download("schedule.svg", "image/svg+xml", state.svg));
+  $("download-kit").addEventListener("click", downloadKit);
   // Re-render when the OS theme changes while following the system (the SVG uses --svg-theme auto then).
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (state.theme === "system") evaluate(); });
   pressed($("theme"), state.theme);

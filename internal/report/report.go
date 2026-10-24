@@ -3,11 +3,9 @@
 package report
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"text/template"
 
 	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/templates"
@@ -130,31 +128,16 @@ func txtLine(e *Entry) string {
 	return line
 }
 
-// renderTemplate executes tmpl on the report decoded from its own JSON, so the template sees exactly the JSON shape
-// (keys like .summary.errors), the same data gomplate gets with `-c .=report.json`. Missing keys are errors, as in
-// gomplate, so the template has to read optional keys with index.
+// renderTemplate executes tmpl on the report decoded from its own JSON (templates.Execute), so the template sees
+// exactly the JSON shape (keys like .summary.errors), the same data gomplate gets with `-c .=report.json`. Missing keys
+// are errors, as in gomplate, so the template has to read optional keys with index.
 func renderTemplate(w io.Writer, r Report, tmpl string) error {
-	raw, err := json.Marshal(r)
+	out, err := templates.Execute(tmpl, r)
 	if err != nil {
-		return fmt.Errorf("encode report: %w", err)
+		return fmt.Errorf("report: %w", err)
 	}
 
-	var data any
-	if err := json.Unmarshal(raw, &data); err != nil {
-		return fmt.Errorf("decode report: %w", err)
-	}
-
-	t, err := template.New("report").Parse(tmpl)
-	if err != nil {
-		return fmt.Errorf("parse report template: %w", err)
-	}
-
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, data); err != nil {
-		return fmt.Errorf("render report template: %w", err)
-	}
-
-	_, err = w.Write(buf.Bytes())
+	_, err = w.Write(out)
 
 	return err
 }
