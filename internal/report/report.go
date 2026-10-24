@@ -132,7 +132,8 @@ func txtLine(e *Entry) string {
 }
 
 // renderTemplate executes tmpl on the report decoded from its own JSON, so the template sees exactly the JSON shape
-// (keys like .summary.errors), the same data gomplate gets with `-c .=report.json`.
+// (keys like .summary.errors), the same data gomplate gets with `-c .=report.json`. Missing keys are errors, as in
+// gomplate, so the template has to read optional keys with index.
 func renderTemplate(w io.Writer, r Report, tmpl string) error {
 	raw, err := json.Marshal(r)
 	if err != nil {
@@ -144,7 +145,7 @@ func renderTemplate(w io.Writer, r Report, tmpl string) error {
 		return fmt.Errorf("decode report: %w", err)
 	}
 
-	t, err := template.New("report").Option("missingkey=zero").Parse(tmpl)
+	t, err := template.New("report").Parse(tmpl)
 	if err != nil {
 		return fmt.Errorf("parse report template: %w", err)
 	}

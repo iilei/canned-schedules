@@ -7,6 +7,8 @@
     canned-schedules --error-output-format json --error-output-file report.json request.md
     gomplate -c .=report.json -f templates/markdown-gfm.tmpl
 
+  Optional keys (file, location, excerpt) are read with index, because a missing key is an error otherwise.
+
   Safety: every user-derived string (file, message, source excerpt) is printed only inside the ~~~~~~ fences, where
   Markdown, HTML, links, @mentions and #references don't render. The tool sanitizes control characters beforehand.
 */ -}}
@@ -22,8 +24,8 @@ No problems found.
 #### {{ .severity }} `{{ .code }}`
 
 ~~~~~~text
-{{ with .location }}{{ . }}: {{ else }}{{ with .file }}{{ . }}: {{ end }}{{ end }}{{ .message }}
-{{- with .excerpt }}
+{{ with index . "location" }}{{ . }}: {{ else }}{{ with index . "file" }}{{ . }}: {{ end }}{{ end }}{{ .message }}
+{{- with index . "excerpt" }}
 
 {{ .text }}
 {{ .marker }}
