@@ -85,14 +85,15 @@ func Render(w io.Writer, r Report, format, tmpl string) error {
 	case tmpl != "":
 		return fmt.Errorf("unknown report template %q", tmpl)
 	case format == FormatJSON:
-		b, err := json.MarshalIndent(r, "", "  ")
-		if err != nil {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		enc.SetEscapeHTML(false) // Excerpts start with ">"; this JSON is not embedded in HTML.
+
+		if err := enc.Encode(r); err != nil {
 			return fmt.Errorf("encode report: %w", err)
 		}
 
-		_, err = fmt.Fprintf(w, "%s\n", b)
-
-		return err
+		return nil
 	case format == FormatTXT || format == "":
 		for i := range r.Diagnostics {
 			if _, err := fmt.Fprintln(w, txtLine(&r.Diagnostics[i])); err != nil {

@@ -190,3 +190,15 @@ func TestASCIIOutput(t *testing.T) {
 		t.Error("with --ascii-output-file, stdout still carries the JSON")
 	}
 }
+
+func TestJSONIsNotHTMLEscaped(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+
+	run([]string{"--error-output-format", "json", "../../testdata/golden/error/time-24-00/input.md"}, &stdout, &stderr)
+
+	if !strings.Contains(stderr.String(), `"text": "> - `) || strings.Contains(stderr.String(), `\u003e`) {
+		t.Errorf("the JSON report must keep the \">\" of excerpts:\n%s", stderr.String())
+	}
+}
