@@ -2,6 +2,7 @@ package expr
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/iilei/canned-schedules/internal/diag"
@@ -101,5 +102,20 @@ func TestParseErrors(t *testing.T) {
 				t.Errorf("got %+v, want %q", diags, tt.want)
 			}
 		})
+	}
+}
+
+func TestInvalidTimeMessages(t *testing.T) {
+	t.Parallel()
+
+	_, diags := Parse(item("10:00", " to ", "24:00", " SAT"), 1)
+	if len(diags) != 1 || !strings.Contains(diags[0].Message, "exclusive") ||
+		!strings.Contains(diags[0].Message, "00:00") {
+		t.Errorf("24:00 must explain the exclusive end and point to 00:00, got %+v", diags)
+	}
+
+	_, diags = Parse(item("noon", " to ", "14:00", " SAT"), 1)
+	if len(diags) != 1 || strings.Contains(diags[0].Message, "23:59") {
+		t.Errorf("examples must not suggest 23:59, got %+v", diags)
 	}
 }
