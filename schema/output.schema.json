@@ -11,7 +11,8 @@
     "annotations",
     "digests",
     "week",
-    "transitions"
+    "transitions",
+    "warnings"
   ],
   "properties": {
     "schema-version": {
@@ -96,6 +97,13 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/transition"
+      }
+    },
+    "warnings": {
+      "description": "Non-fatal diagnostics. No file names: the output depends only on the document and the flags.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
       }
     }
   },
@@ -201,6 +209,60 @@
             }
           }
         }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z]+(?:-[a-z]+)*$"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "excerpt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "marker"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "marker": {
+              "type": "string",
+              "pattern": "^[ \\t]*\\^$"
+            }
+          }
+        }
+      },
+      "dependentRequired": {
+        "line": [
+          "column"
+        ],
+        "column": [
+          "line"
+        ],
+        "excerpt": [
+          "line"
+        ]
       }
     }
   }

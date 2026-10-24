@@ -75,6 +75,17 @@ func compareOutput(t *testing.T, out *schedule.Output, wantJSON string) {
 		t.Fatal("expected output, got none")
 	}
 
+	// Fixtures don't pin message text: compare warnings by code and position only.
+	normalized := *out
+	normalized.Warnings = make([]schedule.Warning, len(out.Warnings))
+	copy(normalized.Warnings, out.Warnings)
+
+	for i := range normalized.Warnings {
+		normalized.Warnings[i].Message = "…"
+	}
+
+	out = &normalized
+
 	gotJSON, err := json.Marshal(out)
 	if err != nil {
 		t.Fatal(err)

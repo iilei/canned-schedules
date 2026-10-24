@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 	"text/template"
 
 	"github.com/iilei/canned-schedules/internal/diag"
@@ -23,10 +22,6 @@ const (
 	FormatJSON          = "json"
 	TemplateMarkdownGFM = "markdown-gfm"
 )
-
-// excerptFence is the start of the fence the Markdown template uses. A source line starting with it could close the
-// fence early, so such lines get no excerpt.
-const excerptFence = "~~~"
 
 // Report is the JSON error report. The Markdown template operates on exactly this shape. Field order is the JSON key
 // order people read.
@@ -46,26 +41,20 @@ type Summary struct {
 // Entry is one diagnostic. Line, Column, Location and Excerpt are omitted for diagnostics without a position.
 // File, Location, Message and Excerpt are sanitized (see diag.Sanitize).
 type Entry struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
-	Severity string   `json:"severity"`
-	Code     string   `json:"code"`
-	File     string   `json:"file,omitempty"`
-	Location string   `json:"location,omitempty"`
-	Line     int      `json:"line,omitempty"`
-	Column   int      `json:"column,omitempty"`
-	Message  string   `json:"message"`
-	Excerpt  *Excerpt `json:"excerpt,omitempty"`
-}
-
-// Excerpt is the source line of a diagnostic and a marker line with a caret under the column.
-type Excerpt struct {
-	Text   string `json:"text"`
-	Marker string `json:"marker"`
+	Severity string        `json:"severity"`
+	Code     string        `json:"code"`
+	File     string        `json:"file,omitempty"`
+	Location string        `json:"location,omitempty"`
+	Line     int           `json:"line,omitempty"`
+	Column   int           `json:"column,omitempty"`
+	Message  string        `json:"message"`
+	Excerpt  *diag.Excerpt `json:"excerpt,omitempty"`
 }
 
 // Build creates the report for file. src may be nil when the file couldn't be read.
 func Build(file string, src []byte, diags diag.List) Report {
 	r := Report{SchemaVersion: SchemaVersion, File: diag.Sanitize(file), Diagnostics: []Entry{}}
-	lines := strings.Split(string(src), "\n")
+	lines := diag.SourceLines(src)
 
 	for _, d := range diags {
 		switch d.Severity {
@@ -79,7 +68,7 @@ func Build(file string, src []byte, diags diag.List) Report {
 		if d.Pos != (diag.Pos{}) {
 			e.Line, e.Column = d.Pos.Line, d.Pos.Col
 			e.Location = d.Location(file)
-			e.Excerpt = excerpt(lines, d.Pos)
+			e.Excerpt = diag.MakeExcerpt(lines, d.Pos)
 		}
 
 		r.Diagnostics = append(r.Diagnostics, e)
@@ -158,33 +147,4 @@ func renderTemplate(w io.Writer, r Report, tmpl string) error {
 	_, err = w.Write(buf.Bytes())
 
 	return err
-}
-
-// excerpt returns the sanitized source line at pos with a caret under the column. Tabs before the column are copied
-// into the marker so the caret lines up.
-func excerpt(lines []string, pos diag.Pos) *Excerpt {
-	if pos.Line < 1 || pos.Line > len(lines) {
-		return nil
-	}
-
-	line := strings.TrimRight(lines[pos.Line-1], "\r")
-	if strings.HasPrefix(strings.TrimLeft(line, " \t"), excerptFence) {
-		return nil
-	}
-
-	runes := []rune(line)
-	before := string(runes[:min(max(pos.Col-1, 0), len(runes))])
-
-	var marker strings.Builder
-	for _, r := range diag.Sanitize(before) {
-		if r == '\t' {
-			marker.WriteRune('\t')
-		} else {
-			marker.WriteRune(' ')
-		}
-	}
-
-	marker.WriteRune('^')
-
-	return &Excerpt{Text: diag.Sanitize(line), Marker: marker.String()}
 }
