@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -22,6 +23,23 @@ func TestEvaluateValid(t *testing.T) {
 
 	if !strings.Contains(res.SVG, "color-scheme: dark") {
 		t.Error("the SVG must follow --svg-theme")
+	}
+
+	// The page's SVG always carries the canonical request and the digest from the JSON.
+	var out struct {
+		Digests struct {
+			Schedule string `json:"schedule"`
+		} `json:"digests"`
+	}
+
+	if err := json.Unmarshal([]byte(res.JSON), &out); err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(res.SVG, `digest="`+out.Digests.Schedule+`"`) ||
+		!strings.Contains(res.SVG, "&gt; [!SCHEDULE-STATE] Medium") ||
+		!strings.Contains(res.SVG, `generator="canned-schedules preflight page`) {
+		t.Error("the page's SVG must embed the source")
 	}
 
 	if !strings.Contains(res.GitHubHTML, "<h1>Office Hours</h1>") || !strings.Contains(res.SphinxHTML, "admonition") {
