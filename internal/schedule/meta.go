@@ -16,8 +16,9 @@ import (
 
 const customPrefix = "x-"
 
-// metaKey matches the text before the code span of a META item: "key:" with optional surrounding spaces.
-var metaKey = regexp.MustCompile(`^\s*([^:\s]+)\s*:\s*$`)
+// metaKey matches the text before the code span of a META item: "key:" with optional surrounding whitespace, the
+// no-break space included (see document.IsSpace).
+var metaKey = regexp.MustCompile(`^[\s\x{00A0}]*([^:\s\x{00A0}]+)[\s\x{00A0}]*:[\s\x{00A0}]*$`)
 
 var metaSchema = sync.OnceValues(func() (*jsonschema.Schema, error) {
 	return schema.Compile(schema.MetaSchemaURL, schema.MetaSchema)
@@ -105,7 +106,7 @@ func metaEntries(d *document.Directive) ([]metaEntry, diag.List) {
 // metaItem decodes `key: `value“ with nothing but whitespace after the code span.
 func metaItem(item document.Item) (metaEntry, bool) {
 	toks := item.Tokens
-	if len(toks) == 3 && toks[2].Kind == document.TokenText && strings.TrimSpace(toks[2].Value) == "" {
+	if len(toks) == 3 && toks[2].Kind == document.TokenText && document.TrimSpace(toks[2].Value) == "" {
 		toks = toks[:2]
 	}
 

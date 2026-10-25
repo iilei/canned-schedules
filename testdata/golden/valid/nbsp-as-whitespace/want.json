@@ -1,0 +1,146 @@
+{
+  "schema-version": "1",
+  "name": "Office Hours",
+  "hint": "Quiet days",
+  "base": "Minimum",
+  "annotations": {
+    "x-owner": "team-xyz"
+  },
+  "digests": {
+    "schedule": "sha256:e00bced1bec8592bc1162599ad5ade3a5af945fec0f866f73e9f62faf41d1560"
+  },
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "state": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "state": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "state": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "state": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "22:00",
+        "state": "Medium"
+      },
+      {
+        "start": "22:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "state": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1-5",
+        "aws": "0 6 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "22:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "state": "Minimum",
+      "cron": {
+        "posix": "0 22 * * 1-5",
+        "aws": "0 22 ? * MON-FRI *"
+      }
+    }
+  ],
+  "warnings": []
+}

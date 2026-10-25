@@ -138,6 +138,12 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
   - **A day already covered by an earlier part warns** (`repeated-weekday`, at the part that introduces it, once per
     item): `MON-WED,TUE`, `FRI-MON,SUN`. The range still applies.
   - Whitespace from the first weekday name to the end of the line is ignored (`SAT, SUN` and `MON - FRI` are fine).
+- **No-break space is whitespace (decided 2026-10-25):** `document.IsSpace` (space, tab, U+00A0) is the one rule for
+  every place the grammar allows whitespace: trimming of name, hint and titles (with matching columns), around ` to `,
+  before and inside weekday expressions, around the colon of META keys. Copy and paste brings U+00A0 in, and it
+  renders like a space. Other invisible characters (zero-width space, …) are not whitespace and stay errors, escaped in
+  messages. U+202F (narrow no-break space) only on request. Fixtures: `valid/nbsp-as-whitespace`,
+  `error/zero-width-space-in-weekdays`.
 - **Cron forms are not accepted** as input.
 - **`--sample-interval <minutes>`** (renamed from `--granularity`, 2026-10-24, for one vocabulary with
   `--preview-downsample`): default `1`. It must divide 60 evenly (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60). Every
@@ -435,16 +441,16 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - `internal/myst`: a valid request → MyST (H1, META always as a `Schedule: hint` admonition, BASE with
   `BaseText`, STATE items written as in the request). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
+  - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
+    (`&nbsp;`) as its body, because docutils rejects an admonition without content. Earlier a hint-only META became a
+    plain paragraph, which looked inconsistent next to META blocks with items. Authors never type the body: requiring
+    a body in the input was rejected (an invisible character, and only docutils needs it).
   - **No weekday tooltips (dropped 2026-10-25):** `{abbr}` roles (and `<abbr>` in the page's Sphinx view) made items
     hard to read, and expanding the fixed English abbreviations told readers almost nothing.
 - `internal/sphinxkit.Kit`: deterministic zip (sorted, fixed timestamps) with README, `_ext/canned_schedules`
   (`__init__.py` loads myst_parser, appends its static dir to `html_static_path`, adds `colon_fence`, adds the CSS),
   the Furo stylesheet, all six Ubuntu fonts the page uses + UFL, `examples/<slug>.md`, VERSION (tool + config digest).
 - Channels: `--myst-output-file`, `--sphinx-kit-output-file` (written in `writeOutputs` like the previews, only
-  - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
-    (`&nbsp;`) as its body, because docutils rejects an admonition without content. Earlier a hint-only META became a
-    plain paragraph, which looked inconsistent next to META blocks with items. Authors never type the body: requiring
-    a body in the input was rejected (an invisible character, and only docutils needs it).
   without errors); page: **Download MyST** (`myst` in the evaluate result, like the SVG) and
   `cannedSchedules.sphinxKit(markdown, args)`, which returns a `Uint8Array` or an error string and is built on click.
 - **MyST is build output (decided 2026-10-25):** users edit and validate the GFM request; docs builds regenerate the
