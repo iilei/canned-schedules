@@ -481,6 +481,27 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Verified end to end with sphinx 9.1.0, furo 2025.12.19, myst-parser 5.1.0: `sphinx-build -W` clean, screenshots in
   light and dark match the page.
 
+## Licence and releases (decided 2026-10-25)
+
+- **Licence: FSL-1.1-ALv2** (`LICENSE.md`, the fsl.software template, unchanged except the copyright line): any use,
+  internal company use included, except a competing commercial product or service; each release becomes Apache-2.0
+  two years after publication. Chosen for adoption while keeping room to earn from the concept. The name and logo
+  aren't licensed (the licence's Trademarks clause). No CLA for now. Third-party licences ship as
+  `THIRD_PARTY_LICENSES.md` in every archive (`mise run licenses`: Go modules in the binary, the Go standard library,
+  the embedded fonts).
+- **goreleaser** (pinned in `mise.toml`, no goreleaser-action): `.goreleaser.yml` builds linux amd64/arm64/armv7, a
+  darwin universal binary and windows amd64/arm64 into `dist/release` (so `--clean` spares `dist/site`), reproducibly
+  (`-trimpath`, commit timestamps). It GPG-signs every archive and `checksums.txt` and creates the release as a
+  **draft**. `mise run release:snapshot` builds locally without signing or publishing.
+- **`.github/workflows/release.yml`** on `v*` tags: build (goreleaser, key from `crazy-max/ghaction-import-gpg`),
+  smoke (each native archive verified against `checksums.txt` and run on its runner: ubuntu x86_64 and arm64, macOS,
+  windows amd64 and arm64; armv7 has no runner), publish (a `.sha256` sidecar per archive, then the draft is
+  published; tags with `-` stay pre-releases, never "latest"). Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`.
+- **CI matrix:** `check.yml` also builds and tests on ubuntu, macos and windows (Go only). `.gitattributes` forces LF
+  so Windows checkouts don't break the golden fixtures; `assets/fonts` stays byte-identical. Tests avoid OS
+  specifics: drive letters for absolute paths, no permission bits on Windows, diagnostic codes instead of OS error
+  texts.
+
 ## Open
 
 - Nothing open at the moment.

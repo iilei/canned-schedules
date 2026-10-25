@@ -1,9 +1,13 @@
 version: 2
 
+# Release builds go to dist/release, so --clean leaves the preflight page's dist/site alone.
+dist: dist/release
+
 before:
   hooks:
-    - go mod tidy
     - go test ./...
+    # The licences of everything compiled or embedded into the binary, shipped in every archive.
+    - mise run licenses
 
 builds:
   - id: canned-schedules-linux
@@ -19,6 +23,10 @@ builds:
       - arm
     goarm:
       - "7"  # ARMv7
+    # Reproducible: no local paths in the binary, file times from the commit.
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
@@ -35,6 +43,10 @@ builds:
     goarch:
       - amd64
       - arm64
+    # Reproducible: no local paths in the binary, file times from the commit.
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
@@ -51,6 +63,10 @@ builds:
     goarch:
       - amd64
       - arm64
+    # Reproducible: no local paths in the binary, file times from the commit.
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
@@ -78,7 +94,8 @@ archives:
       - tar.gz
     files:
       - README.md
-      - LICENSE
+      - LICENSE.md
+      - THIRD_PARTY_LICENSES.md
 
   - id: windows-archives
     ids:
@@ -88,7 +105,8 @@ archives:
       - zip
     files:
       - README.md
-      - LICENSE
+      - LICENSE.md
+      - THIRD_PARTY_LICENSES.md
 
 universal_binaries:
   - id: canned-schedules-darwin
@@ -121,24 +139,27 @@ changelog:
     - title: Others
       order: 999
 
+# Every archive and checksums.txt get a detached GPG signature (<file>.sig). The key comes from the release workflow
+# (GPG_FINGERPRINT); mise run release:snapshot skips signing.
 signs:
-  - cmd: gpg
-    args:
-      - "--batch"
-      - "--local-user"
-      - "{{ .Env.GPG_FINGERPRINT }}"
-      - "--output"
-      - "${signature}"
-      - "--detach-sign"
-      - "${artifact}"
+  - id: archives
+    cmd: gpg
+    args: ["--batch", "--local-user", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign",
+           "${artifact}"]
+    artifacts: archive
+    output: true
+  - id: checksums
+    cmd: gpg
+    args: ["--batch", "--local-user", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign",
+           "${artifact}"]
     artifacts: checksum
     output: true
 
+# Created as a draft: the release workflow publishes it only after every native binary passed its smoke test.
 release:
   prerelease: auto
-  draft: false
+  draft: true
   replace_existing_draft: true
-  make_latest: true
   mode: replace
   header: |
     ## canned-schedules {{ .Tag }} ({{ .Date }})
@@ -150,7 +171,13 @@ release:
     ## Installation
 
     ### Binary Download
-    Download the appropriate binary for your platform from the assets below.
+    Download the archive for your platform from the assets below. Each archive has a detached GPG signature
+    (`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists all of them and is signed too:
+
+    ```bash
+    gpg --verify checksums.txt.sig checksums.txt
+    sha256sum --check --ignore-missing checksums.txt
+    ```
 
     ### Using Go
     ```bash

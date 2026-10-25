@@ -2,4 +2,6 @@
 coverage
 /canned-schedules
 /dist
+# Generated for release archives by mise run licenses.
+/THIRD_PARTY_LICENSES.md
 /editor/node_modules

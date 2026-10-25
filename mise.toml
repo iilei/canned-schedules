@@ -4,6 +4,8 @@ golangci-lint = "2.14.0"
 go = "1.25.14"
 # Runs the test suites compiled to WebAssembly (test:wasm), like the browser page does.
 node = "22.22.2"
+# Builds, signs and publishes releases (.goreleaser.yml); CI uses the same version.
+goreleaser = "2.18.3"
 
 [tasks.fmt]
 description = "Format Go code using the configured golangci-lint formatters"
@@ -44,6 +46,39 @@ run = "go mod tidy"
 [tasks.check]
 description = "Run all non-mutating quality checks"
 depends = ["fmt:check", "vet", "lint", "test", "build"]
+
+[tasks.licenses]
+description = "Write THIRD_PARTY_LICENSES.md: the licences of everything compiled or embedded into the binary"
+# Raw block: mise renders task scripts as templates, and go list's format uses the same braces.
+run = '''
+{% raw %}
+set -eu
+out=THIRD_PARTY_LICENSES.md
+fence() { printf '\n```text\n'; cat "$1"; printf '```\n'; }
+{
+  printf '# Third-party licences\n\nThe canned-schedules binary contains the following Go modules, the Go standard library and the\n'
+  printf 'fonts embedded for the Sphinx kit. Their licences follow. canned-schedules itself is licensed under LICENSE.md.\n'
+  go list -deps -f '{{if not .Standard}}{{with .Module}}{{if .Version}}{{.Path}} {{.Version}} {{.Dir}}{{end}}{{end}}{{end}}' \
+    ./cmd/canned-schedules | sort -u |
+  while read -r path version dir; do
+    lic=$(ls "$dir" | grep -i -m1 -E '^(licen[cs]e|copying)') || { echo "no licence file in $dir" >&2; exit 1; }
+    printf '\n## %s %s\n' "$path" "$version"
+    fence "$dir/$lic"
+  done
+  printf '\n## Go standard library (%s)\n' "$(go env GOVERSION)"
+  fence "$(go env GOROOT)/LICENSE"
+  printf '\n## Ubuntu and Ubuntu Mono fonts (Ubuntu Font Licence)\n'
+  fence assets/fonts/UFL.txt
+  printf '\n## Schedule Braille Mono font (SIL Open Font License, a subset of Cascadia Mono)\n'
+  fence assets/fonts/OFL-schedule-braille-mono.txt
+} > "$out"
+echo "wrote $out"
+{% endraw %}
+'''
+
+[tasks."release:snapshot"]
+description = "Build the release archives locally (no signing, no publishing) into dist/release"
+run = "goreleaser release --snapshot --clean --skip=sign,publish"
 
 [tasks.docs]
 description = "Regenerate the README's generated sections (flag tables, diagnostic codes) from the code"

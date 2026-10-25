@@ -45,3 +45,28 @@ jobs:
 
       # The preflight page builds (WebAssembly, static files).
       - run: mise run web:build
+
+  # Builds and tests on the three common systems, so OS-specific behaviour (paths shown as ~/..., separators, atomic
+  # file writes) is checked where it runs. Release binaries are cross-compiled by goreleaser either way.
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Only Go: linting and the WebAssembly suites run in the check job above.
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          install_args: go
+
+      - run: go build ./...
+
+      - run: go test ./...
+
