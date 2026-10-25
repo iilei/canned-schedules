@@ -16,8 +16,9 @@ const (
 )
 
 type preset struct {
-	ID    string `json:"id"`
-	Label string `json:"label"`
+	ID     string `json:"id"`
+	Label  string `json:"label"`
+	Hidden bool   `json:"hidden"` // Not in the dropdown; opened by link only (?preset=<id>).
 }
 
 // TestPresets keeps the page's presets valid: every listed preset evaluates without diagnostics, and the index and

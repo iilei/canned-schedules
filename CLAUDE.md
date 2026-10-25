@@ -401,7 +401,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - Versions follow the two-week rule: installed with `npm install --before=<date two weeks back>`.
 - Presets: `web/presets/index.json` lists them (id, label), `web/presets/<id>.md` holds the text. `office-hours` is
   the GitLab issue template, copied in by `web:build`, so it never drifts. `TestPresets` (internal/web) requires every
-  preset to evaluate without diagnostics and the index and files to match. The dropdown replaces the editor content
+  preset to evaluate without diagnostics and the index and files to match. **Easter egg:** `yolo` is marked
+  `"hidden": true`, so it stays out of the dropdown and only opens by link (`?preset=yolo`): the week spells YOLO in
+  a 3×5 pixel font. Keep it; it is not dead code. The dropdown replaces the editor content
   (asking first when there are unsaved edits); Reset is disabled until the editor differs from the selected preset.
 - `--svg-theme auto|light|dark` (CLI too): an inline SVG's `prefers-color-scheme` follows the OS, not the page, so
   pages with their own toggle render a fixed palette. SVG rules are scoped under `.canned-schedule` because inline
