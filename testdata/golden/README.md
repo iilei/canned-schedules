@@ -51,7 +51,7 @@ A diagnostic points at the first character of the offending token:
 {
   "schema-version": "1",
   "name": "Schedule-Name",
-  "hint": "Office hours only",
+  "summary": "Office hours only",
   "base": "Minimum",
   "annotations": {"x-owner": "team-xyz"},
   "digests": {"schedule": "sha256:10ab…"},
@@ -75,7 +75,7 @@ A diagnostic points at the first character of the offending token:
   `00:00` means the end of that day. Adjacent runs with the same state are merged.
 - State names use the **config's spelling** of the id, whatever case the document used.
 - Times are always `HH:MM` in the output, even when the input used `H:MM` (`6:00` → `06:00`).
-- `name` comes from the H1. `hint` is the text after the META marker and is **omitted** when there is none.
+- `name` comes from the H1. `summary` is the text after the META marker and is **omitted** when there is none.
 - `annotations` holds every `x-*` META key verbatim (`{}` if none).
 - `transitions` lists every moment the active state changes. The week is cyclic, so MON 00:00 follows SUN 23:59.
   - Days that switch to the same state at the same time are grouped into one entry. `days` is the full list, Monday
@@ -95,7 +95,7 @@ A diagnostic points at the first character of the offending token:
   message text: they hold `"…"`, and the golden runner replaces actual messages with it before comparing.
 - `digests`, written `sha256:<64 lowercase hex>`:
   - `schedule`: SHA-256 of `{"base": …, "week": …}` as compact JSON (no whitespace, keys in the order shown here).
-    It changes only when what a consumer acts on changes, never for name, hint, annotations or cron rendering.
+    It changes only when what a consumer acts on changes, never for name, summary, annotations or cron rendering.
 - The whole output is described by `schema/output.schema.json`. The tool validates its own output against it, and a
   test validates every `want.json` here against it.
 
@@ -111,7 +111,7 @@ styles. The namespace is fixed in code: `SCHEDULE` only.
   `unknown-state`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
   `config-schema`, `config-duplicate-state`, `config-duplicate-symbol` (a warning), `invalid-marker`, `disallowed-alert`,
   `style-reuse`, `preview-approximate`, `duplicate-weekday`, `repeated-weekday` (a warning), `missing-kind`, `duplicate-block`,
-  `empty-state`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
+  `empty-state`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-summary`.
 
 ## Undecided: no fixtures yet
 

@@ -54,11 +54,11 @@ mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:808
 A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE-…]` marker.
 Everything else is free text for humans, including standard alerts such as `[!NOTE]`.
 
-| Block                     | Required      | Content                                                                                     |
-| ------------------------- | ------------- | ------------------------------------------------------------------------------------------- |
-| `[!SCHEDULE-META] hint`   | no            | Optional hint after the marker; list items `` x-<name>: `value` `` for your own bookkeeping |
-| `[!SCHEDULE-BASE] state`  | no            | The state wherever no range applies                                                         |
-| `[!SCHEDULE-STATE] state` | one per state | A list of ranges                                                                            |
+| Block                      | Required      | Content                                                                                        |
+| -------------------------- | ------------- | ---------------------------------------------------------------------------------------------- |
+| `[!SCHEDULE-META] summary` | no            | Optional summary after the marker; list items `` x-<name>: `value` `` for your own bookkeeping |
+| `[!SCHEDULE-BASE] state`   | no            | The state wherever no range applies                                                            |
+| `[!SCHEDULE-STATE] state`  | one per state | A list of ranges                                                                               |
 
 `SCHEDULE` is the only namespace, joined to the kind with a hyphen. Markers and state names are case-insensitive. Any
 other alert, including a misspelt `[!SCHEDUEL-STATE]`, is free text unless `--error-unless-alert-pattern` restricts
@@ -190,7 +190,7 @@ writes a zip with:
   extensions += ["canned_schedules"]
   ```
 
-`--myst-output-file schedule.md` writes just the MyST for a request: the name, the hint, and the META, BASE and STATE
+`--myst-output-file schedule.md` writes just the MyST for a request: the name, the summary, and the META, BASE and STATE
 blocks as `:::{admonition}` blocks with the classes the stylesheet expects, items written as in the request. The issue's
 free text stays out. Colours follow `--set-config-*`; regenerate the kit after changing the state styles. On the page,
 **Download MyST** gives the same file for the document in the editor.
@@ -235,7 +235,7 @@ rehype().use(rehypeCallouts, {
 });
 ```
 
-The text after the marker becomes the callout's title (the state id or the hint), and each block gets
+The text after the marker becomes the callout's title (the state id or the summary), and each block gets
 `data-callout="schedule-state"` (lowercase) for styling with one of its themes:
 
 ```css
@@ -288,7 +288,7 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
 {
   "schema-version": "1",
   "name": "Office Hours",
-  "hint": "Weekdays with a late Friday",
+  "summary": "Weekdays with a late Friday",
   "base": "Minimum",
   "annotations": {"x-owner": "team-xyz"},
   "digests": {"schedule": "sha256:…"},
@@ -318,7 +318,7 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
   zone: set it where you schedule them.
 - `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
   line, column and excerpt. No file names: the output depends only on the document and the flags.
-- `digests.schedule` changes only when the base or the week changes, never for the name, hint, annotations or
+- `digests.schedule` changes only when the base or the week changes, never for the name, summary, annotations or
   prose. To trace a schedule back to its source, carry a git SHA or an issue link in an `x-*` META key.
 - The schema is [`schema/output.schema.json`](schema/output.schema.json); details in
   [`testdata/golden/README.md`](testdata/golden/README.md).

@@ -117,10 +117,10 @@ def transitions(week):
     return out
 
 
-def output(base, ranges, annotations=None, name="Schedule-Name", hint=None, warnings=()):
+def output(base, ranges, annotations=None, name="Schedule-Name", summary=None, warnings=()):
     out = {"schema-version": "1", "name": name}
-    if hint is not None:
-        out["hint"] = hint
+    if summary is not None:
+        out["summary"] = summary
     week = paint_minutes(base, ranges)
     week_runs = paint(base, ranges)
     # The schedule digest covers what a consumer acts on: the base state and the painted week.
@@ -387,7 +387,7 @@ write(
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
 
-# A no-break space (U+00A0) counts as whitespace wherever the grammar allows whitespace: around the hint and the name,
+# A no-break space (U+00A0) counts as whitespace wherever the grammar allows whitespace: around the summary and the name,
 # around "to", before and inside the weekday expression, and around the colon of META keys.
 NBSP = "\u00a0"
 write(
@@ -399,7 +399,7 @@ write(
         title=f"Office Hours{NBSP}",
     ),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-owner": "team-xyz"}, name="Office Hours",
-                hint="Quiet days"),
+                summary="Quiet days"),
 )
 
 write(
@@ -441,24 +441,24 @@ write(
 )
 
 write(
-    "valid/meta-hint",
+    "valid/meta-summary",
     doc(
         "> [!SCHEDULE-META]   Office hours plus late Friday 2   \n> - schema-version: `1`\n",
         "> [!SCHEDULE-BASE] Minimum\n",
         "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
-    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], hint="Office hours plus late Friday 2"),
+    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], summary="Office hours plus late Friday 2"),
 )
 
 write(
-    "valid/meta-hint-without-items",
+    "valid/meta-summary-without-items",
     doc(
         "> [!SCHEDULE-META] Weekend shop\n",
         "> [!SCHEDULE-BASE] Off\n",
         "> [!SCHEDULE-STATE] Medium\n> - `10:00` to `18:00` SAT,SUN\n",
         title="Weekend-Shop 2026",
     ),
-    want=output("Off", [("10:00", "18:00", WE, "Medium")], name="Weekend-Shop 2026", hint="Weekend shop"),
+    want=output("Off", [("10:00", "18:00", WE, "Medium")], name="Weekend-Shop 2026", summary="Weekend shop"),
 )
 
 write(
@@ -468,7 +468,7 @@ write(
         "> [!SCHEDULE-BASE] Minimum\n",
         "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
-    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-owner": "team-xyz"}, hint="Office hours"),
+    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-owner": "team-xyz"}, summary="Office hours"),
 )
 
 write(
@@ -728,11 +728,11 @@ err(
     "SCHEDULE-STATE",
     "misplaced-directive",
 )
-err("error/hint-too-long", ["> [!SCHEDULE-META] " + "a" * 81 + "\n", BASE, STATE], "a" * 81, "invalid-hint")
-err("error/hint-bad-character", ["> [!SCHEDULE-META] Office hours!\n", BASE, STATE], "Office", "invalid-hint")
-err("error/hint-trailing-hyphen", ["> [!SCHEDULE-META] Office-\n", BASE, STATE], "Office", "invalid-hint")
-err("error/hint-leading-digit", ["> [!SCHEDULE-META] 24h service\n", BASE, STATE], "24h", "invalid-hint")
-err("error/hint-on-base", [META, "> [!SCHEDULE-BASE] Minimum extra\n", STATE], "Minimum extra", "unknown-state")
+err("error/summary-too-long", ["> [!SCHEDULE-META] " + "a" * 81 + "\n", BASE, STATE], "a" * 81, "invalid-summary")
+err("error/summary-bad-character", ["> [!SCHEDULE-META] Office hours!\n", BASE, STATE], "Office", "invalid-summary")
+err("error/summary-trailing-hyphen", ["> [!SCHEDULE-META] Office-\n", BASE, STATE], "Office", "invalid-summary")
+err("error/summary-leading-digit", ["> [!SCHEDULE-META] 24h service\n", BASE, STATE], "24h", "invalid-summary")
+err("error/summary-on-base", [META, "> [!SCHEDULE-BASE] Minimum extra\n", STATE], "Minimum extra", "unknown-state")
 
 def err_doc(name, md, marker, code, nth=1):
     write(name, md, diag=[("error", pos(md, marker, nth) if marker else "-", code)])

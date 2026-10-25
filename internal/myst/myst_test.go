@@ -62,7 +62,7 @@ func TestDisplayNamesStayOnOneLine(t *testing.T) {
 	}
 }
 
-func TestHintWithoutItemsIsAnAdmonition(t *testing.T) {
+func TestSummaryWithoutItemsIsAnAdmonition(t *testing.T) {
 	t.Parallel()
 
 	cfg, _ := config.Load(nil)

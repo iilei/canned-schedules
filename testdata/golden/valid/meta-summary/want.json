@@ -1,7 +1,7 @@
 {
   "schema-version": "1",
   "name": "Schedule-Name",
-  "hint": "Office hours plus late Friday 2",
+  "summary": "Office hours plus late Friday 2",
   "base": "Minimum",
   "annotations": {},
   "digests": {

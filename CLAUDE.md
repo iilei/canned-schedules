@@ -41,7 +41,7 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
   - YAML isn't needed any more. If it comes back: `go.yaml.in/yaml/v3` parses YAML only, not frontmatter, so split it
     off yourself and use `yaml.Node` for line numbers.
 - **Digests (decided, implemented).** The output carries `digests.schedule`: SHA-256 of compact `{"base", "week"}`
-  JSON, written `sha256:<hex>`. Name, hint, annotations, prose and range wording that paints the same minutes don't
+  JSON, written `sha256:<hex>`. Name, summary, annotations, prose and range wording that paints the same minutes don't
   change it. `base` is part of it because consumers use it as the fallback, for example when `transitions` is `[]`.
   - **No request digest (dropped 2026-10-25):** a hash of the input bytes earned little. Provenance belongs in git
     SHAs or in an `x-*` META key (an issue link, a commit), and a bot that must pin an issue revision hashes
@@ -107,9 +107,13 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
     `x-custom-*` keys still validate as `x-` keys named `custom-*`.
   - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
     block is absent or just lacks the key, the version built into the binary (currently `"1"`) applies.
-  - **Text after the META marker is the schedule's hint** (`[!SCHEDULE-META] Office hours only`). It is trimmed, then
-    validated with the same rule as the name (see below), and output as `hint`. A META block with a hint and no items is
+  - **Text after the META marker is the schedule's summary** (`[!SCHEDULE-META] Office hours only`). It is trimmed, then
+    validated with the same rule as the name (see below), and output as `summary`. A META block with a summary and no items is
     allowed.
+  - **`summary`, not `hint` (renamed 2026-10-25):** "hint" read like advice for the reader; the field is a one-line
+    subtitle of at most 80 characters. `summary` follows the OpenAPI split (short `summary`, long `description`) and
+    keeps `description` free for long text later. Renamed everywhere: the output key, `invalid-summary`, Go fields,
+    render models and docs.
   - `x-*` keys are allowed **only in META**. Their values are uninterpreted strings, passed through to the output
     (for example under `annotations`). They must never affect the domain model.
 - **STATE items as ranges:** in each item, the times are code spans, `to` is a literal keyword that is part of the
@@ -139,7 +143,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
     item): `MON-WED,TUE`, `FRI-MON,SUN`. The range still applies.
   - Whitespace from the first weekday name to the end of the line is ignored (`SAT, SUN` and `MON - FRI` are fine).
 - **No-break space is whitespace (decided 2026-10-25):** `document.IsSpace` (space, tab, U+00A0) is the one rule for
-  every place the grammar allows whitespace: trimming of name, hint and titles (with matching columns), around ` to `,
+  every place the grammar allows whitespace: trimming of name, summary and titles (with matching columns), around ` to `,
   before and inside weekday expressions, around the colon of META keys. Copy and paste brings U+00A0 in, and it
   renders like a space. Other invisible characters (zero-width space, …) are not whitespace and stay errors, escaped in
   messages. U+202F (narrow no-break space) only on request. Fixtures: `valid/nbsp-as-whitespace`,
@@ -276,7 +280,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 - **The H1 is mandatory** and becomes `name` in the output. There must be exactly one (`missing-name`,
   `duplicate-name`).
-- **Name and hint share one text rule** (`invalid-name`, `invalid-hint`): trimmed, 1–80 chars, ASCII; starts with a
+- **Name and summary share one text rule** (`invalid-name`, `invalid-summary`): trimmed, 1–80 chars, ASCII; starts with a
   letter; may contain letters, digits, spaces and `-`; ends with a letter or digit. Regex:
   `^[A-Za-z](?:[A-Za-z0-9 -]{0,78}[A-Za-z0-9])?$`.
 - **A marker with a namespace but no kind** (`[!SCHEDULE]`, `[!SCHEDULE-]`) is an error (`missing-kind`).
@@ -349,7 +353,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 - `--output json|ascii`: what stdout carries (default `json`). `--ascii-output-file <path>`: saves the preview
   (atomic, only without errors, like the SVG). With `--output ascii` and errors, stdout stays empty.
-- Layout: title (`name - hint`), a ruler (labels every 6 h; `+` every 6 h, `|` every hour, `:` every half hour), one
+- Layout: title (`name - summary`), a ruler (labels every 6 h; `+` every 6 h, `|` every hour, `:` every half hour), one
   row per day (`MON` + one symbol per bucket), a legend with the base state marked, and the `~` approximation note.
   Rendered through `templates/schedule-ascii.tmpl` on a model computed in `internal/render` (same gomplate rules).
 - **Pure ASCII by default (decided 2026-10-24):** block characters (`▒▓█`, lower blocks, `║`, `—`, `≈`) have East Asian
@@ -438,7 +442,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (`--color-admonition-title`, `-title-background`, `--color-admonition-background`, `--icon-admonition-default` for
   the state swatch) from `--state`; checked against furo 2025.12.19.
 - `templates.Execute` is the shared JSON-shaped template runner (render, report, CSS, kit templates).
-- `internal/myst`: a valid request → MyST (H1, META always as a `Schedule: hint` admonition, BASE with
+- `internal/myst`: a valid request → MyST (H1, META always as a `Schedule: summary` admonition, BASE with
   `BaseText`, STATE items written as in the request). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
   - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
@@ -473,7 +477,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   schedules as artifacts; a cron expression as a tooltip; other themes than Furo. Open: where the docs live, in this
   repo or in a consumer repo.
 - **Admonition-style SVG** (asked 2026-10-24, deferred): a second SVG showing the request as the page's Sphinx view
-  does: a META card ("Schedule: hint"), the BASE card (`myst.BaseText`), one state-coloured card per STATE with one row
+  does: a META card ("Schedule: summary"), the BASE card (`myst.BaseText`), one state-coloured card per STATE with one row
   per range, weekday `<title>` tooltips. Same pattern as the week SVG: a model with all coordinates in
   `internal/render`, a gomplate-compatible `templates/schedule-cards-svg.tmpl`, plain per-state fills with
   `prefers-color-scheme` and `--svg-theme` (no CSS variables), title and body tints pre-blended with `blend`. Content
@@ -547,7 +551,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     checks (duplicate state ids/symbols are errors, fewer styles than states is a warning).
   - `internal/cli`: flag parsing with the stdlib `flag` package (no CLI dependency, to keep WASM small) and `Run`.
   - `internal/document`: implemented. goldmark-based parser producing the syntax (name, META/BASE/STATE directives,
-    list items as code/text tokens) with positions. Handles name/hint rules, marker errors, misplaced directives
+    list items as code/text tokens) with positions. Handles name/summary rules, marker errors, misplaced directives
     (code spans are masked, so docs that show the syntax in backticks are fine), duplicate blocks, empty states,
     missing titles, and non-list content (`invalid-range` in STATE, `meta-schema` in META, `unexpected-content` in BASE).
   - `internal/expr`: implemented. Parses one STATE item into a `Range` (start/end minutes, weekday list with wrap-around

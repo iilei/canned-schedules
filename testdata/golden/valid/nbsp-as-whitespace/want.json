@@ -1,7 +1,7 @@
 {
   "schema-version": "1",
   "name": "Office Hours",
-  "hint": "Quiet days",
+  "summary": "Quiet days",
   "base": "Minimum",
   "annotations": {
     "x-owner": "team-xyz"

@@ -29,7 +29,7 @@ const (
 	CodeInvalidFlag           = "invalid-flag"
 	CodeInputFile             = "input-file"
 	CodeInvalidArgs           = "invalid-args"
-	CodeInvalidHint           = "invalid-hint"
+	CodeInvalidSummary        = "invalid-summary"
 	CodeInvalidMarker         = "invalid-marker"
 	CodeInvalidName           = "invalid-name"
 	CodeInvalidOverride       = "invalid-override"

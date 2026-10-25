@@ -30,7 +30,7 @@ const (
 	TokenOther
 )
 
-// textRule is the shared rule for the name and the hint: 1–80 ASCII chars, a letter first, letters, digits, spaces
+// textRule is the shared rule for the name and the summary: 1–80 ASCII chars, a letter first, letters, digits, spaces
 // and hyphens in between, and a letter or digit last.
 var textRule = regexp.MustCompile(`^[A-Za-z](?:[A-Za-z0-9 -]{0,78}[A-Za-z0-9])?$`)
 

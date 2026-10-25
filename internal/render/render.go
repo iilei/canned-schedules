@@ -78,7 +78,7 @@ type Model struct {
 	Days        []Day       `json:"days"`
 	Ticks       []Line      `json:"ticks"`
 	Guides      []Line      `json:"guides"`
-	Hint        Text        `json:"hint"`
+	Summary     Text        `json:"summary"`
 	Title       Text        `json:"title"`
 	Legend      Legend      `json:"legend"`
 	Divider     Line        `json:"divider"`
@@ -181,9 +181,9 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Mo
 	week := float64(titleH + rulerH)
 	m.Title = Text{Text: out.Name, X: labelW, Y: titleH - titleBaseline}
 
-	if out.Hint != "" {
-		m.Hint = Text{
-			Text: out.Hint, X: labelW + float64(len([]rune(out.Name)))*titleCharW + cellPadding,
+	if out.Summary != "" {
+		m.Summary = Text{
+			Text: out.Summary, X: labelW + float64(len([]rune(out.Name)))*titleCharW + cellPadding,
 			Y: titleH - titleBaseline,
 		}
 	}
@@ -215,7 +215,7 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Mo
 	m.Divider = Line{X1: columnX - columnGap/2, Y1: titleH, X2: columnX - columnGap/2, Y2: weekBottom}
 
 	tableBottom, right := m.table(out, cfg, columnX, week)
-	right = math.Max(right, m.Hint.X+float64(len([]rune(m.Hint.Text)))*headerCharW)
+	right = math.Max(right, m.Summary.X+float64(len([]rune(m.Summary.Text)))*headerCharW)
 	bottom := math.Max(weekBottom, tableBottom)
 	right = m.legend(out, cfg, p, bottom, right)
 
