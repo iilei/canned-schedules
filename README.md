@@ -494,6 +494,10 @@ Provider settings such as capacity numbers are out of scope: attach them to the 
 
 ### AWS Auto Scaling scheduled actions
 
+> [!WARNING]
+> Unverified against AWS. The Terraform below passes `terraform validate` with the AWS provider, and the CLI script
+> was run against a stubbed `aws`, but neither has created real scheduled actions yet.
+
 Each transition becomes one scheduled action: `cron.posix` is its recurrence, and the capacity comes from a map you
 keep next to your infrastructure, keyed by state id:
 
