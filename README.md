@@ -87,7 +87,8 @@ flowchart TB
 The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: start from a preset
 (from a bare "Medium all week" to the full issue template), edit it in a highlighting editor that marks errors and
 warnings on their lines, and see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the state
-styles (downloadable as a [Sphinx kit](#sphinx)), diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
+styles (downloadable as a [Sphinx kit](#sphinx)), diagnostics that jump to the offending line, the JSON and the ASCII preview
+(downloadable as the [text form](#text-form)). Light and dark themes included;
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
 the URL fragment, which browsers never send to the server. The page's SVG, shown and downloaded, always embeds the
 canonical request (like `--svg-embed-source`), so a downloaded picture stays traceable to its schedule. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:

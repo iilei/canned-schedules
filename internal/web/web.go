@@ -23,12 +23,13 @@ const fileName = "request.md"
 var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid request")
 
 // Result is what the page shows. Previews of the Markdown are rendered even when the document has errors; the
-// canonical JSON, the schedule previews and the MyST only when it has none.
+// canonical JSON, the schedule previews, the MyST and the text form only when it has none.
 type Result struct {
 	JSON           string `json:"json"`
 	SVG            string `json:"svg"`
 	ASCII          string `json:"ascii"`
 	MyST           string `json:"myst"`
+	Text           string `json:"text"`
 	Report         string `json:"report"`
 	ReportMarkdown string `json:"report-markdown"`
 	GitHubHTML     string `json:"github-html"`
@@ -55,6 +56,7 @@ func Evaluate(src []byte, args []string) Result {
 			res.SVG = string(must(cli.SVG(&opts, out, src, generator())))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
+			res.Text = string(must(cli.Text(&opts, out, src, false)))
 		}
 	}
 

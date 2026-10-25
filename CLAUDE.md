@@ -470,7 +470,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `syscall/js` wrapper around `internal/web.Evaluate`). Nothing leaves the browser.
 - Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme; it always embeds the canonical
   request like `--svg-embed-source`, set in `web.Evaluate` because the page has no `--svg-output-file`, with the
-  generator `canned-schedules preflight page <module version>`; the inline copy shows none of it), the Markdown as a Sphinx page
+  generator `canned-schedules preflight page <module version>`; the inline copy shows none of it), **Download text**
+  (`text` in the evaluate result: the text form with the page's preview settings, `schedule.txt`, disabled while
+  the document has errors), the Markdown as a Sphinx page
   with custom admonitions (the default, left in the switch) or as a GitHub issue (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
   editor, the JSON and the ASCII preview. Options: preview buckets, sample interval, ASCII symbols. Theme toggle
   (system/light/dark, saved in localStorage); `?preset=`, `?theme=`, `?view=`, `?tab=`, `?downsample=`,
@@ -643,7 +645,6 @@ In priority order (agreed 2026-10-25):
    1.0.
 3. **Stability policy before 1.0:** what counts as breaking (syntax, JSON keys and their order, digest inputs, error
    codes) and when `schema-version` changes. The README warns that the syntax may change, but not what stays.
-4. **Preflight page (optional):** a text-form download and an option to embed the source in the SVG, like the CLI.
 
 ## Future ideas (not scheduled — don't build unasked)
 
