@@ -1,4 +1,18 @@
-// Command canned-schedules validates a schedule document and prints its canonical JSON.
+// Command canned-schedules checks a weekly schedule request written in Markdown and prints its canonical JSON.
+//
+// Usage:
+//
+//	canned-schedules [flags] request.md
+//
+// The input is exactly one regular file of at most 256 KiB, given after the flags. On success, stdout carries the
+// canonical JSON (or the ASCII preview with --output ascii), and further outputs (SVG and ASCII previews, MyST, the
+// Sphinx kit) are written where flags ask for them. Problems go to stderr, or to --error-output-file, as an error
+// report in txt, JSON or the built-in Markdown template.
+//
+// Exit codes: 0 when the document is valid, 1 when the document or a flag value has errors, 2 when the command line
+// or the environment is unusable (no or several files, unreadable input, report not writable).
+//
+// canned-schedules --help lists every flag; the README documents the syntax, the outputs and the diagnostic codes.
 package main
 
 import (
@@ -45,13 +59,21 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
-	if len(args) == 1 && args[0] == "--version" {
+	opts, diags := cli.Parse(args)
+
+	switch {
+	case opts.Help:
+		if err := cli.Help(stdout); err != nil {
+			return exitInvalid
+		}
+
+		return exitOK
+	case opts.Version && !diags.HasErrors():
 		fmt.Fprintf(stdout, "canned-schedules %s (%s, %s)\n", version, commit, date)
 
 		return exitOK
 	}
 
-	opts, diags := cli.Parse(args)
 	file, src, out, more := evaluate(&opts, diags.HasErrors())
 	diags = append(diags, more...)
 

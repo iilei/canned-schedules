@@ -106,28 +106,55 @@ the file, unreadable input, report not writable):
 request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
 ```
 
-| Flag                                   | Default     | Meaning                                                                         |
-| -------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
-| `--sample-interval <minutes>`          | `1`         | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)           |
-| `--require-base true\|false`           | `false`     | `true`: the document must contain a BASE block; can't be combined with `--base` |
-| `--base <state>`                       | first state | Base state when the document has no BASE block                                  |
-| `--set-config-at <path>`               |             | Config path to replace, e.g. `representation.styles.states[0]` (repeatable)     |
-| `--set-config-value <json>`            |             | JSON value for the matching `--set-config-at` (repeatable)                      |
-| `--output json\|ascii`                 | `json`      | What stdout carries: the canonical JSON or the ASCII preview                    |
-| `--svg-output-file <path>`             |             | Write an SVG preview (only when the document has no errors)                     |
-| `--svg-theme <theme>`                  | `auto`      | SVG colours: `auto` (follow the viewer), `light` or `dark`                      |
-| `--ascii-output-file <path>`           |             | Write an ASCII preview (only when the document has no errors)                   |
-| `--myst-output-file <path>`            |             | Write the schedule as MyST for Sphinx (only when the document has no errors)    |
-| `--sphinx-kit-output-file`             |             | Write the Sphinx kit zip (only when the document has no errors)                 |
-| `--preview-downsample[=N]`             | 15          | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
-| `--no-preview-downsample`              |             | Preview at 1-minute resolution (1440 columns per day)                           |
-| `--ascii-symbols <preset>`             | `ascii`     | Symbols in the ASCII preview: `ascii`, `braille` or `styles`                    |
-| `--color auto\|always\|never`          | `auto`      | Colours in the ASCII preview; auto = terminal only, and not with `NO_COLOR`     |
-| `--error-output-file <path>`           | stderr      | Write the error report to this file (always, even when empty)                   |
-| `--error-output-format`                | `txt`       | Error report format: `txt` or `json`                                            |
-| `--error-report-template`              |             | Render the error report with the built-in `markdown-gfm` template instead       |
-| `--error-unless-alert-pattern <regex>` |             | Every alert other than a schedule directive must match (whole type, Go syntax)  |
-| `--version`                            |             | Print the version                                                               |
+`canned-schedules --help` prints the same list.
+
+<!-- generated: flags (mise run docs; from the flag set in internal/cli) -->
+**Evaluation**
+
+| Flag                                   | Default     | Meaning                                                                                             |
+| -------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| `--sample-interval <minutes>`          | `1`         | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)                               |
+| `--require-base true\|false`           | `false`     | `true`: the document must contain a BASE block; can't be combined with `--base`                     |
+| `--base <state>`                       | first state | Base state when the document has no BASE block                                                      |
+| `--error-unless-alert-pattern <regex>` |             | Every alert other than a schedule directive must match (whole type, Go syntax, `(?i)` for any case) |
+
+**Configuration**
+
+| Flag                        | Default | Meaning                                                                                                                     |
+| --------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `--set-config-at <path>`    |         | Config path to replace, e.g. `representation.styles.states[0]` (repeatable)                                                 |
+| `--set-config-value <json>` |         | JSON value for the matching `--set-config-at` (repeatable)                                                                  |
+| `--ascii-symbols <preset>`  | `ascii` | Symbols in the ASCII preview: `ascii`, `braille` or `styles` (shorthand for `--set-config-at representation.ascii.symbols`) |
+
+**Outputs**
+
+| Flag                              | Default | Meaning                                                                                |
+| --------------------------------- | ------- | -------------------------------------------------------------------------------------- |
+| `--output json\|ascii`            | `json`  | What stdout carries: the canonical JSON or the ASCII preview                           |
+| `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                            |
+| `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                             |
+| `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                          |
+| `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR` |
+| `--preview-downsample[=N]`        | `15`    | Preview buckets in minutes (must divide 60); `=N` needs the `=`                        |
+| `--no-preview-downsample`         |         | Preview at 1-minute resolution (1440 columns per day)                                  |
+| `--myst-output-file <path>`       |         | Write the schedule as MyST for Sphinx (only when the document has no errors)           |
+| `--sphinx-kit-output-file <path>` |         | Write the Sphinx kit zip (only when the document has no errors)                        |
+
+**Error report**
+
+| Flag                              | Default | Meaning                                                                   |
+| --------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `--error-output-file <path>`      | stderr  | Write the error report to this file (always, even when empty)             |
+| `--error-output-format txt\|json` | `txt`   | Error report format: `txt` or `json`                                      |
+| `--error-report-template <name>`  |         | Render the error report with the built-in `markdown-gfm` template instead |
+
+**Other**
+
+| Flag        | Default | Meaning                    |
+| ----------- | ------- | -------------------------- |
+| `--help`    |         | Print this help and exit   |
+| `--version` |         | Print the version and exit |
+<!-- end generated -->
 
 ## Previews
 
@@ -282,6 +309,47 @@ Safety: the report file is written atomically (temporary file plus rename), so a
 of written through. Control characters and bidirectional formatting characters in paths and messages are escaped,
 so a crafted file name can't forge log lines. In the Markdown, everything that comes from the document or the file
 name sits inside a fenced block, where links, HTML, `@mentions` and `#references` don't render.
+
+### Diagnostic codes
+
+Every diagnostic carries one of these codes; the golden fixtures pin them, so they are part of the contract.
+
+<!-- generated: codes (mise run docs; from diag.Codes in internal/diag) -->
+| Code                      | Severity | Meaning                                                                                                                                 |
+| ------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `missing-name`            | error    | The document has no H1 heading; the H1 names the schedule.                                                                              |
+| `duplicate-name`          | error    | More than one H1 heading.                                                                                                               |
+| `invalid-name`            | error    | The name breaks the text rule: 1-80 ASCII letters, digits, spaces or hyphens, starting with a letter and ending with a letter or digit. |
+| `invalid-summary`         | error    | The summary after the META marker breaks the same text rule as the name.                                                                |
+| `invalid-marker`          | error    | A directive separates namespace and kind with `:` (`[!SCHEDULE:STATE]`); the separator is `-`.                                          |
+| `missing-kind`            | error    | A marker has the namespace but no kind (`[!SCHEDULE]`, `[!SCHEDULE-]`).                                                                 |
+| `unknown-kind`            | error    | A kind other than META, BASE or STATE.                                                                                                  |
+| `missing-title`           | error    | A BASE or STATE marker without a state name after it.                                                                                   |
+| `duplicate-block`         | error    | A second META or BASE block.                                                                                                            |
+| `empty-state`             | error    | A STATE block without ranges.                                                                                                           |
+| `misplaced-directive`     | error    | A directive that isn't a top-level quote starting with its marker, e.g. nested in a list or wrapped in bold.                            |
+| `unexpected-content`      | error    | Content in a BASE block, which takes only a state name on the marker line.                                                              |
+| `disallowed-alert`        | error    | An alert that doesn't match `--error-unless-alert-pattern`.                                                                             |
+| `invalid-range`           | error    | A STATE item that isn't `` `start` to `end` WEEKDAYS ``, or content other than a list in a STATE block.                                 |
+| `invalid-time`            | error    | A time that isn't `H:MM` or `HH:MM` from `00:00` to `23:59` (`24:00` is rejected).                                                      |
+| `sample-interval`         | error    | A time that isn't a multiple of `--sample-interval`.                                                                                    |
+| `invalid-weekday`         | error    | A weekday expression with an unknown or lowercase name, or a broken range or list.                                                      |
+| `duplicate-weekday`       | error    | The same weekday written twice in one item (`MON,MON`, `WED-WED`).                                                                      |
+| `repeated-weekday`        | warning  | A day that an earlier part of the same item already covers (`MON-WED,TUE`); the range still applies.                                    |
+| `meta-schema`             | error    | META content that isn't a list of ``key: `value` `` items, or a key or value the META schema rejects.                                   |
+| `unknown-state`           | error    | A state name the configuration doesn't define, in BASE, STATE or `--base`.                                                              |
+| `missing-base`            | error    | `--require-base true`, and the document has no BASE block.                                                                              |
+| `config-schema`           | error    | The configuration, after overrides, fails its JSON Schema.                                                                              |
+| `invalid-override`        | error    | A `--set-config-at` path that doesn't exist, or a `--set-config-value` that isn't JSON.                                                 |
+| `config-duplicate-state`  | error    | Two state ids in the configuration that are equal ignoring case.                                                                        |
+| `config-duplicate-symbol` | warning  | Two styles share a symbol, so the `styles` ASCII preset tells those states apart only by colour.                                        |
+| `style-reuse`             | warning  | Fewer styles than states: styles repeat round robin, so states become hard to tell apart.                                               |
+| `invalid-flag`            | error    | An unknown flag or an invalid flag value.                                                                                               |
+| `invalid-args`            | error    | No input file, several files, or flags after the file (exit code 2).                                                                    |
+| `input-file`              | error    | The input can't be read: missing, not a regular file, or larger than 256 KiB (exit code 2).                                             |
+| `preview-approximate`     | warning  | Preview buckets mix states, so the preview rounds; reported only when a preview is requested.                                           |
+| `output-schema`           | error    | The tool's own output failed its schema: a bug in canned-schedules, please report it.                                                   |
+<!-- end generated -->
 
 ## Output
 

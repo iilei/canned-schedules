@@ -1,5 +1,6 @@
-// Package render draws a schedule as SVG. Go computes a render model (every coordinate, colour, label and tooltip);
-// the repo-baked template (templates/schedule-svg.tmpl) only emits markup. The template runs on the model decoded
+// Package render draws the schedule previews: the SVG week and the ASCII preview, both from the same downsampled week
+// (preview buckets, see Downsample). Go computes a render model (every coordinate, colour, label and tooltip); the
+// repo-baked templates (templates/schedule-svg.tmpl, templates/schedule-ascii.tmpl) only emit markup. The template runs on the model decoded
 // from JSON and uses no functions beyond the text/template builtins, so it also runs with gomplate.
 package render
 
