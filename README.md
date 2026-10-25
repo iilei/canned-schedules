@@ -40,6 +40,48 @@ Friday `Medium` range.
 Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_schedule_request.md),
 [GitLab](.gitlab/issue_templates/canned_schedule_request.md).
 
+## How it fits together
+
+Schedules are proposed as issues, kept in a catalog repo, published as versions, and consumed by pinned version:
+
+```mermaid
+flowchart TB
+  subgraph propose["1 · Propose"]
+    direction LR
+    issue["Issue from the template:<br/>a Markdown request"] --> check["Issue workflow: schedule:check<br/>one comment with report and preview"]
+  end
+  subgraph catalog["2 · Catalog repo"]
+    direction LR
+    pr["Pull request adds<br/>schedules/name.canned-schedule.md"] --> ci["CI: schedule:render<br/>.json · .svg · .txt"]
+  end
+  subgraph publish["3 · Publish a version"]
+    direction LR
+    release["Git tag + release assets"]
+    artifactory["Artifactory<br/>generic repository"]
+  end
+  subgraph consume["4 · Consume a pinned version"]
+    direction LR
+    capacity[/"capacity.json<br/>state id → capacity"/] --> infra["Terraform or AWS CLI<br/>ASG and ECS scheduled actions"]
+    docs["Docs<br/>Sphinx kit, SVG previews"]
+  end
+  check -->|approved| pr
+  ci --> release & artifactory
+  release & artifactory --> infra
+  release --> docs
+```
+
+1. **Propose:** someone opens an issue from the template. The issue workflow checks the request and keeps one
+   comment with the report and, for a valid request, the preview.
+2. **Catalog:** once approved, the request becomes `schedules/<name>.canned-schedule.md` in a catalog repo. CI and
+   the pre-commit hook check it; `schedule:render` writes the outputs. [`examples/consumer`](examples/consumer) has
+   both steps ready to copy.
+3. **Publish:** your pipeline's part. The outputs are plain files, so a git tag with release assets, an Artifactory
+   generic repository, or both work. Publish the JSON at least; the digest in it tells consumers whether the
+   schedule itself changed.
+4. **Consume:** infrastructure code pins a catalog version, reads the schedule's JSON and maps its state ids to
+   capacities that stay with the infrastructure (the AWS recipes are under [Output](#output)). Docs
+   use the SVG previews or the [Sphinx kit](#sphinx).
+
 ## Try it in the browser
 
 The **preflight page** runs the same checker, compiled to WebAssembly, entirely in your browser: start from a preset
