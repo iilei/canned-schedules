@@ -1,7 +1,7 @@
 # Schedule-Name
 
-> [!SCHEDULE:META]
+> [!SCHEDULE-META]
 > - schema-version: `1`
 > - x-note: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
-> [!SCHEDULE:BASE] Minimum
+> [!SCHEDULE-BASE] Minimum

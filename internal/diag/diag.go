@@ -21,6 +21,7 @@ const (
 	CodeConfigDuplicateSymbol = "config-duplicate-symbol"
 	CodeConfigDuplicateState  = "config-duplicate-state"
 	CodeConfigSchema          = "config-schema"
+	CodeDisallowedAlert       = "disallowed-alert"
 	CodeDuplicateBlock        = "duplicate-block"
 	CodeDuplicateName         = "duplicate-name"
 	CodeDuplicateWeekday      = "duplicate-weekday"
@@ -29,6 +30,7 @@ const (
 	CodeInputFile             = "input-file"
 	CodeInvalidArgs           = "invalid-args"
 	CodeInvalidHint           = "invalid-hint"
+	CodeInvalidMarker         = "invalid-marker"
 	CodeInvalidName           = "invalid-name"
 	CodeInvalidOverride       = "invalid-override"
 	CodeInvalidRange          = "invalid-range"
@@ -47,7 +49,6 @@ const (
 	CodeStyleReuse            = "style-reuse"
 	CodeUnexpectedContent     = "unexpected-content"
 	CodeUnknownKind           = "unknown-kind"
-	CodeUnknownNamespace      = "unknown-namespace"
 	CodeUnknownState          = "unknown-state"
 )
 

@@ -5,6 +5,7 @@
 package schedule
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/iilei/canned-schedules/internal/config"
@@ -18,6 +19,8 @@ const SchemaVersion = "1"
 
 // Options are the command-line settings that affect evaluation.
 type Options struct {
+	// AlertPattern is --error-unless-alert-pattern (see document.Options).
+	AlertPattern *regexp.Regexp
 	// Base is the --base state; empty when not given.
 	Base string
 	// SampleInterval is --sample-interval in minutes; every time must be a multiple of it.
@@ -108,7 +111,7 @@ func Warnings(src []byte, diags diag.List) []Warning {
 
 // Evaluate parses src and paints the week. The output is nil when there are errors.
 func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List) {
-	doc, diags := document.Parse(src)
+	doc, diags := document.Parse(src, document.Options{AlertPattern: opts.AlertPattern})
 	if diags.HasErrors() {
 		return nil, diags
 	}
@@ -186,7 +189,7 @@ func resolveBase(doc *document.Document, cfg *config.Config, opts Options) (conf
 		return t, nil
 	case opts.RequireBase:
 		return config.State{}, diag.List{diag.Errorf(diag.Pos{}, diag.CodeMissingBase,
-			"--require-base true: the document needs a BASE block").WithExample("> [!SCHEDULE:BASE] Minimum")}
+			"--require-base true: the document needs a BASE block").WithExample("> [!SCHEDULE-BASE] Minimum")}
 	case opts.Base != "":
 		t, _ := cfg.State(opts.Base) // Validated by the CLI.
 

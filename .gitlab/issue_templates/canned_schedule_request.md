@@ -4,23 +4,23 @@
 How to edit this request
 
 - Replace the name above (the H1). Letters, digits, spaces and hyphens; up to 80 characters.
-- Keep each block as its own quote: a line starting with `> [!SCHEDULE:…]`, followed by its list.
+- Keep each block as its own quote: a line starting with `> [!SCHEDULE-…]`, followed by its list.
 - Change the states, times and weekdays below. Add or remove STATE blocks as needed.
 - Everything outside these blocks is free text for reviewers: explain why you need this schedule.
 
 The full syntax reference is at the end of this request.
 -->
 
-> [!SCHEDULE:META] Weekdays with a late Friday
+> [!SCHEDULE-META] Weekdays with a late Friday
 > - x-owner: `team-xyz`
 
-> [!SCHEDULE:BASE] Minimum
+> [!SCHEDULE-BASE] Minimum
 
-> [!SCHEDULE:STATE] Medium
+> [!SCHEDULE-STATE] Medium
 > - `06:00` to `22:00` MON-FRI
 > - `10:00` to `18:00` SAT
 
-> [!SCHEDULE:STATE] Maximum
+> [!SCHEDULE-STATE] Maximum
 > - `16:00` to `00:00` FRI
 
 ## Why this schedule
@@ -32,10 +32,10 @@ The full syntax reference is at the end of this request.
 > [!NOTE]
 > **Blocks**
 >
-> - `[!SCHEDULE:META]` (optional): text after the marker is a short hint. List items are free-form entries for
+> - `[!SCHEDULE-META]` (optional): text after the marker is a short hint. List items are free-form entries for
 >   your own bookkeeping, written like `` x-owner: `team-xyz` ``.
-> - `[!SCHEDULE:BASE] <state>` (optional): the state wherever no range applies.
-> - `[!SCHEDULE:STATE] <state>`: one block per state, each with a list of ranges.
+> - `[!SCHEDULE-BASE] <state>` (optional): the state wherever no range applies.
+> - `[!SCHEDULE-STATE] <state>`: one block per state, each with a list of ranges.
 >
 > **States:** `Off`, `Minimum`, `Medium`, `Maximum`.
 >

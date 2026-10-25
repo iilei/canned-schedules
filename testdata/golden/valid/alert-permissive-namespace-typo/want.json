@@ -1,0 +1,62 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Minimum",
+  "annotations": {},
+  "digests": {
+    "schedule": "sha256:dfb7404ec43e392c3fdc2b9b0d9eb0229f368843e4544e344e0a6aa4a3e85385"
+  },
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ]
+  },
+  "transitions": [],
+  "warnings": []
+}

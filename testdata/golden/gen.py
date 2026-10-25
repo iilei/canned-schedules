@@ -199,7 +199,7 @@ def write(name, md, args=(), want=None, diag=(), preview=None):
             f.write("\n".join(lines) + "\n")
 
 
-META = "> [!SCHEDULE:META]\n> - schema-version: `1`\n"
+META = "> [!SCHEDULE-META]\n> - schema-version: `1`\n"
 WD = ["MON", "TUE", "WED", "THU", "FRI"]
 WE = ["SAT", "SUN"]
 
@@ -213,43 +213,43 @@ def doc(*blocks, title="Schedule-Name"):
 
 write(
     "valid/basic",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
 
 write(
     "valid/midnight-spill",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Maximum\n> - `22:00` to `02:00` FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Maximum\n> - `22:00` to `02:00` FRI\n"),
     want=output("Minimum", [("22:00", "02:00", ["FRI"], "Maximum")]),
 )
 
 write(
     "valid/week-wrap",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Maximum\n> - `22:00` to `02:00` SUN\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Maximum\n> - `22:00` to `02:00` SUN\n"),
     want=output("Minimum", [("22:00", "02:00", ["SUN"], "Maximum")]),
 )
 
 write(
     "valid/start-equals-end-full-day",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `08:00` to `08:00` MON\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `08:00` to `08:00` MON\n"),
     want=output("Minimum", [("08:00", "08:00", ["MON"], "Medium")]),
 )
 
 write(
     "valid/end-at-midnight",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `10:00` to `00:00` SAT,SUN\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `10:00` to `00:00` SAT,SUN\n"),
     want=output("Minimum", [("10:00", "00:00", WE, "Medium")]),
 )
 
 write(
     "valid/whole-day-midnight-to-midnight",
-    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `00:00` to `00:00` WED\n"),
+    doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `00:00` to `00:00` WED\n"),
     want=output("Off", [("00:00", "00:00", ["WED"], "Medium")]),
 )
 
 write(
     "valid/weekday-wraparound-range",
-    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `09:00` to `17:00` FRI-MON\n"),
+    doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `09:00` to `17:00` FRI-MON\n"),
     want=output("Off", [("09:00", "17:00", ["FRI", "SAT", "SUN", "MON"], "Medium")]),
 )
 
@@ -257,15 +257,15 @@ write(
     "valid/weekday-whitespace",
     doc(
         META,
-        "> [!SCHEDULE:BASE] Off\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `09:00` to `17:00` MON - FRI\n> - `10:00` to `14:00` SAT, SUN   \n",
+        "> [!SCHEDULE-BASE] Off\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `09:00` to `17:00` MON - FRI\n> - `10:00` to `14:00` SAT, SUN   \n",
     ),
     want=output("Off", [("09:00", "17:00", WD, "Medium"), ("10:00", "14:00", WE, "Medium")]),
 )
 
 write(
     "valid/weekday-mixed-list",
-    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `09:00` to `17:00` MON-WED,FRI,SUN\n"),
+    doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `09:00` to `17:00` MON-WED,FRI,SUN\n"),
     want=output("Off", [("09:00", "17:00", ["MON", "TUE", "WED", "FRI", "SUN"], "Medium")]),
 )
 
@@ -278,10 +278,10 @@ write(
     "valid/overlap-later-wins",
     doc(
         META,
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
-        "> [!SCHEDULE:STATE] Maximum\n> - `12:00` to `14:00` WED\n",
-        "> [!SCHEDULE:STATE] Off\n> - `20:00` to `23:00` WED\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!SCHEDULE-STATE] Maximum\n> - `12:00` to `14:00` WED\n",
+        "> [!SCHEDULE-STATE] Off\n> - `20:00` to `23:00` WED\n",
     ),
     want=output("Minimum", overlap),
 )
@@ -290,9 +290,9 @@ write(
     "valid/overlap-earlier-block-loses",
     doc(
         META,
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Maximum\n> - `12:00` to `14:00` WED\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Maximum\n> - `12:00` to `14:00` WED\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output("Minimum", [("12:00", "14:00", ["WED"], "Maximum"), ("06:00", "22:00", WD, "Medium")]),
 )
@@ -301,41 +301,41 @@ write(
     "valid/adjacent-runs-merge",
     doc(
         META,
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `12:00` TUE\n> - `12:00` to `18:00` TUE\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `12:00` TUE\n> - `12:00` to `18:00` TUE\n",
     ),
     want=output("Minimum", [("06:00", "12:00", ["TUE"], "Medium"), ("12:00", "18:00", ["TUE"], "Medium")]),
 )
 
 write(
     "valid/range-equal-to-base-is-noop",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Minimum\n> - `06:00` to `12:00` TUE\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Minimum\n> - `06:00` to `12:00` TUE\n"),
     want=output("Minimum", [("06:00", "12:00", ["TUE"], "Minimum")]),
 )
 
 write(
     "valid/base-default-index-0",
-    doc(META, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
     want=output("Off", [("06:00", "22:00", WD, "Medium")]),
 )
 
 write(
     "valid/base-from-flag",
-    doc(META, "> [!SCHEDULE:STATE] Maximum\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-STATE] Maximum\n> - `06:00` to `22:00` MON-FRI\n"),
     args=["--base", "Medium"],
     want=output("Medium", [("06:00", "22:00", WD, "Maximum")]),
 )
 
 write(
     "valid/base-document-wins-over-flag",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Maximum\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Maximum\n> - `06:00` to `22:00` MON-FRI\n"),
     args=["--base", "Medium"],
     want=output("Minimum", [("06:00", "22:00", WD, "Maximum")]),
 )
 
 write(
     "valid/require-base-satisfied",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Maximum\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Maximum\n> - `06:00` to `22:00` MON-FRI\n"),
     args=["--require-base", "true"],
     want=output("Minimum", [("06:00", "22:00", WD, "Maximum")]),
 )
@@ -343,9 +343,9 @@ write(
 write(
     "valid/case-insensitive-names",
     doc(
-        "> [!schedule:meta]\n> - schema-version: `1`\n",
-        "> [!Schedule:Base] MINIMUM\n",
-        "> [!SCHEDULE:state] medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!schedule-meta]\n> - schema-version: `1`\n",
+        "> [!Schedule-Base] MINIMUM\n",
+        "> [!SCHEDULE-state] medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
@@ -358,8 +358,8 @@ write(
         META,
         "## States\n",
         "> [!TIP]\n> Later ranges win where they overlap.\n",
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
         "A closing remark.\n",
     ),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
@@ -368,10 +368,10 @@ write(
 write(
     "valid/annotations",
     doc(
-        "> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-owner: `team-xyz`\n"
+        "> [!SCHEDULE-META]\n> - schema-version: `1`\n> - x-owner: `team-xyz`\n"
         "> - x-ticket: `OPS-1234`\n",
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output(
         "Minimum",
@@ -382,14 +382,30 @@ write(
 
 write(
     "valid/sample-interval-60",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
     args=["--sample-interval", "60"],
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
 
 write(
+    "valid/alert-permissive-namespace-typo",
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDUEL-STATE] Medium\n> - `06:00` to `22:00` MON\n"),
+    want=output("Minimum", []),
+)
+
+write(
+    "valid/alert-pattern-standard-alerts",
+    doc(
+        META, "> [!SCHEDULE-BASE] Minimum\n", "> [!NOTE]\n> Read me.\n", "> [!tip]\n> Lowercase matches with (?i).\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+    ),
+    args=["--error-unless-alert-pattern", "(?i)NOTE|TIP|IMPORTANT|WARNING|CAUTION"],
+    want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
+)
+
+write(
     "valid/sample-interval-1-odd-minutes",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:07` to `21:53` MON\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:07` to `21:53` MON\n"),
     want=output("Minimum", [("06:07", "21:53", ["MON"], "Medium")]),
 )
 
@@ -397,24 +413,24 @@ write(
     "valid/time-single-digit-hour",
     doc(
         META,
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `6:00` to `9:30` MON\n> - `0:15` to `08:45` TUE\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `6:00` to `9:30` MON\n> - `0:15` to `08:45` TUE\n",
     ),
     want=output("Minimum", [("6:00", "9:30", ["MON"], "Medium"), ("0:15", "08:45", ["TUE"], "Medium")]),
 )
 
 write(
     "valid/meta-omitted",
-    doc("> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc("> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
 
 write(
     "valid/meta-hint",
     doc(
-        "> [!SCHEDULE:META]   Office hours plus late Friday 2   \n> - schema-version: `1`\n",
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!SCHEDULE-META]   Office hours plus late Friday 2   \n> - schema-version: `1`\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")], hint="Office hours plus late Friday 2"),
 )
@@ -422,9 +438,9 @@ write(
 write(
     "valid/meta-hint-without-items",
     doc(
-        "> [!SCHEDULE:META] Weekend shop\n",
-        "> [!SCHEDULE:BASE] Off\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `10:00` to `18:00` SAT,SUN\n",
+        "> [!SCHEDULE-META] Weekend shop\n",
+        "> [!SCHEDULE-BASE] Off\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `10:00` to `18:00` SAT,SUN\n",
         title="Weekend-Shop 2026",
     ),
     want=output("Off", [("10:00", "18:00", WE, "Medium")], name="Weekend-Shop 2026", hint="Weekend shop"),
@@ -433,28 +449,28 @@ write(
 write(
     "valid/meta-default-schema-version",
     doc(
-        "> [!SCHEDULE:META] Office hours\n> - x-owner: `team-xyz`\n",
-        "> [!SCHEDULE:BASE] Minimum\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
+        "> [!SCHEDULE-META] Office hours\n> - x-owner: `team-xyz`\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-owner": "team-xyz"}, hint="Office hours"),
 )
 
 write(
     "valid/no-transitions-all-base",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Minimum\n> - `00:00` to `00:00` MON-SUN\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Minimum\n> - `00:00` to `00:00` MON-SUN\n"),
     want=output("Minimum", [("00:00", "00:00", DAYS, "Minimum")]),
 )
 
 write(
     "valid/no-transitions-single-state",
-    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `00:00` to `00:00` MON-SUN\n"),
+    doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `00:00` to `00:00` MON-SUN\n"),
     want=output("Off", [("00:00", "00:00", DAYS, "Medium")]),
 )
 
 write(
     "valid/transitions-every-day",
-    doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `8:15` to `17:45` MON-SUN\n"),
+    doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `8:15` to `17:45` MON-SUN\n"),
     want=output("Off", [("08:15", "17:45", DAYS, "Medium")]),
 )
 
@@ -464,14 +480,14 @@ basic_ranges = [("06:00", "22:00", WD, "Medium")]
 rows, _ = preview_rows("Minimum", basic_ranges)
 write(
     "valid/preview-default",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
     args=["--output", "ascii"],
     want=output("Minimum", basic_ranges),
     preview=rows,
 )
 
 odd_ranges = [("06:07", "09:52", ["MON"], "Medium")]
-odd_doc = doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `06:07` to `09:52` MON\n")
+odd_doc = doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `06:07` to `09:52` MON\n")
 rows, mixed = preview_rows("Off", odd_ranges)
 assert mixed == 2
 write(
@@ -499,9 +515,9 @@ write(
     "valid/preview-downsample-60-ties",
     doc(
         META,
-        "> [!SCHEDULE:BASE] Off\n",
-        "> [!SCHEDULE:STATE] Maximum\n> - `23:00` to `01:30` SUN\n",
-        "> [!SCHEDULE:STATE] Medium\n> - `21:30` to `05:30` MON-FRI\n",
+        "> [!SCHEDULE-BASE] Off\n",
+        "> [!SCHEDULE-STATE] Maximum\n> - `23:00` to `01:30` SUN\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `21:30` to `05:30` MON-FRI\n",
     ),
     args=["--preview-downsample=60", "--output", "ascii"],
     want=output("Off", tie_ranges, warnings=["preview-approximate"]),
@@ -512,7 +528,7 @@ write(
 rows, _ = preview_rows("Minimum", basic_ranges, symbols="braille")
 write(
     "valid/preview-braille",
-    doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
+    doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"),
     args=["--ascii-symbols", "braille", "--output", "ascii"],
     want=output("Minimum", basic_ranges),
     preview=rows,
@@ -526,7 +542,7 @@ write(
 
 # ---------------------------------------------------------------- warnings (valid output + diagnostics)
 
-md = doc(META, "> [!SCHEDULE:BASE] Minimum\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n")
+md = doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n")
 write(
     "warn/fewer-styles-than-states",
     md,
@@ -541,7 +557,7 @@ write(
     diag=[("warn", "-", "style-reuse")],
 )
 
-md = doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `09:00` to `17:00` MON-WED,TUE\n")
+md = doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `09:00` to `17:00` MON-WED,TUE\n")
 write(
     "warn/repeated-weekday-overlap",
     md,
@@ -550,7 +566,7 @@ write(
     diag=[("warn", pos(md, "TUE\n"), "repeated-weekday")],
 )
 
-md = doc(META, "> [!SCHEDULE:BASE] Off\n", "> [!SCHEDULE:STATE] Medium\n> - `09:00` to `17:00` FRI-MON,SUN\n")
+md = doc(META, "> [!SCHEDULE-BASE] Off\n", "> [!SCHEDULE-STATE] Medium\n> - `09:00` to `17:00` FRI-MON,SUN\n")
 write(
     "warn/repeated-weekday-wraparound",
     md,
@@ -567,43 +583,43 @@ def err(name, blocks, marker, code, args=(), nth=1):
     write(name, md, args=args, diag=[("error", where, code)])
 
 
-BASE = "> [!SCHEDULE:BASE] Minimum\n"
+BASE = "> [!SCHEDULE-BASE] Minimum\n"
 
-err("error/time-24-00", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `10:00` to `24:00` SAT\n"], "24:00", "invalid-time")
-err("error/time-minute-60", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `23:60` to `02:00` SAT\n"], "23:60", "invalid-time")
-err("error/time-garbage", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `noon` to `14:00` SAT\n"], "noon", "invalid-time")
-err("error/weekday-lowercase", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` mon-fri\n"], "mon", "invalid-weekday")
-err("error/weekday-mixed-case", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` Mon\n"], "Mon", "invalid-weekday")
-err("error/weekday-alias", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` weekdays\n"], "weekdays", "invalid-weekday")
-err("error/weekday-trailing-dot", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON.\n"], "MON.", "invalid-weekday")
-err("error/weekday-full-name", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MONDAY\n"], "MONDAY", "invalid-weekday")
-err("error/weekday-missing", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00`\n"], "`06:00`", "invalid-range")
-err("error/cron-form", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `0 8 * * MON-FRI`\n"], "`0 8", "invalid-range")
-err("error/separator-dash", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00`-`22:00` MON\n"], "`06:00`-", "invalid-range")
-err("error/separator-until", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` until `22:00` MON\n"], "`06:00` until", "invalid-range")
-err("error/prose-in-range", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - from `06:00` to `22:00` MON\n"], "from", "invalid-range")
-err("error/range-not-in-list", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> `06:00` to `22:00` MON\n"], "`06:00` to", "invalid-range")
-err("error/unknown-kind", [META, BASE, "> [!SCHEDULE:TEIR] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE:TEIR", "unknown-kind")
-err("error/unknown-state", [META, BASE, "> [!SCHEDULE:STATE] Turbo\n> - `06:00` to `22:00` MON\n"], "Turbo", "unknown-state")
-err("error/unknown-base-state", [META, "> [!SCHEDULE:BASE] Nope\n", "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n"], "Nope", "unknown-state")
-err("error/state-title-missing", [META, BASE, "> [!SCHEDULE:STATE]\n> - `06:00` to `22:00` MON\n"], "SCHEDULE:STATE", "missing-title")
-err("error/meta-wrong-schema-version", ["> [!SCHEDULE:META]\n> - schema-version: `2`\n", BASE], "2`", "meta-schema")
-err("error/meta-unknown-key", ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - owner: `team-xyz`\n", BASE], "owner", "meta-schema")
+err("error/time-24-00", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"], "24:00", "invalid-time")
+err("error/time-minute-60", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `23:60` to `02:00` SAT\n"], "23:60", "invalid-time")
+err("error/time-garbage", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `noon` to `14:00` SAT\n"], "noon", "invalid-time")
+err("error/weekday-lowercase", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` mon-fri\n"], "mon", "invalid-weekday")
+err("error/weekday-mixed-case", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` Mon\n"], "Mon", "invalid-weekday")
+err("error/weekday-alias", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` weekdays\n"], "weekdays", "invalid-weekday")
+err("error/weekday-trailing-dot", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON.\n"], "MON.", "invalid-weekday")
+err("error/weekday-full-name", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MONDAY\n"], "MONDAY", "invalid-weekday")
+err("error/weekday-missing", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00`\n"], "`06:00`", "invalid-range")
+err("error/cron-form", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `0 8 * * MON-FRI`\n"], "`0 8", "invalid-range")
+err("error/separator-dash", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00`-`22:00` MON\n"], "`06:00`-", "invalid-range")
+err("error/separator-until", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` until `22:00` MON\n"], "`06:00` until", "invalid-range")
+err("error/prose-in-range", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - from `06:00` to `22:00` MON\n"], "from", "invalid-range")
+err("error/range-not-in-list", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> `06:00` to `22:00` MON\n"], "`06:00` to", "invalid-range")
+err("error/unknown-kind", [META, BASE, "> [!SCHEDULE-TEIR] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE-TEIR", "unknown-kind")
+err("error/unknown-state", [META, BASE, "> [!SCHEDULE-STATE] Turbo\n> - `06:00` to `22:00` MON\n"], "Turbo", "unknown-state")
+err("error/unknown-base-state", [META, "> [!SCHEDULE-BASE] Nope\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n"], "Nope", "unknown-state")
+err("error/state-title-missing", [META, BASE, "> [!SCHEDULE-STATE]\n> - `06:00` to `22:00` MON\n"], "SCHEDULE-STATE", "missing-title")
+err("error/meta-wrong-schema-version", ["> [!SCHEDULE-META]\n> - schema-version: `2`\n", BASE], "2`", "meta-schema")
+err("error/meta-unknown-key", ["> [!SCHEDULE-META]\n> - schema-version: `1`\n> - owner: `team-xyz`\n", BASE], "owner", "meta-schema")
 err(
     "error/meta-custom-value-too-long",
-    ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-note: `" + "x" * 49 + "`\n", BASE],
+    ["> [!SCHEDULE-META]\n> - schema-version: `1`\n> - x-note: `" + "x" * 49 + "`\n", BASE],
     "x" * 49,
     "meta-schema",
 )
 err(
     "error/meta-custom-key-uppercase",
-    ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-Owner: `team-xyz`\n", BASE],
+    ["> [!SCHEDULE-META]\n> - schema-version: `1`\n> - x-Owner: `team-xyz`\n", BASE],
     "x-Owner",
     "meta-schema",
 )
 err(
     "error/sample-interval-mismatch",
-    [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:10` to `22:00` MON\n"],
+    [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:10` to `22:00` MON\n"],
     "06:10",
     "sample-interval",
     args=["--sample-interval", "15"],
@@ -612,7 +628,7 @@ err("error/sample-interval-not-divisor-of-60", [META, BASE], None, "invalid-flag
 err("error/sample-interval-zero", [META, BASE], None, "invalid-flag", args=["--sample-interval", "0"])
 err(
     "error/require-base-missing",
-    [META, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n"],
+    [META, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n"],
     None,
     "missing-base",
     args=["--require-base", "true"],
@@ -661,36 +677,44 @@ err(
     "config-duplicate-state",
     args=["--set-config-at", "states[1]", "--set-config-value", '{"id": "off", "display-name": "Off again"}'],
 )
-err("error/unknown-namespace-typo", [META, BASE, "> [!SCHEDUEL:STATE] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDUEL:STATE", "unknown-namespace")
-# The former aliases (CANNED-SCHEDULE, TO-SCHEDULE, CAN-SCHED, CONFIG-SCHED) were dropped on 2026-10-25.
-err("error/unknown-namespace-former-alias", [META, BASE, "> [!CAN-SCHED:STATE] Medium\n> - `06:00` to `22:00` MON\n"], "CAN-SCHED:STATE", "unknown-namespace")
-err("error/unknown-namespace-foreign", [META, BASE, "> [!PLAN:STATE] Medium\n> - `06:00` to `22:00` MON\n"], "PLAN:STATE", "unknown-namespace")
-err("error/time-single-digit-minute", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `6:0` to `9:30` MON\n"], "6:0`", "invalid-time")
-err("error/time-three-digit-hour", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `006:00` to `9:30` MON\n"], "006:00", "invalid-time")
+# The separator is a hyphen; the former colon form points to it.
+err("error/marker-colon", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE:STATE", "invalid-marker")
 
-STATE = "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n"
+# Alerts other than schedule directives are prose, unless --error-unless-alert-pattern restricts them. The pattern is
+# anchored by the tool; schedule directives are always allowed.
+PATTERN = ["--error-unless-alert-pattern", "(?i)NOTE|TIP|IMPORTANT|WARNING|CAUTION"]
+err("error/alert-pattern-namespace-typo", [META, BASE, "> [!SCHEDUEL-STATE] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDUEL-STATE", "disallowed-alert", args=PATTERN)
+# The former aliases (CANNED-SCHEDULE, TO-SCHEDULE, CAN-SCHED, CONFIG-SCHED) were dropped on 2026-10-25.
+err("error/alert-pattern-former-alias", [META, BASE, "> [!CAN-SCHED-STATE] Medium\n> - `06:00` to `22:00` MON\n"], "CAN-SCHED-STATE", "disallowed-alert", args=PATTERN)
+err("error/alert-pattern-custom-callout", [META, BASE, "> [!custom-question] Why\n> Because.\n"], "custom-question", "disallowed-alert", args=PATTERN)
+err("error/alert-pattern-anchored", [META, BASE, "> [!NOTE-extra]\n> Text.\n"], "NOTE-extra", "disallowed-alert", args=["--error-unless-alert-pattern", "NOTE"])
+err("error/alert-pattern-invalid", [META, BASE], None, "invalid-flag", args=["--error-unless-alert-pattern", "(NOTE"])
+err("error/time-single-digit-minute", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `6:0` to `9:30` MON\n"], "6:0`", "invalid-time")
+err("error/time-three-digit-hour", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `006:00` to `9:30` MON\n"], "006:00", "invalid-time")
+
+STATE = "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n"
 err("error/missing-kind", [META, BASE, "> [!SCHEDULE] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE]", "missing-kind")
-err("error/missing-kind-empty", [META, BASE, "> [!SCHEDULE:] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE:]", "missing-kind")
-err("error/duplicate-base", [META, BASE, "> [!SCHEDULE:BASE] Medium\n", STATE], "SCHEDULE:BASE", "duplicate-block", nth=2)
-err("error/duplicate-meta", [META, BASE, META, STATE], "SCHEDULE:META", "duplicate-block", nth=2)
-err("error/empty-state", [META, BASE, "> [!SCHEDULE:STATE] Medium\n", STATE], "SCHEDULE:STATE", "empty-state")
+err("error/missing-kind-empty", [META, BASE, "> [!SCHEDULE-] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE-]", "missing-kind")
+err("error/duplicate-base", [META, BASE, "> [!SCHEDULE-BASE] Medium\n", STATE], "SCHEDULE-BASE", "duplicate-block", nth=2)
+err("error/duplicate-meta", [META, BASE, META, STATE], "SCHEDULE-META", "duplicate-block", nth=2)
+err("error/empty-state", [META, BASE, "> [!SCHEDULE-STATE] Medium\n", STATE], "SCHEDULE-STATE", "empty-state")
 err(
     "error/misplaced-directive-in-list",
-    [META, BASE, "- a list item\n\n  > [!SCHEDULE:STATE] Medium\n  > - `06:00` to `22:00` MON\n"],
-    "SCHEDULE:STATE",
+    [META, BASE, "- a list item\n\n  > [!SCHEDULE-STATE] Medium\n  > - `06:00` to `22:00` MON\n"],
+    "SCHEDULE-STATE",
     "misplaced-directive",
 )
 err(
     "error/misplaced-directive-bold",
-    [META, BASE, "> **[!SCHEDULE:STATE]** Medium\n> - `06:00` to `22:00` MON\n"],
-    "SCHEDULE:STATE",
+    [META, BASE, "> **[!SCHEDULE-STATE]** Medium\n> - `06:00` to `22:00` MON\n"],
+    "SCHEDULE-STATE",
     "misplaced-directive",
 )
-err("error/hint-too-long", ["> [!SCHEDULE:META] " + "a" * 81 + "\n", BASE, STATE], "a" * 81, "invalid-hint")
-err("error/hint-bad-character", ["> [!SCHEDULE:META] Office hours!\n", BASE, STATE], "Office", "invalid-hint")
-err("error/hint-trailing-hyphen", ["> [!SCHEDULE:META] Office-\n", BASE, STATE], "Office", "invalid-hint")
-err("error/hint-leading-digit", ["> [!SCHEDULE:META] 24h service\n", BASE, STATE], "24h", "invalid-hint")
-err("error/hint-on-base", [META, "> [!SCHEDULE:BASE] Minimum extra\n", STATE], "Minimum extra", "unknown-state")
+err("error/hint-too-long", ["> [!SCHEDULE-META] " + "a" * 81 + "\n", BASE, STATE], "a" * 81, "invalid-hint")
+err("error/hint-bad-character", ["> [!SCHEDULE-META] Office hours!\n", BASE, STATE], "Office", "invalid-hint")
+err("error/hint-trailing-hyphen", ["> [!SCHEDULE-META] Office-\n", BASE, STATE], "Office", "invalid-hint")
+err("error/hint-leading-digit", ["> [!SCHEDULE-META] 24h service\n", BASE, STATE], "24h", "invalid-hint")
+err("error/hint-on-base", [META, "> [!SCHEDULE-BASE] Minimum extra\n", STATE], "Minimum extra", "unknown-state")
 
 def err_doc(name, md, marker, code, nth=1):
     write(name, md, diag=[("error", pos(md, marker, nth) if marker else "-", code)])
@@ -736,6 +760,6 @@ err(
     "config-schema",
     args=["--set-config-at", "representation.ascii.symbols", "--set-config-value", '"blocks"'],
 )
-err("error/duplicate-weekday-list", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON,MON\n"], "MON", "duplicate-weekday", nth=2)
-err("error/duplicate-weekday-one-day-range", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` WED-WED\n"], "WED", "duplicate-weekday", nth=2)
+err("error/duplicate-weekday-list", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON,MON\n"], "MON", "duplicate-weekday", nth=2)
+err("error/duplicate-weekday-one-day-range", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` WED-WED\n"], "WED", "duplicate-weekday", nth=2)
 err("error/svg-theme-unknown", [META, BASE, STATE], None, "invalid-flag", args=["--svg-theme", "sepia"])

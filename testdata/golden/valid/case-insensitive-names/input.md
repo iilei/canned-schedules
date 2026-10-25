@@ -1,9 +1,9 @@
 # Schedule-Name
 
-> [!schedule:meta]
+> [!schedule-meta]
 > - schema-version: `1`
 
-> [!Schedule:Base] MINIMUM
+> [!Schedule-Base] MINIMUM
 
-> [!SCHEDULE:state] medium
+> [!SCHEDULE-state] medium
 > - `06:00` to `22:00` MON-FRI

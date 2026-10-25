@@ -2,14 +2,24 @@ package document
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/yuin/goldmark/ast"
 
 	"github.com/iilei/canned-schedules/internal/diag"
 )
 
-// directiveLike matches text that looks like a directive marker: "[!" followed by a namespace and a colon.
-var directiveLike = regexp.MustCompile(`\[!([A-Za-z][A-Za-z0-9-]*):`)
+// directiveLike matches text that looks like a directive marker: "[!", a namespace, then a hyphen or "]".
+var directiveLike = regexp.MustCompile(`(?i)\[!(?:` + quoteAll(Namespaces) + `)[-\]]`)
+
+func quoteAll(names []string) string {
+	quoted := make([]string, len(names))
+	for i, n := range names {
+		quoted[i] = regexp.QuoteMeta(n)
+	}
+
+	return strings.Join(quoted, "|")
+}
 
 // scanMisplaced reports directive-like markers anywhere except on the marker line of a top-level directive, such as
 // directives nested in lists or bold-wrapped markers. Code spans are blanked out first, so documentation that shows
@@ -45,7 +55,7 @@ func (p *parser) scanBlock(n ast.Node) {
 			pos := p.lines.pos(seg.Start + m[0] + len("[!"))
 			p.errorf(pos, diag.CodeMisplacedDirective,
 				"directives must be top-level blockquotes that start with the marker")
-			p.example("> [!SCHEDULE:STATE] Medium")
+			p.example("> [!SCHEDULE-STATE] Medium")
 		}
 	}
 }

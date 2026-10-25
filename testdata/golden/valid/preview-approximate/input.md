@@ -1,9 +1,9 @@
 # Schedule-Name
 
-> [!SCHEDULE:META]
+> [!SCHEDULE-META]
 > - schema-version: `1`
 
-> [!SCHEDULE:BASE] Off
+> [!SCHEDULE-BASE] Off
 
-> [!SCHEDULE:STATE] Medium
+> [!SCHEDULE-STATE] Medium
 > - `06:07` to `09:52` MON

@@ -9,8 +9,10 @@ import (
 	"github.com/iilei/canned-schedules/internal/diag"
 )
 
-// Namespaces lists the accepted namespaces, matched case-insensitively. There is one for now; it stays a list so an
-// alias can be added later. Adding one is a spec change.
+// Namespaces lists the accepted namespaces, matched case-insensitively. A directive's alert type is the namespace, a
+// hyphen and the kind ([!SCHEDULE-STATE]): the hyphen keeps the markers valid callout types for other tools, such as
+// rehype-callouts. There is one namespace for now; it stays a list so an alias can be added later. Adding one is a
+// spec change.
 var Namespaces = []string{"SCHEDULE"}
 
 // marker matches the alert marker at the start of a blockquote's first line and captures the alert type.
@@ -37,14 +39,28 @@ func (p *parser) blockquote(bq ast.Node) {
 	typ := line[m[2]:m[3]]
 	kindPos := p.lines.pos(first.Start + m[2])
 
-	ns, kindName, hasColon := strings.Cut(typ, ":")
-	if !hasColon && !isNamespace(ns) {
-		return // A standard alert such as [!NOTE]: prose for humans.
+	if ns, _, ok := strings.Cut(typ, ":"); ok && isNamespace(ns) {
+		p.errorf(kindPos, diag.CodeInvalidMarker, "[!%s]: directives separate the namespace and the kind with a hyphen",
+			typ)
+		p.example("> [!SCHEDULE-STATE] Medium")
+
+		return
+	}
+
+	kindName, ours := SplitMarker(typ)
+	if !ours {
+		// Any other alert (NOTE, TIP, custom callouts) is prose for humans, unless --error-unless-alert-pattern
+		// restricts which ones may appear.
+		if pat := p.opts.AlertPattern; pat != nil && !pat.MatchString(typ) {
+			p.errorf(kindPos, diag.CodeDisallowedAlert, "alert [!%s] doesn't match --error-unless-alert-pattern", typ)
+		}
+
+		return
 	}
 
 	p.markerLines[first.Start] = true
 
-	kind, ok := p.kind(typ, ns, kindName, hasColon, kindPos)
+	kind, ok := p.kind(typ, kindName, kindPos)
 	if !ok {
 		return
 	}
@@ -61,22 +77,38 @@ func (p *parser) blockquote(bq ast.Node) {
 	p.add(&d, hasBody)
 }
 
-func (p *parser) kind(typ, ns, kindName string, hasColon bool, pos diag.Pos) (Kind, bool) {
-	switch {
-	case !isNamespace(ns):
-		p.errorf(pos, diag.CodeUnknownNamespace, "unknown namespace %q in [!%s]; use one of %s",
-			ns, typ, strings.Join(Namespaces, ", "))
-		p.example("> [!SCHEDULE:STATE] Medium")
-	case !hasColon || kindName == "":
+func (p *parser) kind(typ, kindName string, pos diag.Pos) (Kind, bool) {
+	if kindName == "" {
 		p.errorf(pos, diag.CodeMissingKind, "[!%s] needs a kind: META, BASE or STATE", typ)
-		p.example("> [!SCHEDULE:STATE] Medium")
-	default:
-		if k, ok := kinds[strings.ToUpper(kindName)]; ok {
-			return k, true
+		p.example("> [!SCHEDULE-STATE] Medium")
+
+		return "", false
+	}
+
+	if k, ok := kinds[strings.ToUpper(kindName)]; ok {
+		return k, true
+	}
+
+	p.errorf(pos, diag.CodeUnknownKind, "unknown kind %q in [!%s]; use META, BASE or STATE", kindName, typ)
+	p.example("> [!SCHEDULE-STATE] Medium")
+
+	return "", false
+}
+
+// SplitMarker reports whether an alert type is a schedule directive ([!SCHEDULE-STATE], also the bare [!SCHEDULE])
+// and returns its kind as written, empty when missing.
+func SplitMarker(typ string) (string, bool) {
+	for _, ns := range Namespaces {
+		if len(typ) < len(ns) || !strings.EqualFold(typ[:len(ns)], ns) {
+			continue
 		}
 
-		p.errorf(pos, diag.CodeUnknownKind, "unknown kind %q in [!%s]; use META, BASE or STATE", kindName, typ)
-		p.example("> [!SCHEDULE:STATE] Medium")
+		switch rest := typ[len(ns):]; {
+		case rest == "":
+			return "", true
+		case rest[0] == '-':
+			return rest[1:], true
+		}
 	}
 
 	return "", false
@@ -201,7 +233,7 @@ func (p *parser) titled(d *Directive) bool {
 	}
 
 	p.errorf(d.KindPos, diag.CodeMissingTitle, "%s needs a state name after the marker", d.Kind)
-	p.example("> [!SCHEDULE:" + string(d.Kind) + "] Medium")
+	p.example("> [!SCHEDULE-" + string(d.Kind) + "] Medium")
 
 	return false
 }

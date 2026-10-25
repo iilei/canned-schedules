@@ -16,37 +16,37 @@ func TestParseGoldenFormat(t *testing.T) {
 	}{
 		{
 			name: "syntax shown in code spans is not a misplaced directive",
-			src:  "# Plan\n\nWrite `> [!SCHEDULE:STATE] Medium` followed by ranges.\n",
+			src:  "# Plan\n\nWrite `> [!SCHEDULE-STATE] Medium` followed by ranges.\n",
 			want: []string{},
 		},
 		{
 			name: "directive-like text in prose is misplaced",
-			src:  "# Plan\n\nSee [!SCHEDULE:STATE] below.\n",
+			src:  "# Plan\n\nSee [!SCHEDULE-STATE] below.\n",
 			want: []string{"error 3:7 misplaced-directive"},
 		},
 		{
 			name: "ordered list in a state",
-			src:  "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> 1. `06:00` to `22:00` MON\n",
+			src:  "# Plan\n\n> [!SCHEDULE-STATE] Medium\n> 1. `06:00` to `22:00` MON\n",
 			want: []string{"error 4:6 invalid-range"},
 		},
 		{
 			name: "content in a base block",
-			src:  "# Plan\n\n> [!SCHEDULE:BASE] Minimum\n> - `06:00` to `22:00` MON\n",
+			src:  "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n> - `06:00` to `22:00` MON\n",
 			want: []string{"error 4:5 unexpected-content"},
 		},
 		{
 			name: "malformed meta line",
-			src:  "# Plan\n\n> [!SCHEDULE:META]\n> owner team\n",
+			src:  "# Plan\n\n> [!SCHEDULE-META]\n> owner team\n",
 			want: []string{"error 4:3 meta-schema"},
 		},
 		{
 			name: "columns count runes, not bytes",
-			src:  "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n\nÄÖÜ [!SCHEDULE:BASE]\n",
+			src:  "# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n\nÄÖÜ [!SCHEDULE-BASE]\n",
 			want: []string{"error 6:7 misplaced-directive"},
 		},
 		{
 			name: "diagnostics are sorted by position",
-			src:  "> [!SCHEDULE:NOPE] x\n\n# 1st\n",
+			src:  "> [!SCHEDULE-NOPE] x\n\n# 1st\n",
 			want: []string{"error 1:5 unknown-kind", "error 3:3 invalid-name"},
 		},
 	}
@@ -55,7 +55,7 @@ func TestParseGoldenFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, diags := Parse([]byte(tt.src))
+			_, diags := Parse([]byte(tt.src), Options{})
 			if got := golden(diags); !equal(got, tt.want) {
 				t.Errorf("got %q, want %q", got, tt.want)
 			}
@@ -66,10 +66,10 @@ func TestParseGoldenFormat(t *testing.T) {
 func TestParseDocument(t *testing.T) {
 	t.Parallel()
 
-	src := "# Office Hours\n\n> [!schedule:meta] Weekdays only\n> - x-owner: `ops`\n\n" +
-		"> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"
+	src := "# Office Hours\n\n> [!schedule-meta] Weekdays only\n> - x-owner: `ops`\n\n" +
+		"> [!SCHEDULE-BASE] Minimum\n\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"
 
-	doc, diags := Parse([]byte(src))
+	doc, diags := Parse([]byte(src), Options{})
 	if len(diags) != 0 {
 		t.Fatalf("unexpected diagnostics: %q", golden(diags))
 	}

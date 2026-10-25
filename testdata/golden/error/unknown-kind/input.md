@@ -1,9 +1,9 @@
 # Schedule-Name
 
-> [!SCHEDULE:META]
+> [!SCHEDULE-META]
 > - schema-version: `1`
 
-> [!SCHEDULE:BASE] Minimum
+> [!SCHEDULE-BASE] Minimum
 
-> [!SCHEDULE:TEIR] Medium
+> [!SCHEDULE-TEIR] Medium
 > - `06:00` to `22:00` MON

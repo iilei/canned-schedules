@@ -161,8 +161,8 @@ func (t *transformer) classify(typ, title string) *Callout {
 		return nil
 	}
 
-	ns, kind, ok := strings.Cut(typ, ":")
-	if !ok || !isNamespace(ns) {
+	kind, ok := document.SplitMarker(typ)
+	if !ok {
 		return &Callout{Class: "admonition", Title: strings.TrimSpace(typ + " " + title)}
 	}
 
@@ -232,16 +232,6 @@ func firstOffset(n ast.Node) (int, bool) {
 	}
 
 	return 0, false
-}
-
-func isNamespace(ns string) bool {
-	for _, n := range document.Namespaces {
-		if strings.EqualFold(n, ns) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // RegisterFuncs implements renderer.NodeRenderer.

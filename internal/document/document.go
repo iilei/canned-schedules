@@ -75,8 +75,16 @@ type Document struct {
 	Name   Text
 }
 
+// Options configure Parse.
+type Options struct {
+	// AlertPattern is --error-unless-alert-pattern, anchored: when set, every alert that isn't a schedule directive
+	// must match it, otherwise it is a disallowed-alert error. Nil allows any alert.
+	AlertPattern *regexp.Regexp
+}
+
 type parser struct {
 	markerLines map[int]bool
+	opts        Options
 	src         []byte
 	lines       lineIndex
 	diags       diag.List
@@ -84,8 +92,8 @@ type parser struct {
 }
 
 // Parse parses src. Diagnostics are sorted by position, those without a position first.
-func Parse(src []byte) (*Document, diag.List) {
-	p := &parser{src: src, lines: newLineIndex(src), markerLines: map[int]bool{}}
+func Parse(src []byte, opts Options) (*Document, diag.List) {
+	p := &parser{src: src, opts: opts, lines: newLineIndex(src), markerLines: map[int]bool{}}
 	root := goldmark.New().Parser().Parse(text.NewReader(src))
 
 	var nameSeen bool

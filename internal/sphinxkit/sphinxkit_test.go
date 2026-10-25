@@ -14,7 +14,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/config"
 )
 
-const request = "# Office Hours\n\n> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"
+const request = "# Office Hours\n\n> [!SCHEDULE-BASE] Minimum\n\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"
 
 func TestCSSTargets(t *testing.T) {
 	t.Parallel()

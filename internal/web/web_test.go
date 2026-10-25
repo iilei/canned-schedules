@@ -36,7 +36,7 @@ func TestEvaluateValid(t *testing.T) {
 func TestEvaluateInvalid(t *testing.T) {
 	t.Parallel()
 
-	res := Evaluate([]byte("# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `10:00` to `24:00` SAT\n"), nil)
+	res := Evaluate([]byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"), nil)
 	if res.Errors != 1 || res.JSON != "" || res.SVG != "" || res.MyST != "" {
 		t.Fatalf("an invalid document has no output, got %+v", res)
 	}
@@ -73,7 +73,7 @@ func TestSphinxKit(t *testing.T) {
 	}
 
 	if _, err := SphinxKit(
-		[]byte("# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `10:00` to `24:00` SAT\n"),
+		[]byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"),
 		nil,
 	); err == nil {
 		t.Error("an invalid request must not produce a kit")

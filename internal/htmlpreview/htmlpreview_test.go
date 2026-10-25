@@ -8,9 +8,9 @@ import (
 )
 
 const doc = "# Plan\n\n" +
-	"> [!SCHEDULE:META] Office\n> - x-owner: `ops`\n\n" +
-	"> [!SCHEDULE:BASE] Minimum\n\n" +
-	"> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
+	"> [!SCHEDULE-META] Office\n> - x-owner: `ops`\n\n" +
+	"> [!SCHEDULE-BASE] Minimum\n\n" +
+	"> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
 	"> [!NOTE]\n> Mention MON here.\n\n" +
 	"> [!TIP] with a title\n> text\n\n" +
 	"> [!OTHER:THING] x\n\n" +
@@ -36,7 +36,7 @@ func TestGitHub(t *testing.T) {
 
 	for _, want := range []string{
 		`<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title">Note</p>`,
-		`<blockquote>` + "\n" + `<p>[!SCHEDULE:STATE] Medium</p>`, // GitHub shows schedule directives literally.
+		`<blockquote>` + "\n" + `<p>[!SCHEDULE-STATE] Medium</p>`, // GitHub shows schedule directives literally.
 		`<p>[!TIP] with a title`, // A marker with a title is no GitHub alert.
 	} {
 		if !strings.Contains(html, want) {
@@ -68,7 +68,7 @@ func TestSphinx(t *testing.T) {
 		t.Error("weekdays are written as in the request, without tooltips")
 	}
 
-	if strings.Contains(html, "[!SCHEDULE:") {
+	if strings.Contains(html, "[!SCHEDULE-") {
 		t.Error("markers must not show in the Sphinx view")
 	}
 }
