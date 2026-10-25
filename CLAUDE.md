@@ -501,6 +501,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   the key. Release key: a dedicated ed25519 key, `B645234C9CB8175ECA5D78A5C8447A2252E9E7B6` (README and release
   notes print it). Tags: semver pre-releases like `v0.0.1-pre.1`, **no build metadata** (`+…`): Go modules reject it
   and semver ignores it for ordering.
+- **`--version`** (`cmd/canned-schedules/version.go`): goreleaser's `-ldflags -X` values pass through verbatim. Without
+  them (`go install`, `go build`), the module version from `debug.ReadBuildInfo` is used when it matches the official
+  semver.org regex after its `v` (`(devel)` stays `dev`), and `vcs.revision`/`vcs.time` fill in commit and date.
 - **CI matrix:** `check.yml` also builds and tests on ubuntu, macos and windows (Go only). `.gitattributes` forces LF
   so Windows checkouts don't break the golden fixtures; `assets/fonts` stays byte-identical. Tests avoid OS
   specifics: drive letters for absolute paths, no permission bits on Windows, diagnostic codes instead of OS error
