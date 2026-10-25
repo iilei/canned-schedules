@@ -8,6 +8,8 @@ node = "22.22.2"
 goreleaser = "2.18.3"
 # SBOMs for the release archives (goreleaser's sboms step).
 syft = "1.54.1"
+# Markdown style (.rumdl.toml): README, CLAUDE.md, templates, presets and schedule files.
+rumdl = "0.2.79"
 
 [tasks.fmt]
 description = "Format Go code using the configured golangci-lint formatters"
@@ -37,6 +39,14 @@ run = [
   "go tool cover -func=coverage/coverage.out",
 ]
 
+[tasks."lint:md"]
+description = "Check Markdown style with rumdl (.rumdl.toml); mise run fmt:md fixes what it can"
+run = "rumdl check ."
+
+[tasks."fmt:md"]
+description = "Fix Markdown style issues rumdl can fix"
+run = "rumdl fmt ."
+
 [tasks.build]
 description = "Compile all packages, including the CLI"
 run = "go build ./..."
@@ -47,7 +57,7 @@ run = "go mod tidy"
 
 [tasks.check]
 description = "Run all non-mutating quality checks"
-depends = ["fmt:check", "vet", "lint", "test", "build"]
+depends = ["fmt:check", "vet", "lint", "lint:md", "test", "build"]
 
 [tasks.licenses]
 description = "Write THIRD_PARTY_LICENSES.md: the licences of everything compiled or embedded into the binary"

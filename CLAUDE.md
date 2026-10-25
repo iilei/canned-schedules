@@ -49,11 +49,14 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
     the body itself. The `digests` object stays, so a digest can be added later without reshaping the output.
   - Storing the source next to its outputs is decided as the `*.canned-schedule.md` convention (see "Schedule files
     and generated outputs"). Consumers read only the output; the raw Markdown is never part of the contract.
-- **Linting (proposed).** rumdl has no custom rules, and a markdownlint-cli2 JS rule would be a second parser.
-  - Use rumdl for generic style only. Add a per-file ignore for MD028 on schedule files (`*.canned-schedule.md`),
-    because adjacent alerts trigger it.
-  - Add a `lint-schedule` mise task that wraps the Go validator and prints rumdl's concise format,
-    `file:line:col CODE message`.
+- **Linting (decided 2026-10-25).** rumdl has no custom rules, and a markdownlint-cli2 JS rule would be a second
+  parser, so rumdl checks generic style only and the CLI checks schedules.
+  - rumdl is pinned in `mise.toml` and runs as `lint:md`, part of `mise run check` (so CI runs it); `fmt:md` fixes
+    what it can. `.rumdl.toml` ignores MD028/MD032 for schedule documents (adjacent alerts, lists under the marker),
+    MD025 for the GitHub template (frontmatter title), MD036 for the README (the generated flag tables label groups
+    in bold), and excludes golden inputs and `LICENSE.md` (the licence template, kept verbatim).
+  - The proposed `lint-schedule` task is **superseded**: the CLI's txt report already is `path:line:col:
+    severity[code]: message`, and `schedule:render` / `schedule:pre-commit` run it over schedule files.
 
 ## Input syntax
 
@@ -192,7 +195,6 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
   `unknown-state`, …), CSS classes (`schedule-state`, `state-N`, `--state`). No `TIER` alias. Config order stays a
   technical detail (default base, preview tie-breaking), not "more" or "less". The defaults remain the capacity
   example (`Off`, `Minimum`, `Medium`, `Maximum`).
-
 - Pattern `^[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$`, 1–32 chars, ASCII, hyphen as the only separator. Names work
   directly as MyST/CSS classes.
 - Case-insensitive. Canonical key = upper-cased name. Reject configs whose state ids collide after upper-casing. Display
@@ -533,7 +535,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
   minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
 - Deploy: `.github/workflows/pages.yml` publishes `dist/site` on pushes to `master` (SHA-pinned
-  `upload-pages-artifact`/`deploy-pages`). Live at https://iilei.github.io/canned-schedules/ since 2026-10-25 (Pages source "GitHub Actions", HTTPS
+  `upload-pages-artifact`/`deploy-pages`). Live at <https://iilei.github.io/canned-schedules/> since 2026-10-25 (Pages source "GitHub Actions", HTTPS
   enforced).
 - Verified on the first deploy: GitHub Pages serves `app.wasm` gzip-compressed (about 3 MB over the wire for the
   11.5 MB file), so the loading overlay shows "MB loaded" without a total there.
@@ -615,7 +617,17 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-- Nothing open at the moment.
+In priority order (agreed 2026-10-25):
+
+1. **AWS recipe in the README:** from `transitions` to ASG scheduled actions (a CLI loop with
+   `aws autoscaling put-scheduled-update-group-action`, or Terraform `aws_autoscaling_schedule` with `for_each`), with
+   state ids mapped to min/desired/max outside the tool. AWS ASG is the first target, and nothing shows it yet.
+2. **Schema `$id`s pinned to a version:** the four `$id`s point at `master`, and they appear in consumers' output
+   and validation. Either rewrite them per release (tag URLs) or attach the schemas as release assets. Decide before
+   1.0.
+3. **Stability policy before 1.0:** what counts as breaking (syntax, JSON keys and their order, digest inputs, error
+   codes) and when `schema-version` changes. The README warns that the syntax may change, but not what stays.
+4. **Preflight page (optional):** a text-form download and an option to embed the source in the SVG, like the CLI.
 
 ## Future ideas (not scheduled — don't build unasked)
 
@@ -704,12 +716,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Working conventions
 
-- **Go boilerplate (`40d6d86`):** module `github.com/iilei/canned-schedules`, Go 1.25. `mise.toml` now pins only
-  `golangci-lint` and `go`. Tasks: `fmt`, `fmt:check`, `vet`, `lint`, `test` (with `-race`), `coverage`, `build`,
-  `tidy`, and `check` (runs all non-mutating checks). `.golangci.yml` is strict (`mnd`, `nonamedreturns`, `godot`,
-  `testpackage` outside tests, …). `.goreleaser.yml` handles releases.
-  - **All old mise tasks and tools (cue, jq, yq, gomplate, markdown-tool, rumdl, jsonschema) are gone**, so the old
-    pipeline no longer runs through mise. The `lint-schedule`/rumdl proposal needs rumdl re-added if it's still wanted.
+- **Go boilerplate (`40d6d86`):** module `github.com/iilei/canned-schedules`, Go 1.25. `mise.toml` pins
+  `golangci-lint`, `go`, `node` (`test:wasm`, the editor bundle), `goreleaser`, `syft` (SBOMs) and `rumdl`. Tasks:
+  `fmt`, `fmt:check`, `vet`, `lint`, `lint:md`, `fmt:md`, `test` (with `-race`), `coverage`, `build`, `tidy`,
+  `check` (runs all non-mutating checks), `licenses`, `docs`, `golden:check`, `example:test`, `test:wasm`,
+  `web:build`, `web:serve`, `fonts:braille`, `release:snapshot`, `release:smoke`, `release:verify`. `.golangci.yml`
+  is strict (`mnd`, `nonamedreturns`, `godot`, `testpackage` outside tests, …). `.goreleaser.yml` handles releases.
+  - **The old pipeline's tools (cue, jq, yq, gomplate, markdown-tool, jsonschema) are gone** from mise; rumdl came
+    back for Markdown style only (see "Linting").
 - **Boilerplate is adapted:** main package `./cmd/canned-schedules`, anchored `.gitignore` binary rule
   (`/canned-schedules`), golangci import prefix `github.com/iilei/canned-schedules`, release texts renamed. Test files
   have relaxed lint rules (`mnd`, `perfsprint`, complexity linters, `fieldalignment`, `rangeValCopy`/`hugeParam`).
@@ -752,7 +766,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Issue templates:** `.github/ISSUE_TEMPLATE/canned_schedule_request.md` (with GitHub frontmatter) and
   `.gitlab/issue_templates/canned_schedule_request.md` share one body. `internal/cli/templates_test.go` requires the
   bodies to be identical and the template to evaluate without diagnostics, so keep the template a valid example.
-  `.rumdl.toml` ignores MD028/MD032 (and MD025 on GitHub) for them, and excludes golden inputs from linting.
+  `.rumdl.toml` ignores MD028/MD032 (and MD025 on GitHub) for them, and excludes golden inputs from linting
+  (`mise run lint:md`).
 - **JSON key order is part of the output:** `Output` and `Transition` fields are in the documented key order (the
   `Transition` order needs a `fieldalignment` exemption), and the golden runner compares the exact text.
 - **Golden fixtures** live in `testdata/golden/` (format in its README), generated by `testdata/golden/gen.py`: `valid/`, `warn/` and `error/` cases, each with

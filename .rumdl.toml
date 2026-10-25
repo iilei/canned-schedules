@@ -1,7 +1,7 @@
 # Enable MD060 globally or via per-file-ignores/extend-enable
 [global]
-# Golden inputs are malformed on purpose.
-exclude = ["testdata/golden/*/*/input.md"]
+# Golden inputs are malformed on purpose; LICENSE.md is the fsl.software template, kept verbatim.
+exclude = ["testdata/golden/*/*/input.md", "LICENSE.md"]
 extend-enable = [
   "MD060",
   "MD001",  # Heading increment
@@ -23,6 +23,8 @@ column-align = "auto"
 # Schedule documents (issue templates, page presets) put directive blocks right after each other (MD028) and lists right under the marker line
 # (MD032); the parser accepts both. On GitHub, rumdl counts the template's frontmatter title as a second H1 (MD025).
 [per-file-ignores]
+# The generated flag tables (mise run docs) label their groups in bold; headings would break the outline under Usage.
+"README.md" = ["MD036"]
 ".github/ISSUE_TEMPLATE/canned_schedule_request.md" = ["MD025", "MD028", "MD032"]
 ".gitlab/issue_templates/*.md" = ["MD028", "MD032"]
 "web/presets/*.md" = ["MD028", "MD032"]

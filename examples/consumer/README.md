@@ -4,15 +4,15 @@ A ready-to-copy setup for a repo that keeps approved schedules as `*.canned-sche
 requests that arrive as issues. Everything runs through [mise](https://mise.jdx.dev) tasks, so CI and your machine use
 the same commands. This folder is tested in the canned-schedules CI (`mise run example:test`).
 
-| File | What it does |
-| --- | --- |
-| `mise.toml` | Pins the canned-schedules release and defines the `schedule:*` tasks |
-| `scripts/canned-schedule` | The tasks themselves (POSIX `sh`); runs without mise too |
-| `canned-schedules.args` | Flags for every call, one per line |
-| `.gitignore` | Keeps the generated files out of git |
-| `schedules/office-hours.canned-schedule.md` | An example schedule (the issue template's example) |
-| `.github/ISSUE_TEMPLATE/canned_schedule_request.md` | The issue template people propose schedules with |
-| `.github/workflows/schedule-request.yml` | Checks request issues and keeps one comment with the result |
+| File                                                | What it does                                                         |
+| --------------------------------------------------- | -------------------------------------------------------------------- |
+| `mise.toml`                                         | Pins the canned-schedules release and defines the `schedule:*` tasks |
+| `scripts/canned-schedule`                           | The tasks themselves (POSIX `sh`); runs without mise too             |
+| `canned-schedules.args`                             | Flags for every call, one per line                                   |
+| `.gitignore`                                        | Keeps the generated files out of git                                 |
+| `schedules/office-hours.canned-schedule.md`         | An example schedule (the issue template's example)                   |
+| `.github/ISSUE_TEMPLATE/canned_schedule_request.md` | The issue template people propose schedules with                     |
+| `.github/workflows/schedule-request.yml`            | Checks request issues and keeps one comment with the result          |
 
 ## Set up
 
