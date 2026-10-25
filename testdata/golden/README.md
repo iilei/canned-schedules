@@ -107,11 +107,8 @@ styles. The namespace is fixed in code: `SCHEDULE` only.
 ## Notes
 
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
-- Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
-  `unknown-state`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-state`, `config-duplicate-symbol` (a warning), `invalid-marker`, `disallowed-alert`,
-  `style-reuse`, `preview-approximate`, `duplicate-weekday`, `repeated-weekday` (a warning), `missing-kind`, `duplicate-block`,
-  `empty-state`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-summary`.
+- Diagnostic codes: see [the table in the main README](../../README.md#diagnostic-codes), generated from
+  `diag.Codes`.
 
 ## Undecided: no fixtures yet
 

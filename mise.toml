@@ -45,6 +45,10 @@ run = "go mod tidy"
 description = "Run all non-mutating quality checks"
 depends = ["fmt:check", "vet", "lint", "test", "build"]
 
+[tasks.docs]
+description = "Regenerate the README's generated sections (flag tables, diagnostic codes) from the code"
+run = "UPDATE_DOCS=1 go test ./internal/cli -run TestReadmeReference -count=1"
+
 [tasks."web:build"]
 description = "Build the browser preflight page (WebAssembly) into dist/site"
 run = '''

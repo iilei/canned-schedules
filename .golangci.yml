@@ -123,6 +123,8 @@ linters:
       rules:
         - name: package-comments
           severity: warning
+        - name: exported
+          severity: warning
   exclusions:
     rules:
       - path: '_test\.go'

@@ -1,4 +1,6 @@
-// Package templates embeds the repo-baked report templates.
+// Package templates embeds the repo-baked templates: the Markdown error report, the SVG and ASCII previews, and the
+// Sphinx schedule stylesheet. They are plain text/template, gomplate-compatible, and run on JSON-shaped models
+// (Execute).
 package templates
 
 import (

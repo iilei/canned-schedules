@@ -74,14 +74,15 @@ func (f downsampleFlag) Set(s string) error {
 
 func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 	p.Downsample = DefaultDownsample
-	fs.StringVar(&p.Output, "output", OutputJSON, "what to print on stdout: json or ascii")
-	fs.StringVar(&p.SVGFile, "svg-output-file", "", "write an SVG preview to this file (only without errors)")
-	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "write an ASCII preview to this file (only without errors)")
-	fs.StringVar(&p.Color, "color", ColorAuto, "colours in the ASCII preview: auto, always or never")
-	fs.StringVar(&p.SVGTheme, "svg-theme", render.ThemeAuto, "SVG colours: auto (follow the viewer), light or dark")
-	fs.Var(downsampleFlag{p}, "preview-downsample", "preview buckets in minutes: bare flag 15, =N for N; must "+
-		"divide 60")
-	fs.BoolVar(&p.noDownsample, "no-preview-downsample", false, "preview at 1-minute resolution (1440 columns per day)")
+	fs.StringVar(&p.Output, "output", OutputJSON, "What stdout carries: the canonical JSON or the ASCII preview")
+	fs.StringVar(&p.SVGFile, "svg-output-file", "", "Write an SVG preview (only when the document has no errors)")
+	fs.StringVar(&p.SVGTheme, "svg-theme", render.ThemeAuto, "SVG colours: `auto` (follow the viewer), `light` or "+
+		"`dark`")
+	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "Write an ASCII preview (only when the document has no errors)")
+	fs.StringVar(&p.Color, "color", ColorAuto, "Colours in the ASCII preview; `auto` means on a terminal only, and "+
+		"not with `NO_COLOR`")
+	fs.Var(downsampleFlag{p}, "preview-downsample", "Preview buckets in minutes (must divide 60); `=N` needs the `=`")
+	fs.BoolVar(&p.noDownsample, "no-preview-downsample", false, "Preview at 1-minute resolution (1440 columns per day)")
 }
 
 func checkPreviewFlags(p *PreviewOptions) diag.List {

@@ -483,13 +483,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-- **Go documentation (to do, asked 2026-10-25):** the code already follows the conventions (package comments
-  everywhere, every exported identifier documented, `godot`). Still to do:
-  1. `-h`/`--help` prints a synopsis and the flags to stdout and exits 0 (today it is an `invalid-flag` error, exit 2).
-  2. Fix stale package comments: `render` (also ASCII and downsampling), `templates` (also SVG, ASCII, Sphinx CSS).
-  3. A usage synopsis as the command's doc comment (input, outputs, exit codes, pointer to the README).
-  4. Enable revive's `exported` rule in `.golangci.yml` (passes today), so it stays that way.
-  Skipped on purpose: `Example` tests (everything is `internal/`) and a separate docs site (README plus pkg.go.dev).
+- Nothing open at the moment.
 
 ## Future ideas (not scheduled — don't build unasked)
 
@@ -601,6 +595,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `input.md`, optional `args` (one arg per line), and `want.json` and/or `want.diag` (`<severity> <line>:<col> <code>`).
   They are the spec. Don't regenerate them from the implementation.
 - Generated files (`coverage`, `*coverage.txt`, the binary) are gitignored. Never commit them.
+- **Help and generated reference (decided 2026-10-25):** the flag set's usage strings (`newFlagSet` in
+  `internal/cli`) and `diag.Codes` are the single source for `--help` (`cli.Help`) and for the README's flag tables
+  and diagnostic-code table, which sit between `<!-- generated: … -->` markers. `TestReadmeReference` fails when they
+  are stale; `mise run docs` regenerates them. `flagGroups` orders the flags and names their placeholders and
+  defaults; tests require every registered flag there once and every `Code` constant in `diag.Codes` once. `-h`,
+  `--help` (also with other arguments) print the help to stdout and exit 0; `--version` is a regular flag. revive's
+  `exported` rule is on. Skipped on purpose: `Example` tests (everything is `internal/`) and a separate docs site.
 - **Examples in messages and docs:** times sit on a 15-minute grid (`6:15`, `21:45`). Never use `23:59`: it reads
   like a recommended end of day, but the end of a range is exclusive and "until midnight" is written `00:00`. The
   `24:00` error says exactly that.

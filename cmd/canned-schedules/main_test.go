@@ -85,6 +85,26 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestHelpAndVersion(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		want string
+		args []string
+	}{
+		{"Usage: canned-schedules [flags] request.md", []string{"--help"}},
+		{"Usage: canned-schedules [flags] request.md", []string{"-h"}},
+		{"Usage: canned-schedules [flags] request.md", []string{"--help", basic}},
+		{"canned-schedules dev", []string{"--version"}},
+	} {
+		var stdout, stderr bytes.Buffer
+		if code := run(tc.args, &stdout, &stderr); code != exitOK || !strings.Contains(stdout.String(), tc.want) ||
+			stderr.Len() != 0 {
+			t.Errorf("%q: exit %d, stdout %q, stderr %q", tc.args, code, stdout.String(), stderr.String())
+		}
+	}
+}
+
 func TestReportFile(t *testing.T) {
 	t.Parallel()
 

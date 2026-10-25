@@ -31,6 +31,17 @@ type Options struct {
 	Overrides []config.Override
 	Args      []string
 	Schedule  schedule.Options
+	// Help is --help (also -h): print the help and exit.
+	Help bool
+	// Version is --version: print the version and exit.
+	Version bool
+}
+
+// pending holds flag values that Parse turns into options after parsing.
+type pending struct {
+	symbols string
+	at      []string
+	values  []string
 }
 
 // SphinxOptions configure the Sphinx outputs.
@@ -51,33 +62,24 @@ type ReportOptions struct {
 	Template string
 }
 
-// Parse parses args (without the program name). Unknown or malformed flags become invalid-flag errors.
-func Parse(args []string) (Options, diag.List) {
-	var (
-		opts    Options
-		at      []string
-		values  []string
-		symbols string
-	)
-
+// newFlagSet registers every flag. The usage strings are the reference text: --help and the README's flag table are
+// generated from them (FlagDocs), so they are written as sentences, with Markdown code spans.
+func newFlagSet(opts *Options, p *pending) *flag.FlagSet {
 	fs := flag.NewFlagSet("canned-schedules", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
-	fs.StringVar(&opts.Schedule.Base, "base", "", "base state when the document has no BASE block")
-	fs.IntVar(
-		&opts.Schedule.SampleInterval,
-		"sample-interval",
-		1,
-		"minutes; must divide 60, every time must be a multiple",
-	)
-	fs.Func("require-base", "true|false (default false): the document must contain a BASE block", func(s string) error {
-		v, err := parseBool(s)
-		opts.Schedule.RequireBase = v
+	fs.IntVar(&opts.Schedule.SampleInterval, "sample-interval", 1,
+		"Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)")
+	fs.Func("require-base", "`true`: the document must contain a BASE block; can't be combined with `--base`",
+		func(s string) error {
+			v, err := parseBool(s)
+			opts.Schedule.RequireBase = v
 
-		return err
-	})
-	fs.Func("error-unless-alert-pattern", "regular expression (Go syntax, matched as a whole) that every alert other "+
-		"than a schedule directive must match; omitted, any alert is allowed", func(s string) error {
+			return err
+		})
+	fs.StringVar(&opts.Schedule.Base, "base", "", "Base state when the document has no BASE block")
+	fs.Func("error-unless-alert-pattern", "Every alert other than a schedule directive must match (whole type, Go "+
+		"syntax, `(?i)` for any case)", func(s string) error {
 		re, err := regexp.Compile(`^(?:` + s + `)$`)
 		opts.Schedule.AlertPattern = re
 
@@ -88,33 +90,49 @@ func Parse(args []string) (Options, diag.List) {
 
 		return err
 	})
-	fs.Func(
-		"set-config-at",
-		"config path to override (repeatable, paired with --set-config-value)",
+	fs.Func("set-config-at", "Config path to replace, e.g. `representation.styles.states[0]` (repeatable)",
 		func(s string) error {
-			at = append(at, s)
+			p.at = append(p.at, s)
 
 			return nil
-		},
-	)
-	registerPreviewFlags(fs, &opts.Preview)
-	fs.StringVar(&opts.Sphinx.MySTFile, "myst-output-file", "", "write the schedule as MyST for Sphinx (only without "+
-		"errors)")
-	fs.StringVar(&opts.Sphinx.KitFile, "sphinx-kit-output-file", "", "write the Sphinx kit zip: stylesheet, fonts, "+
-		"local extension and the schedule as MyST (only without errors)")
-	fs.StringVar(&symbols, "ascii-symbols", "", "symbol preset for the ASCII preview: ascii, braille or styles "+
-		"(shorthand for --set-config-at representation.ascii.symbols)")
-	fs.StringVar(&opts.Report.File, "error-output-file", "", "write the error report to this file instead of stderr")
-	fs.StringVar(&opts.Report.Format, "error-output-format", "", "error report format: txt (default) or json")
-	fs.StringVar(&opts.Report.Template, "error-report-template", "", "render the error report with a built-in "+
-		"template: markdown-gfm")
-	fs.Func("set-config-value", "JSON value for the matching --set-config-at (repeatable)", func(s string) error {
-		values = append(values, s)
+		})
+	fs.Func("set-config-value", "JSON value for the matching `--set-config-at` (repeatable)", func(s string) error {
+		p.values = append(p.values, s)
 
 		return nil
 	})
+	fs.StringVar(&p.symbols, "ascii-symbols", "", "Symbols in the ASCII preview: `ascii`, `braille` or `styles` "+
+		"(shorthand for `--set-config-at representation.ascii.symbols`)")
+	registerPreviewFlags(fs, &opts.Preview)
+	fs.StringVar(&opts.Sphinx.MySTFile, "myst-output-file", "",
+		"Write the schedule as MyST for Sphinx (only when the document has no errors)")
+	fs.StringVar(&opts.Sphinx.KitFile, "sphinx-kit-output-file", "",
+		"Write the Sphinx kit zip (only when the document has no errors)")
+	fs.StringVar(&opts.Report.File, "error-output-file", "",
+		"Write the error report to this file (always, even when empty)")
+	fs.StringVar(&opts.Report.Format, "error-output-format", "", "Error report format: `txt` or `json`")
+	fs.StringVar(&opts.Report.Template, "error-report-template", "",
+		"Render the error report with the built-in `markdown-gfm` template instead")
+	fs.BoolVar(&opts.Help, "help", false, "Print this help and exit")
+	fs.BoolVar(&opts.Version, "version", false, "Print the version and exit")
 
-	if err := fs.Parse(args); err != nil {
+	return fs
+}
+
+// Parse parses args (without the program name). Unknown or malformed flags become invalid-flag errors. -h and --help
+// set Help, --version sets Version.
+func Parse(args []string) (Options, diag.List) {
+	var (
+		opts Options
+		p    pending
+	)
+
+	fs := newFlagSet(&opts, &p)
+	if err := fs.Parse(args); errors.Is(err, flag.ErrHelp) {
+		opts.Help = true // -h, which isn't registered: the flag package reports it as a help request.
+
+		return opts, nil
+	} else if err != nil {
 		return opts, diag.List{diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "%v", err)}
 	}
 
@@ -122,16 +140,16 @@ func Parse(args []string) (Options, diag.List) {
 
 	var diags diag.List
 
-	if len(at) != len(values) {
+	if len(p.at) != len(p.values) {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
-			"%d --set-config-at but %d --set-config-value: they must come in pairs", len(at), len(values)))
+			"%d --set-config-at but %d --set-config-value: they must come in pairs", len(p.at), len(p.values)))
 	} else {
-		for i := range at {
-			opts.Overrides = append(opts.Overrides, config.Override{Path: at[i], Value: values[i]})
+		for i := range p.at {
+			opts.Overrides = append(opts.Overrides, config.Override{Path: p.at[i], Value: p.values[i]})
 		}
 	}
 
-	diags = append(diags, asciiSymbols(&opts, symbols)...)
+	diags = append(diags, asciiSymbols(&opts, p.symbols)...)
 
 	if g := opts.Schedule.SampleInterval; g < 1 || minutesPerHour%g != 0 {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
