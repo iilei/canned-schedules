@@ -1,0 +1,11 @@
+# Codecov is here for the README badge and the coverage view, not as a merge gate: its statuses inform, never fail.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment: false

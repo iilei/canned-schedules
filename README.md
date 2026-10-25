@@ -1,5 +1,7 @@
 # Canned Schedules
 
+[![codecov](https://codecov.io/gh/iilei/canned-schedules/graph/badge.svg)](https://codecov.io/gh/iilei/canned-schedules)
+
 Weekly schedules that humans and machines agree on.
 
 Teams propose a schedule in a GitHub or GitLab issue, written in plain Markdown. `canned-schedules` checks it, points

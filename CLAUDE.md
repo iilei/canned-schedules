@@ -505,6 +505,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **`--version`** (`cmd/canned-schedules/version.go`): goreleaser's `-ldflags -X` values pass through verbatim. Without
   them (`go install`, `go build`), the module version from `debug.ReadBuildInfo` is used when it matches the official
   semver.org regex after its `v` (`(devel)` stays `dev`), and `vcs.revision`/`vcs.time` fill in commit and date.
+- **Coverage (Codecov):** the `check` job runs `mise run coverage` and uploads `coverage/coverage.out` with
+  `codecov/codecov-action` (secret `CODECOV_TOKEN`, a repo secret so pull requests get it; forks upload tokenless).
+  `codecov.yml` makes the statuses informational and turns PR comments off: Codecov serves the README badge, it
+  doesn't gate merges.
 - **CI matrix:** `check.yml` also builds and tests on ubuntu, macos and windows (Go only). `.gitattributes` forces LF
   so Windows checkouts don't break the golden fixtures; `assets/fonts` stays byte-identical. Tests avoid OS
   specifics: drive letters for absolute paths, no permission bits on Windows, diagnostic codes instead of OS error
