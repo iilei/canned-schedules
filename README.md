@@ -44,7 +44,7 @@ The **preflight page** runs the same checker, compiled to WebAssembly, entirely 
 warnings on their lines, and see the week as SVG, the issue as GitHub renders it, a Sphinx handbook view with admonitions coloured from the state
 styles (downloadable as a [Sphinx kit](#sphinx)), diagnostics that jump to the offending line, the JSON and the ASCII preview. Light and dark themes included;
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
-the URL fragment, which browsers never send to the server. It is published to GitHub Pages from `master`; locally:
+the URL fragment, which browsers never send to the server. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
 
 ```sh
 mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)

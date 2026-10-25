@@ -441,8 +441,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
   minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
 - Deploy: `.github/workflows/pages.yml` publishes `dist/site` on pushes to `master` (SHA-pinned
-  `upload-pages-artifact`/`deploy-pages`). **One-time setup:** Settings → Pages → Source: "GitHub Actions".
-- To verify after the first deploy: whether GitHub Pages serves `app.wasm` compressed (otherwise 10 MB per visit).
+  `upload-pages-artifact`/`deploy-pages`). Live at https://iilei.github.io/canned-schedules/ since 2026-10-25 (Pages source "GitHub Actions", HTTPS
+  enforced).
+- Verified on the first deploy: GitHub Pages serves `app.wasm` gzip-compressed (about 3 MB over the wire for the
+  11.5 MB file), so the loading overlay shows "MB loaded" without a total there.
 
 ## Sphinx kit (implemented 2026-10-24)
 
