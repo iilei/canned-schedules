@@ -396,7 +396,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     schedule directives stay quotes with the literal marker, as GitHub really shows them.
   - Sphinx mode: all alerts become admonitions; schedule directives get `admonition schedule schedule-state state-N`
     with the state's display name, coloured by `sphinxkit.CSS(cfg, sphinxkit.Page)` (see "Sphinx kit"). BASE gets
-    the body `myst.BaseText`; a META block with only a hint is a paragraph, like in the MyST output.
+    the body `myst.BaseText`; a META block without items keeps an invisible `&nbsp;` body, like in the MyST output.
   - `web/style.css` imitates Furo's admonitions with Furo's variable names, so the generated schedule stylesheet works
     unchanged on the page and in a real Furo build.
 - Fonts: Ubuntu + Ubuntu Mono, **self-hosted** in `assets/fonts` (embedded by `assets/embed.go` for the Sphinx kit,
@@ -432,7 +432,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (`--color-admonition-title`, `-title-background`, `--color-admonition-background`, `--icon-admonition-default` for
   the state swatch) from `--state`; checked against furo 2025.12.19.
 - `templates.Execute` is the shared JSON-shaped template runner (render, report, CSS, kit templates).
-- `internal/myst`: a valid request → MyST (H1, META as `Schedule: hint` admonition or a hint paragraph, BASE with
+- `internal/myst`: a valid request → MyST (H1, META always as a `Schedule: hint` admonition, BASE with
   `BaseText`, STATE items written as in the request). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
   - **No weekday tooltips (dropped 2026-10-25):** `{abbr}` roles (and `<abbr>` in the page's Sphinx view) made items
@@ -441,6 +441,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (`__init__.py` loads myst_parser, appends its static dir to `html_static_path`, adds `colon_fence`, adds the CSS),
   the Furo stylesheet, all six Ubuntu fonts the page uses + UFL, `examples/<slug>.md`, VERSION (tool + config digest).
 - Channels: `--myst-output-file`, `--sphinx-kit-output-file` (written in `writeOutputs` like the previews, only
+  - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
+    (`&nbsp;`) as its body, because docutils rejects an admonition without content. Earlier a hint-only META became a
+    plain paragraph, which looked inconsistent next to META blocks with items. Authors never type the body: requiring
+    a body in the input was rejected (an invisible character, and only docutils needs it).
   without errors); page: **Download MyST** (`myst` in the evaluate result, like the SVG) and
   `cannedSchedules.sphinxKit(markdown, args)`, which returns a `Uint8Array` or an error string and is built on click.
 - **MyST is build output (decided 2026-10-25):** users edit and validate the GFM request; docs builds regenerate the

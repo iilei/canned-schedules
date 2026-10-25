@@ -17,6 +17,10 @@ import (
 // Sphinx view (internal/htmlpreview).
 const BaseText = "Applies wherever no range is set."
 
+// EmptyBody is the body of a META admonition without items: docutils requires content in an admonition, and a
+// no-break space satisfies it while rendering as nothing, so META always looks like an admonition.
+const EmptyBody = "&nbsp;"
+
 // ErrInvalid is returned for a request with errors; only valid requests are rendered.
 var ErrInvalid = errors.New("the request has errors")
 
@@ -33,18 +37,17 @@ func Render(src []byte, cfg *config.Config) (string, error) {
 	fmt.Fprintf(&b, "# %s\n", doc.Name.Value)
 
 	if m := doc.Meta; m != nil {
-		switch {
-		case len(m.Items) > 0:
-			title := "Schedule"
-			if m.Title.Value != "" {
-				title += ": " + m.Title.Value
-			}
-
-			admonition(&b, title, "schedule schedule-meta", m.Items, "")
-		case m.Title.Value != "":
-			// docutils requires content in an admonition: a hint alone is a paragraph.
-			fmt.Fprintf(&b, "\n%s\n", m.Title.Value)
+		title := "Schedule"
+		if m.Title.Value != "" {
+			title += ": " + m.Title.Value
 		}
+
+		body := ""
+		if len(m.Items) == 0 {
+			body = EmptyBody
+		}
+
+		admonition(&b, title, "schedule schedule-meta", m.Items, body)
 	}
 
 	if base := doc.Base; base != nil {
