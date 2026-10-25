@@ -8,10 +8,10 @@ overlap, so the peaks sit on top of the daytime range.
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `07:00` to `20:00` MON-FRI
 > - `09:00` to `17:00` SAT
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `11:30` to `13:30` MON-FRI
 > - `15:00` to `17:00` MON-FRI

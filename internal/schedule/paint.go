@@ -14,8 +14,8 @@ const (
 
 // paint fills every minute of the week with base, then paints the ranges in source order: later ranges win where
 // they overlap. A range belongs to its start day and spills past midnight (and from SUN into MON) as needed. The
-// result holds one tier id per minute, starting MON 00:00.
-func paint(base config.Tier, ranges []tierRange) []string {
+// result holds one state id per minute, starting MON 00:00.
+func paint(base config.State, ranges []stateRange) []string {
 	week := make([]string, len(expr.Weekdays)*minutesPerDay)
 
 	for i := range week {
@@ -31,7 +31,7 @@ func paint(base config.Tier, ranges []tierRange) []string {
 		for _, d := range r.Days {
 			start := d*minutesPerDay + r.Start
 			for i := range length {
-				week[(start+i)%len(week)] = r.tier.ID
+				week[(start+i)%len(week)] = r.state.ID
 			}
 		}
 	}
@@ -49,7 +49,7 @@ func weekRuns(week []string) Week {
 	return Week{MON: runs[0], TUE: runs[1], WED: runs[2], THU: runs[3], FRI: runs[4], SAT: runs[5], SUN: runs[6]}
 }
 
-// dayRuns merges consecutive minutes with the same tier into half-open runs. The last run ends at "00:00".
+// dayRuns merges consecutive minutes with the same state into half-open runs. The last run ends at "00:00".
 func dayRuns(day []string) []Run {
 	var runs []Run
 
@@ -59,7 +59,7 @@ func dayRuns(day []string) []Run {
 			continue
 		}
 
-		runs = append(runs, Run{Start: clock(start), End: clock(m % minutesPerDay), Tier: day[start]})
+		runs = append(runs, Run{Start: clock(start), End: clock(m % minutesPerDay), State: day[start]})
 		start = m
 	}
 

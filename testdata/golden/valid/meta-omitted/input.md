@@ -2,5 +2,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `06:00` to `22:00` MON-FRI

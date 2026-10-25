@@ -61,7 +61,7 @@ func Parse(args []string) (Options, diag.List) {
 	fs := flag.NewFlagSet("canned-schedules", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 
-	fs.StringVar(&opts.Schedule.Base, "base", "", "base tier when the document has no BASE block")
+	fs.StringVar(&opts.Schedule.Base, "base", "", "base state when the document has no BASE block")
 	fs.IntVar(
 		&opts.Schedule.SampleInterval,
 		"sample-interval",
@@ -143,8 +143,8 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	}
 
 	if b := opts.Schedule.Base; b != "" {
-		if _, ok := cfg.Tier(b); !ok {
-			return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--base %q: no such tier", b))
+		if _, ok := cfg.State(b); !ok {
+			return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--base %q: no such state", b))
 		}
 	}
 
@@ -158,7 +158,7 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	if opts.Preview.Requested() {
 		if p := render.Downsample(out, cfg, opts.Preview.Downsample); p.Mixed > 0 {
 			diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodePreviewApproximate,
-				"the preview uses %d-minute buckets: %d of them mix tiers and show the one covering most of the "+
+				"the preview uses %d-minute buckets: %d of them mix states and show the one covering most of the "+
 					"bucket (the JSON stays exact; see --preview-downsample)", p.Size, p.Mixed))
 		}
 	}

@@ -5,8 +5,8 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `12:00` to `14:00` WED
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `06:00` to `22:00` MON-FRI

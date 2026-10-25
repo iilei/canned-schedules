@@ -80,7 +80,7 @@ func replace(node any, path []segment, value any, full string) (any, error) {
 	return arr, nil
 }
 
-// parsePath parses dot-separated keys with optional [index] suffixes, e.g. "representation.styles.tiers[0]".
+// parsePath parses dot-separated keys with optional [index] suffixes, e.g. "representation.styles.states[0]".
 func parsePath(p string) ([]segment, error) {
 	if p == "" {
 		return nil, errEmptyPath

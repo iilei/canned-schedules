@@ -8,7 +8,7 @@
 
   The data is a model computed by the tool; the template uses plain Go text/template, so it also runs with gomplate.
 */ -}}
-/* canned-schedules: schedule admonitions, generated from the config's tier styles. Do not edit; regenerate. */
+/* canned-schedules: schedule admonitions, generated from the config's state styles. Do not edit; regenerate. */
 
 /* Ubuntu and Ubuntu Mono (Ubuntu Font Licence), used only inside schedule admonitions. */
 @font-face { font-family: "Canned Schedules Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-400.woff2") format("woff2"); }
@@ -19,22 +19,22 @@
 @font-face { font-family: "Canned Schedules Mono"; font-weight: 700; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-700.woff2") format("woff2"); }
 
 {{ .scope }}.admonition.schedule {
-  --color-admonition-title: var(--tier, #8a8f98);
-  --color-admonition-title-background: color-mix(in srgb, var(--tier, #8a8f98) 18%, transparent);
-  --color-admonition-background: color-mix(in srgb, var(--tier, #8a8f98) 6%, transparent);
+  --color-admonition-title: var(--state, #8a8f98);
+  --color-admonition-title-background: color-mix(in srgb, var(--state, #8a8f98) 18%, transparent);
+  --color-admonition-background: color-mix(in srgb, var(--state, #8a8f98) 6%, transparent);
   font-family: "Canned Schedules Sans", sans-serif;
 }
-/* A rounded square in the tier colour instead of the default icon: the swatch also used in the SVG legend. */
-{{ .scope }}.admonition.schedule-tier,
+/* A rounded square in the state colour instead of the default icon: the swatch also used in the SVG legend. */
+{{ .scope }}.admonition.schedule-state,
 {{ .scope }}.admonition.schedule-base {
   --icon-admonition-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='18' height='18' rx='4'/%3E%3C/svg%3E");
 }
 {{ .scope }}.admonition.schedule ul { list-style: none; padding-left: 0; }
 {{ .scope }}.admonition.schedule li { margin: .15em 0; }
 {{ .scope }}.admonition.schedule code { font-family: "Canned Schedules Mono", monospace; }
-{{- range .tiers }}
+{{- range .states }}
 
-{{ $.scope }}.admonition.{{ .class }} { --tier: {{ .light }}; }
-{{ $.dark }} {{ $.scope }}.admonition.{{ .class }} { --tier: {{ .dark }}; }
-@media (prefers-color-scheme: dark) { {{ $.auto }} {{ $.scope }}.admonition.{{ .class }} { --tier: {{ .dark }}; } }
+{{ $.scope }}.admonition.{{ .class }} { --state: {{ .light }}; }
+{{ $.dark }} {{ $.scope }}.admonition.{{ .class }} { --state: {{ .dark }}; }
+@media (prefers-color-scheme: dark) { {{ $.auto }} {{ $.scope }}.admonition.{{ .class }} { --state: {{ .dark }}; } }
 {{- end }}

@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `6:0` to `9:30` MON

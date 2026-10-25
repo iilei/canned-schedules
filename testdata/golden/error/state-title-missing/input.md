@@ -3,7 +3,7 @@
 > [!SCHEDULE:META]
 > - schema-version: `1`
 
-> [!SCHEDULE:BASE] Nope
+> [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE]
 > - `06:00` to `22:00` MON

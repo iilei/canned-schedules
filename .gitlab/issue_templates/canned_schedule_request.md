@@ -5,7 +5,7 @@ How to edit this request
 
 - Replace the name above (the H1). Letters, digits, spaces and hyphens; up to 80 characters.
 - Keep each block as its own quote: a line starting with `> [!SCHEDULE:…]`, followed by its list.
-- Change the tiers, times and weekdays below. Add or remove TIER blocks as needed.
+- Change the states, times and weekdays below. Add or remove STATE blocks as needed.
 - Everything outside these blocks is free text for reviewers: explain why you need this schedule.
 
 The full syntax reference is at the end of this request.
@@ -16,11 +16,11 @@ The full syntax reference is at the end of this request.
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `06:00` to `22:00` MON-FRI
 > - `10:00` to `18:00` SAT
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `16:00` to `00:00` FRI
 
 ## Why this schedule
@@ -34,10 +34,10 @@ The full syntax reference is at the end of this request.
 >
 > - `[!SCHEDULE:META]` (optional): text after the marker is a short hint. List items are free-form entries for
 >   your own bookkeeping, written like `` x-owner: `team-xyz` ``.
-> - `[!SCHEDULE:BASE] <tier>` (optional): the tier wherever no range applies.
-> - `[!SCHEDULE:TIER] <tier>`: one block per tier, each with a list of ranges.
+> - `[!SCHEDULE:BASE] <state>` (optional): the state wherever no range applies.
+> - `[!SCHEDULE:STATE] <state>`: one block per state, each with a list of ranges.
 >
-> **Tiers:** `Off`, `Minimum`, `Medium`, `Maximum`.
+> **States:** `Off`, `Minimum`, `Medium`, `Maximum`.
 >
 > **Ranges:** `` `start` to `end` WEEKDAYS ``
 >

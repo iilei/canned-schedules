@@ -8,14 +8,14 @@ Some introduction for humans.
 > [!SCHEDULE:META]
 > - schema-version: `1`
 
-## Tiers
+## States
 
 > [!TIP]
 > Later ranges win where they overlap.
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `06:00` to `22:00` MON-FRI
 
 A closing remark.

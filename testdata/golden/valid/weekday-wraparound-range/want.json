@@ -4,96 +4,96 @@
   "base": "Off",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:84a3b8d738d86f8e56b3d95e6b6507a2a9f6f98a2b1f751444e013a833fcea96"
+    "schedule": "sha256:498e027f2dc84d09bbeca9eee02bce96ace4998c75a5a80a267b1209d3dd7f22"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ]
   },
@@ -106,7 +106,7 @@
         "SAT",
         "SUN"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 9 * * 0-1,5-6",
         "aws": "0 9 ? * SUN-MON,FRI-SAT *"
@@ -120,7 +120,7 @@
         "SAT",
         "SUN"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 17 * * 0-1,5-6",
         "aws": "0 17 ? * SUN-MON,FRI-SAT *"

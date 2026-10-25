@@ -16,17 +16,17 @@ func TestParseGoldenFormat(t *testing.T) {
 	}{
 		{
 			name: "syntax shown in code spans is not a misplaced directive",
-			src:  "# Plan\n\nWrite `> [!SCHEDULE:TIER] Medium` followed by ranges.\n",
+			src:  "# Plan\n\nWrite `> [!SCHEDULE:STATE] Medium` followed by ranges.\n",
 			want: []string{},
 		},
 		{
 			name: "directive-like text in prose is misplaced",
-			src:  "# Plan\n\nSee [!SCHEDULE:TIER] below.\n",
+			src:  "# Plan\n\nSee [!SCHEDULE:STATE] below.\n",
 			want: []string{"error 3:7 misplaced-directive"},
 		},
 		{
-			name: "ordered list in a tier",
-			src:  "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> 1. `06:00` to `22:00` MON\n",
+			name: "ordered list in a state",
+			src:  "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> 1. `06:00` to `22:00` MON\n",
 			want: []string{"error 4:6 invalid-range"},
 		},
 		{
@@ -41,7 +41,7 @@ func TestParseGoldenFormat(t *testing.T) {
 		},
 		{
 			name: "columns count runes, not bytes",
-			src:  "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON\n\nÄÖÜ [!SCHEDULE:BASE]\n",
+			src:  "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n\nÄÖÜ [!SCHEDULE:BASE]\n",
 			want: []string{"error 6:7 misplaced-directive"},
 		},
 		{
@@ -67,7 +67,7 @@ func TestParseDocument(t *testing.T) {
 	t.Parallel()
 
 	src := "# Office Hours\n\n> [!schedule:meta] Weekdays only\n> - x-owner: `ops`\n\n" +
-		"> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n"
+		"> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"
 
 	doc, diags := Parse([]byte(src))
 	if len(diags) != 0 {
@@ -86,11 +86,11 @@ func TestParseDocument(t *testing.T) {
 		t.Fatalf("base = %+v", doc.Base)
 	}
 
-	if len(doc.Tiers) != 1 || len(doc.Tiers[0].Items) != 1 {
-		t.Fatalf("tiers = %+v", doc.Tiers)
+	if len(doc.States) != 1 || len(doc.States[0].Items) != 1 {
+		t.Fatalf("states = %+v", doc.States)
 	}
 
-	toks := doc.Tiers[0].Items[0].Tokens
+	toks := doc.States[0].Items[0].Tokens
 	want := []Token{
 		{Kind: TokenCode, Value: "06:00", Pos: diag.Pos{Line: 9, Col: 6}},
 		{Kind: TokenText, Value: " to ", Pos: diag.Pos{Line: 9, Col: 12}},

@@ -5,7 +5,7 @@
   this template only emits markup. It uses plain Go text/template (the builtin html function escapes text), so it
   also runs with gomplate on the same model.
 
-  Light and dark: plain fill rules per tier. The auto theme repeats them inside prefers-color-scheme: dark; light and
+  Light and dark: plain fill rules per state. The auto theme repeats them inside prefers-color-scheme: dark; light and
   dark (--svg-theme) emit one fixed palette, which pages with their own theme toggle need. No CSS custom properties,
   because several SVG renderers (librsvg, image converters, PDF pipelines) don't support them. Every rule is scoped to
   .canned-schedule, because an SVG inlined into HTML shares the page's style sheet.
@@ -17,7 +17,7 @@
     .canned-schedule .label { fill: {{ html .label }}; }
     .canned-schedule .divider { stroke: {{ html .label }}; stroke-opacity: 0.3; }
     .canned-schedule .guide { stroke: {{ html .label }}; stroke-opacity: 0.12; }
-    {{- range .tiers }}
+    {{- range .states }}
     .canned-schedule .{{ .class }} { fill: {{ html .fill }}; }
     {{- end }}
     {{- end }}
@@ -27,7 +27,7 @@
       .canned-schedule .label { fill: {{ html .label }}; }
       .canned-schedule .divider { stroke: {{ html .label }}; }
       .canned-schedule .guide { stroke: {{ html .label }}; }
-      {{- range .tiers }}
+      {{- range .states }}
       .canned-schedule .{{ .class }} { fill: {{ html .fill }}; }
       {{- end }}
     }
@@ -50,7 +50,7 @@
     {{- range .days }}
     <text class="label" x="{{ .label.x }}" y="{{ .label.y }}" font-size="14">{{ html .label.text }}</text>
     {{- range .runs }}
-    <rect class="tier {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="{{ .width }}" height="{{ .height }}" rx="1"><title>{{ html .tooltip }}</title></rect>
+    <rect class="state {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="{{ .width }}" height="{{ .height }}" rx="1"><title>{{ html .tooltip }}</title></rect>
     {{- end }}
     {{- end }}
     {{- range .guides }}
@@ -74,7 +74,7 @@
   <g class="legend">
     <line class="divider" x1="{{ .legend.rule.x1 }}" y1="{{ .legend.rule.y1 }}" x2="{{ .legend.rule.x2 }}" y2="{{ .legend.rule.y2 }}"/>
     {{- range .legend.swatches }}
-    <rect class="tier {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="20" height="16" rx="1"/>
+    <rect class="state {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="20" height="16" rx="1"/>
     <text class="label" x="{{ .text.x }}" y="{{ .text.y }}" font-size="12">{{ html .text.text }}</text>
     {{- end }}
     {{- with .legend.note }}

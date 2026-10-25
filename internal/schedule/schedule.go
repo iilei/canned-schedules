@@ -1,6 +1,6 @@
 // Package schedule turns a schedule document into the canonical weekly output.
 //
-// Evaluate runs the stages in order: parse (internal/document), META validation, tier and base resolution, range
+// Evaluate runs the stages in order: parse (internal/document), META validation, state and base resolution, range
 // expressions (internal/expr) and painting.
 package schedule
 
@@ -18,7 +18,7 @@ const SchemaVersion = "1"
 
 // Options are the command-line settings that affect evaluation.
 type Options struct {
-	// Base is the --base tier; empty when not given.
+	// Base is the --base state; empty when not given.
 	Base string
 	// SampleInterval is --sample-interval in minutes; every time must be a multiple of it.
 	SampleInterval int
@@ -52,7 +52,7 @@ type Warning struct { //nolint:govet // fieldalignment: field order is the JSON 
 
 // Digests identify the schedule a consumer acts on.
 type Digests struct {
-	// Schedule is the SHA-256 of the base tier and the painted week: it changes only when what a consumer acts on
+	// Schedule is the SHA-256 of the base state and the painted week: it changes only when what a consumer acts on
 	// changes, never for name, hint, annotations or cron rendering.
 	Schedule string `json:"schedule"`
 }
@@ -68,16 +68,16 @@ type Week struct {
 	SUN []Run `json:"SUN"`
 }
 
-// Run is a half-open [Start, End) stretch of one day with a single tier. End "00:00" means the end of the day.
+// Run is a half-open [Start, End) stretch of one day with a single state. End "00:00" means the end of the day.
 type Run struct {
 	Start string `json:"start"`
 	End   string `json:"end"`
-	Tier  string `json:"tier"`
+	State string `json:"state"`
 }
 
-// tierRange is one parsed range item together with the tier it paints.
-type tierRange struct {
-	tier config.Tier
+// stateRange is one parsed range item together with the state it paints.
+type stateRange struct {
+	state config.State
 	expr.Range
 }
 
@@ -116,8 +116,8 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 	m, metaDiags := decodeMeta(doc.Meta)
 	diags = append(diags, metaDiags...)
 
-	ranges, tierDiags := resolveTiers(doc, cfg, opts.SampleInterval)
-	diags = append(diags, tierDiags...)
+	ranges, stateDiags := resolveStates(doc, cfg, opts.SampleInterval)
+	diags = append(diags, stateDiags...)
 
 	base, baseDiags := resolveBase(doc, cfg, opts)
 	diags = append(diags, baseDiags...)
@@ -148,17 +148,17 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 	return out, diags
 }
 
-// resolveTiers maps every TIER block to its config tier and parses its range items, in source order.
-func resolveTiers(doc *document.Document, cfg *config.Config, sampleInterval int) ([]tierRange, diag.List) {
+// resolveStates maps every STATE block to its config state and parses its range items, in source order.
+func resolveStates(doc *document.Document, cfg *config.Config, sampleInterval int) ([]stateRange, diag.List) {
 	var (
-		ranges []tierRange
+		ranges []stateRange
 		diags  diag.List
 	)
 
-	for _, d := range doc.Tiers {
-		t, ok := cfg.Tier(d.Title.Value)
+	for _, d := range doc.States {
+		t, ok := cfg.State(d.Title.Value)
 		if !ok {
-			diags = append(diags, unknownTier(cfg, d.Title))
+			diags = append(diags, unknownState(cfg, d.Title))
 		}
 
 		for _, item := range d.Items {
@@ -166,7 +166,7 @@ func resolveTiers(doc *document.Document, cfg *config.Config, sampleInterval int
 			diags = append(diags, rangeDiags...)
 
 			if ok && !rangeDiags.HasErrors() {
-				ranges = append(ranges, tierRange{tier: t, Range: r})
+				ranges = append(ranges, stateRange{state: t, Range: r})
 			}
 		}
 	}
@@ -174,34 +174,34 @@ func resolveTiers(doc *document.Document, cfg *config.Config, sampleInterval int
 	return ranges, diags
 }
 
-// resolveBase picks the base tier: the document's BASE, then --base, then the first configured tier.
-func resolveBase(doc *document.Document, cfg *config.Config, opts Options) (config.Tier, diag.List) {
+// resolveBase picks the base state: the document's BASE, then --base, then the first configured state.
+func resolveBase(doc *document.Document, cfg *config.Config, opts Options) (config.State, diag.List) {
 	switch {
 	case doc.Base != nil:
-		t, ok := cfg.Tier(doc.Base.Title.Value)
+		t, ok := cfg.State(doc.Base.Title.Value)
 		if !ok {
-			return config.Tier{}, diag.List{unknownTier(cfg, doc.Base.Title)}
+			return config.State{}, diag.List{unknownState(cfg, doc.Base.Title)}
 		}
 
 		return t, nil
 	case opts.RequireBase:
-		return config.Tier{}, diag.List{diag.Errorf(diag.Pos{}, diag.CodeMissingBase,
+		return config.State{}, diag.List{diag.Errorf(diag.Pos{}, diag.CodeMissingBase,
 			"--require-base true: the document needs a BASE block").WithExample("> [!SCHEDULE:BASE] Minimum")}
 	case opts.Base != "":
-		t, _ := cfg.Tier(opts.Base) // Validated by the CLI.
+		t, _ := cfg.State(opts.Base) // Validated by the CLI.
 
 		return t, nil
 	default:
-		return cfg.Tiers[0], nil
+		return cfg.States[0], nil
 	}
 }
 
-func unknownTier(cfg *config.Config, title document.Text) diag.Diagnostic {
-	ids := make([]string, 0, len(cfg.Tiers))
-	for _, t := range cfg.Tiers {
+func unknownState(cfg *config.Config, title document.Text) diag.Diagnostic {
+	ids := make([]string, 0, len(cfg.States))
+	for _, t := range cfg.States {
 		ids = append(ids, t.ID)
 	}
 
-	return diag.Errorf(title.Pos, diag.CodeUnknownTier, "unknown tier %q; configured tiers: %s",
+	return diag.Errorf(title.Pos, diag.CodeUnknownState, "unknown state %q; configured states: %s",
 		title.Value, strings.Join(ids, ", "))
 }

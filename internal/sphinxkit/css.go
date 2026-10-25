@@ -33,26 +33,26 @@ type Target struct {
 
 // cssModel is the data of templates/sphinx-schedule.css.tmpl.
 type cssModel struct {
-	Scope string    `json:"scope"`
-	Dark  string    `json:"dark"`
-	Auto  string    `json:"auto"`
-	Fonts string    `json:"fonts"`
-	Tiers []cssTier `json:"tiers"`
+	Scope  string     `json:"scope"`
+	Dark   string     `json:"dark"`
+	Auto   string     `json:"auto"`
+	Fonts  string     `json:"fonts"`
+	States []cssState `json:"states"`
 }
 
-type cssTier struct {
+type cssState struct {
 	Class string `json:"class"`
 	Light string `json:"light"`
 	Dark  string `json:"dark"`
 }
 
-// CSS renders the schedule admonition stylesheet for target, coloured from the config's tier styles (round robin).
+// CSS renders the schedule admonition stylesheet for target, coloured from the config's state styles (round robin).
 func CSS(cfg *config.Config, target Target) (string, error) {
 	m := cssModel{Scope: target.Scope, Dark: target.Dark, Auto: target.Auto, Fonts: target.Fonts}
 
-	for i := range cfg.Tiers {
+	for i := range cfg.States {
 		c := cfg.Style(i).Color
-		m.Tiers = append(m.Tiers, cssTier{Class: "tier-" + strconv.Itoa(i), Light: c.Light, Dark: c.Dark})
+		m.States = append(m.States, cssState{Class: "state-" + strconv.Itoa(i), Light: c.Light, Dark: c.Dark})
 	}
 
 	out, err := templates.Execute(templates.SphinxScheduleCSS, m)

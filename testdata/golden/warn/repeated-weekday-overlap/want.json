@@ -4,86 +4,86 @@
   "base": "Off",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:f680c640ff1f2545ae41f39016e6ef3126d1e32c578653bd3570670b3c8d206e"
+    "schedule": "sha256:8576bd73242569720844575d80457fc181de43f79058dd1e7edb612f1e88898f"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ]
   },
@@ -95,7 +95,7 @@
         "TUE",
         "WED"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 9 * * 1-3",
         "aws": "0 9 ? * MON-WED *"
@@ -108,7 +108,7 @@
         "TUE",
         "WED"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 17 * * 1-3",
         "aws": "0 17 ? * MON-WED *"

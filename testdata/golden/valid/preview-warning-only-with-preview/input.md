@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Off
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `06:07` to `09:52` MON

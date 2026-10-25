@@ -38,11 +38,11 @@ type Override struct {
 type Config struct {
 	SchemaVersion  string         `json:"schema-version"`
 	Representation Representation `json:"representation"`
-	Tiers          []Tier         `json:"tiers"`
+	States         []State        `json:"states"`
 }
 
-// Tier is one capacity tier. The order of tiers matters: index 0 is the default base.
-type Tier struct {
+// State is one capacity state. The order of states matters: index 0 is the default base.
+type State struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"display-name"`
 }
@@ -72,12 +72,12 @@ type Surface struct {
 	Label      string `json:"label"`
 }
 
-// Styles are assigned to tiers round robin.
+// Styles are assigned to states round robin.
 type Styles struct {
-	Tiers []Style `json:"tiers"`
+	States []Style `json:"states"`
 }
 
-// Style is the visual representation of a tier.
+// Style is the visual representation of a state.
 type Style struct {
 	Color  ColorPair `json:"color"`
 	Symbol string    `json:"symbol"`
@@ -121,19 +121,19 @@ func Load(overrides []Override) (*Config, diag.List) {
 	return cfg, diags
 }
 
-// Tier returns the tier whose id matches name case-insensitively.
-func (c *Config) Tier(name string) (Tier, bool) {
-	for _, t := range c.Tiers {
+// State returns the state whose id matches name case-insensitively.
+func (c *Config) State(name string) (State, bool) {
+	for _, t := range c.States {
 		if strings.EqualFold(t.ID, name) {
 			return t, true
 		}
 	}
 
-	return Tier{}, false
+	return State{}, false
 }
 
-// Symbol returns the ASCII preview symbol for the tier at index i: from the preset in representation.ascii.symbols
-// by tier order (round robin), or the style's own symbol for the styles preset.
+// Symbol returns the ASCII preview symbol for the state at index i: from the preset in representation.ascii.symbols
+// by state order (round robin), or the style's own symbol for the styles preset.
 func (c *Config) Symbol(i int) string {
 	preset := symbolPresets[c.Representation.ASCII.Symbols]
 	if preset == nil {
@@ -143,9 +143,9 @@ func (c *Config) Symbol(i int) string {
 	return preset[i%len(preset)]
 }
 
-// Style returns the style assigned to the tier at index i (round robin).
+// Style returns the style assigned to the state at index i (round robin).
 func (c *Config) Style(i int) Style {
-	styles := c.Representation.Styles.Tiers
+	styles := c.Representation.Styles.States
 
 	return styles[i%len(styles)]
 }
@@ -155,32 +155,32 @@ func (c *Config) check() diag.List {
 	var diags diag.List
 
 	seen := map[string]string{}
-	for _, t := range c.Tiers {
+	for _, t := range c.States {
 		key := strings.ToUpper(t.ID)
 		if prev, ok := seen[key]; ok {
-			diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeConfigDuplicateTier,
-				"tier ids %q and %q collide (tier ids are case-insensitive)", prev, t.ID))
+			diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeConfigDuplicateState,
+				"state ids %q and %q collide (state ids are case-insensitive)", prev, t.ID))
 		}
 		seen[key] = t.ID
 	}
 
 	symbols := map[string]bool{}
-	for _, s := range c.Representation.Styles.Tiers {
+	for _, s := range c.Representation.Styles.States {
 		if c.Representation.ASCII.Symbols != SymbolsStyles {
 			break // Style symbols are only used by the styles preset.
 		}
 
 		if symbols[s.Symbol] {
 			diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodeConfigDuplicateSymbol,
-				"style symbol %q is used more than once: ASCII previews can tell those tiers apart only by colour",
+				"style symbol %q is used more than once: ASCII previews can tell those states apart only by colour",
 				s.Symbol))
 		}
 		symbols[s.Symbol] = true
 	}
 
-	if n, m := len(c.Representation.Styles.Tiers), len(c.Tiers); n < m {
+	if n, m := len(c.Representation.Styles.States), len(c.States); n < m {
 		diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodeStyleReuse,
-			"%d styles for %d tiers: styles repeat, so tiers become hard to tell apart", n, m))
+			"%d styles for %d states: styles repeat, so states become hard to tell apart", n, m))
 	}
 
 	return diags

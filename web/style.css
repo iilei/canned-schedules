@@ -779,7 +779,7 @@ pre.ascii {
     color: var(--gh-caution);
 }
 
-/* Sphinx handbook look (Furo-like), with schedule admonitions coloured from the config (--tier, see #tier-styles) */
+/* Sphinx handbook look (Furo-like), with schedule admonitions coloured from the config (--state, see #state-styles) */
 .rendered.sphinx {
     background: var(--sx-bg);
     color: var(--sx-text);
@@ -818,7 +818,7 @@ pre.ascii {
     border-left: 3px solid var(--border);
 }
 /* Admonitions imitate Furo and use Furo's own variables (--color-admonition-title, -title-background, -background,
-   --icon-admonition-default). The schedule stylesheet injected into #tier-styles, which the Sphinx kit ships for real
+   --icon-admonition-default). The schedule stylesheet injected into #state-styles, which the Sphinx kit ships for real
    Furo builds, only sets those variables, so it works unchanged in both places. */
 .rendered.sphinx .admonition {
     --color-admonition-title: var(--kind, var(--sx-note));

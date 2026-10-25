@@ -4,126 +4,126 @@
   "base": "Off",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:b5847e90108f98a6b47dd10865505ff057487411b43b3e222781644853f07a43"
+    "schedule": "sha256:d8bb77a59b4b31965605245b6d2f783b931ab916920abe0d1550ae54c75fc692"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "09:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "09:00",
         "end": "17:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "17:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "10:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "10:00",
         "end": "14:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "14:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "10:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "10:00",
         "end": "14:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "14:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ]
   },
@@ -137,7 +137,7 @@
         "THU",
         "FRI"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 9 * * 1-5",
         "aws": "0 9 ? * MON-FRI *"
@@ -152,7 +152,7 @@
         "THU",
         "FRI"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 17 * * 1-5",
         "aws": "0 17 ? * MON-FRI *"
@@ -164,7 +164,7 @@
         "SAT",
         "SUN"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 10 * * 0,6",
         "aws": "0 10 ? * SUN,SAT *"
@@ -176,7 +176,7 @@
         "SAT",
         "SUN"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 14 * * 0,6",
         "aws": "0 14 ? * SUN,SAT *"

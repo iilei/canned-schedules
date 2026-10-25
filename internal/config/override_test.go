@@ -14,21 +14,21 @@ func TestParsePath(t *testing.T) {
 		want    []segment
 		wantErr bool
 	}{
-		{name: "single key", path: "tiers", want: []segment{{key: "tiers", isKey: true}}},
+		{name: "single key", path: "states", want: []segment{{key: "states", isKey: true}}},
 		{
 			name: "nested keys with index",
-			path: "representation.styles.tiers[0]",
+			path: "representation.styles.states[0]",
 			want: []segment{
 				{key: "representation", isKey: true},
 				{key: "styles", isKey: true},
-				{key: "tiers", isKey: true},
+				{key: "states", isKey: true},
 				{index: 0},
 			},
 		},
 		{
 			name: "index then key",
-			path: "tiers[1].display-name",
-			want: []segment{{key: "tiers", isKey: true}, {index: 1}, {key: "display-name", isKey: true}},
+			path: "states[1].display-name",
+			want: []segment{{key: "states", isKey: true}, {index: 1}, {key: "display-name", isKey: true}},
 		},
 		{name: "repeated index", path: "a[1][2]", want: []segment{{key: "a", isKey: true}, {index: 1}, {index: 2}}},
 		{name: "empty", path: "", wantErr: true},
@@ -64,15 +64,15 @@ func TestLoadBuiltIn(t *testing.T) {
 		t.Fatalf("built-in config must load cleanly, got diagnostics %+v", diags)
 	}
 
-	if got := cfg.Tiers[0].ID; got != "Off" {
-		t.Errorf("tier 0 = %q, want Off (the default base)", got)
+	if got := cfg.States[0].ID; got != "Off" {
+		t.Errorf("state 0 = %q, want Off (the default base)", got)
 	}
 
-	if _, ok := cfg.Tier("mEdIuM"); !ok {
-		t.Error("tier lookup must be case-insensitive")
+	if _, ok := cfg.State("mEdIuM"); !ok {
+		t.Error("state lookup must be case-insensitive")
 	}
 
-	if got, want := cfg.Style(len(cfg.Representation.Styles.Tiers)), cfg.Style(0); got != want {
+	if got, want := cfg.Style(len(cfg.Representation.Styles.States)), cfg.Style(0); got != want {
 		t.Errorf("styles must repeat round robin: got %+v, want %+v", got, want)
 	}
 }
@@ -90,7 +90,7 @@ func TestSymbolPresets(t *testing.T) {
 		t.Errorf("braille preset = %q", got)
 	}
 
-	dup := Override{Path: "representation.styles.tiers[1].symbol", Value: `"."`}
+	dup := Override{Path: "representation.styles.states[1].symbol", Value: `"."`}
 
 	if _, diags := Load([]Override{dup}); len(diags) != 0 {
 		t.Errorf("repeated style symbols don't matter with a preset, got %+v", diags)

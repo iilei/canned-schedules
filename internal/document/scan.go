@@ -45,7 +45,7 @@ func (p *parser) scanBlock(n ast.Node) {
 			pos := p.lines.pos(seg.Start + m[0] + len("[!"))
 			p.errorf(pos, diag.CodeMisplacedDirective,
 				"directives must be top-level blockquotes that start with the marker")
-			p.example("> [!SCHEDULE:TIER] Medium")
+			p.example("> [!SCHEDULE:STATE] Medium")
 		}
 	}
 }

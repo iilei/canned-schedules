@@ -14,7 +14,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/config"
 )
 
-const request = "# Office Hours\n\n> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n"
+const request = "# Office Hours\n\n> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n"
 
 func TestCSSTargets(t *testing.T) {
 	t.Parallel()
@@ -26,14 +26,14 @@ func TestCSSTargets(t *testing.T) {
 		want   []string
 	}{
 		"page": {Page, []string{
-			`.rendered.sphinx .admonition.tier-2 { --tier: `,
-			`:root[data-theme="dark"] .rendered.sphinx .admonition.tier-2`,
-			`:root[data-theme="system"] .rendered.sphinx .admonition.tier-2`,
+			`.rendered.sphinx .admonition.state-2 { --state: `,
+			`:root[data-theme="dark"] .rendered.sphinx .admonition.state-2`,
+			`:root[data-theme="system"] .rendered.sphinx .admonition.state-2`,
 		}},
 		"furo": {Furo, []string{
-			"\n.admonition.tier-2 { --tier: ",
-			`body[data-theme="dark"] .admonition.tier-2`,
-			`@media (prefers-color-scheme: dark) { body:not([data-theme="light"]) .admonition.tier-2`,
+			"\n.admonition.state-2 { --state: ",
+			`body[data-theme="dark"] .admonition.state-2`,
+			`@media (prefers-color-scheme: dark) { body:not([data-theme="light"]) .admonition.state-2`,
 		}},
 	} {
 		css, err := CSS(cfg, tc.target)
@@ -42,7 +42,7 @@ func TestCSSTargets(t *testing.T) {
 		}
 
 		for _, w := range append(tc.want,
-			"--color-admonition-title: var(--tier", "--icon-admonition-default", `url("fonts/ubuntu-mono-400.woff2")`,
+			"--color-admonition-title: var(--state", "--icon-admonition-default", `url("fonts/ubuntu-mono-400.woff2")`,
 			`url("fonts/ubuntu-700.woff2")`, `font-style: italic; font-display: swap; src: url("fonts/ubuntu-mono-400-italic.woff2")`,
 			`.admonition.schedule code { font-family: "Canned Schedules Mono"`) {
 			if !strings.Contains(css, w) {
@@ -50,10 +50,10 @@ func TestCSSTargets(t *testing.T) {
 			}
 		}
 
-		for i := range cfg.Tiers {
+		for i := range cfg.States {
 			c := cfg.Style(i).Color
 			if !strings.Contains(css, c.Light) || !strings.Contains(css, c.Dark) {
-				t.Errorf("%s: tier %d colours missing", name, i)
+				t.Errorf("%s: state %d colours missing", name, i)
 			}
 		}
 

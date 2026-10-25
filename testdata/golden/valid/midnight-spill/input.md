@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `22:00` to `02:00` FRI

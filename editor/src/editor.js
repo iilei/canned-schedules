@@ -43,7 +43,7 @@ const theme = EditorView.theme({
   },
 });
 
-// Schedule markers ([!SCHEDULE:TIER], [!NOTE]) are plain text to Markdown; give them their own colour.
+// Schedule markers ([!SCHEDULE:STATE], [!NOTE]) are plain text to Markdown; give them their own colour.
 const markers = new MatchDecorator({
   regexp: /^(?:\s*>\s*)\[![A-Za-z][A-Za-z0-9:-]*\]/g,
   decorate: (add, from, to, match) => {

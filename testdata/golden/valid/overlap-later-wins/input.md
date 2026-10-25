@@ -5,11 +5,11 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `06:00` to `22:00` MON-FRI
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `12:00` to `14:00` WED
 
-> [!SCHEDULE:TIER] Off
+> [!SCHEDULE:STATE] Off
 > - `20:00` to `23:00` WED

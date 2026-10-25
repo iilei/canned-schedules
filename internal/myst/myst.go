@@ -1,5 +1,5 @@
 // Package myst renders the schedule of a valid request as MyST Markdown for Sphinx: the name, the hint and the
-// META, BASE and TIER blocks as admonitions with the classes the Sphinx kit styles. The request's free text (editing
+// META, BASE and STATE blocks as admonitions with the classes the Sphinx kit styles. The request's free text (editing
 // hints, syntax reference) is left out; it belongs to the issue, not to a handbook page.
 package myst
 
@@ -48,13 +48,13 @@ func Render(src []byte, cfg *config.Config) (string, error) {
 	}
 
 	if base := doc.Base; base != nil {
-		class, name := tier(cfg, base.Title.Value)
-		admonition(&b, "Base tier: "+name, "schedule schedule-base "+class, nil, BaseText)
+		class, name := state(cfg, base.Title.Value)
+		admonition(&b, "Base state: "+name, "schedule schedule-base "+class, nil, BaseText)
 	}
 
-	for _, t := range doc.Tiers {
-		class, name := tier(cfg, t.Title.Value)
-		admonition(&b, name, "schedule schedule-tier "+class, t.Items, "")
+	for _, t := range doc.States {
+		class, name := state(cfg, t.Title.Value)
+		admonition(&b, name, "schedule schedule-state "+class, t.Items, "")
 	}
 
 	return b.String(), nil
@@ -89,13 +89,13 @@ func admonition(b *strings.Builder, title, class string, items []document.Item, 
 	b.WriteString(":::\n")
 }
 
-// tier returns the CSS class and display name of a tier id; the request is valid, so the tier exists.
-func tier(cfg *config.Config, id string) (string, string) {
-	for i, t := range cfg.Tiers {
+// state returns the CSS class and display name of a state id; the request is valid, so the state exists.
+func state(cfg *config.Config, id string) (string, string) {
+	for i, t := range cfg.States {
 		if strings.EqualFold(t.ID, id) {
-			return fmt.Sprintf("tier-%d", i), t.DisplayName
+			return fmt.Sprintf("state-%d", i), t.DisplayName
 		}
 	}
 
-	return "tier-unknown", id
+	return "state-unknown", id
 }

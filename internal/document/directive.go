@@ -16,7 +16,7 @@ var Namespaces = []string{"SCHEDULE"}
 // marker matches the alert marker at the start of a blockquote's first line and captures the alert type.
 var marker = regexp.MustCompile(`^\[!([^\]\n]*)\]`)
 
-var kinds = map[string]Kind{"META": KindMeta, "BASE": KindBase, "TIER": KindTier}
+var kinds = map[string]Kind{"META": KindMeta, "BASE": KindBase, "STATE": KindState}
 
 // blockquote handles a top-level blockquote. Blockquotes that aren't directives (plain quotes, NOTE, TIP, …) are
 // left alone; scanMisplaced still looks into them.
@@ -66,17 +66,17 @@ func (p *parser) kind(typ, ns, kindName string, hasColon bool, pos diag.Pos) (Ki
 	case !isNamespace(ns):
 		p.errorf(pos, diag.CodeUnknownNamespace, "unknown namespace %q in [!%s]; use one of %s",
 			ns, typ, strings.Join(Namespaces, ", "))
-		p.example("> [!SCHEDULE:TIER] Medium")
+		p.example("> [!SCHEDULE:STATE] Medium")
 	case !hasColon || kindName == "":
-		p.errorf(pos, diag.CodeMissingKind, "[!%s] needs a kind: META, BASE or TIER", typ)
-		p.example("> [!SCHEDULE:TIER] Medium")
+		p.errorf(pos, diag.CodeMissingKind, "[!%s] needs a kind: META, BASE or STATE", typ)
+		p.example("> [!SCHEDULE:STATE] Medium")
 	default:
 		if k, ok := kinds[strings.ToUpper(kindName)]; ok {
 			return k, true
 		}
 
-		p.errorf(pos, diag.CodeUnknownKind, "unknown kind %q in [!%s]; use META, BASE or TIER", kindName, typ)
-		p.example("> [!SCHEDULE:TIER] Medium")
+		p.errorf(pos, diag.CodeUnknownKind, "unknown kind %q in [!%s]; use META, BASE or STATE", kindName, typ)
+		p.example("> [!SCHEDULE:STATE] Medium")
 	}
 
 	return "", false
@@ -137,14 +137,14 @@ func (p *parser) item(d *Directive, li ast.Node) {
 // unexpected reports content that doesn't belong in a directive.
 func (p *parser) unexpected(d *Directive, pos diag.Pos) {
 	switch d.Kind {
-	case KindTier:
-		p.errorf(pos, diag.CodeInvalidRange, "a TIER block holds a list of ranges")
+	case KindState:
+		p.errorf(pos, diag.CodeInvalidRange, "a STATE block holds a list of ranges")
 		p.example("- `06:00` to `22:00` MON-FRI")
 	case KindMeta:
 		p.errorf(pos, diag.CodeMetaSchema, "a META block holds a list of key: value items")
 		p.example("- x-owner: `team-xyz`")
 	case KindBase:
-		p.errorf(pos, diag.CodeUnexpectedContent, "BASE takes only a tier name on the marker line")
+		p.errorf(pos, diag.CodeUnexpectedContent, "BASE takes only a state name on the marker line")
 	}
 }
 
@@ -169,18 +169,18 @@ func (p *parser) add(d *Directive, hasBody bool) {
 		}
 
 		p.doc.Base = d
-	case KindTier:
+	case KindState:
 		if !p.titled(d) {
 			return
 		}
 
 		if !hasBody {
-			p.errorf(d.KindPos, diag.CodeEmptyTier, "TIER %s has no ranges", d.Title.Value)
+			p.errorf(d.KindPos, diag.CodeEmptyState, "STATE %s has no ranges", d.Title.Value)
 
 			return
 		}
 
-		p.doc.Tiers = append(p.doc.Tiers, *d)
+		p.doc.States = append(p.doc.States, *d)
 	}
 }
 
@@ -200,7 +200,7 @@ func (p *parser) titled(d *Directive) bool {
 		return true
 	}
 
-	p.errorf(d.KindPos, diag.CodeMissingTitle, "%s needs a tier name after the marker", d.Kind)
+	p.errorf(d.KindPos, diag.CodeMissingTitle, "%s needs a state name after the marker", d.Kind)
 	p.example("> [!SCHEDULE:" + string(d.Kind) + "] Medium")
 
 	return false

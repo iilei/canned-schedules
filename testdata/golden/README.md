@@ -25,7 +25,7 @@ error/<case>/   input.md, want.diag, [args]
 - `want.json`: the expected canonical output (draft shape, see below). Error cases have none, because errors produce
   no output.
 - `want.preview`: the expected day rows of the ASCII preview (`MON` + one symbol per bucket, built-in symbols
-  `░▒▓█`). It pins the bucketing rule (majority, ties to the later tier), not the rest of the layout.
+  `░▒▓█`). It pins the bucketing rule (majority, ties to the later state), not the rest of the layout.
 - `want.diag`: the expected diagnostics, one per line, in emission order:
 
   ```text
@@ -56,14 +56,14 @@ A diagnostic points at the first character of the offending token:
   "annotations": {"x-owner": "team-xyz"},
   "digests": {"schedule": "sha256:10ab…"},
   "week": {
-    "MON": [{"start": "00:00", "end": "06:00", "tier": "Minimum"}, …],
+    "MON": [{"start": "00:00", "end": "06:00", "state": "Minimum"}, …],
     "TUE": […], "WED": […], "THU": […], "FRI": […], "SAT": […], "SUN": […]
   },
   "transitions": [
     {
       "time": "06:00",
       "days": ["MON", "TUE", "WED", "THU", "FRI"],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
     }
   ]
@@ -72,25 +72,25 @@ A diagnostic points at the first character of the offending token:
 
 - `week` keys are always all seven days, in order `MON`…`SUN`.
 - Each day is split at midnight into runs that cover `00:00`–`00:00` without gaps. Runs are half-open. An `end` of
-  `00:00` means the end of that day. Adjacent runs with the same tier are merged.
-- Tier names use the **config's spelling** of the id, whatever case the document used.
+  `00:00` means the end of that day. Adjacent runs with the same state are merged.
+- State names use the **config's spelling** of the id, whatever case the document used.
 - Times are always `HH:MM` in the output, even when the input used `H:MM` (`6:00` → `06:00`).
 - `name` comes from the H1. `hint` is the text after the META marker and is **omitted** when there is none.
 - `annotations` holds every `x-*` META key verbatim (`{}` if none).
-- `transitions` lists every moment the active tier changes. The week is cyclic, so MON 00:00 follows SUN 23:59.
-  - Days that switch to the same tier at the same time are grouped into one entry. `days` is the full list, Monday
+- `transitions` lists every moment the active state changes. The week is cyclic, so MON 00:00 follows SUN 23:59.
+  - Days that switch to the same state at the same time are grouped into one entry. `days` is the full list, Monday
     first.
-  - Order: by the group's first minute in the week (MON 00:00 first), then by tier id.
-  - A week painted in a single tier has no transitions (`[]`).
-  - `time`, `days` and `tier` are the facts. `cron` renders them for schedulers, without a time zone (wall-clock):
+  - Order: by the group's first minute in the week (MON 00:00 first), then by state id.
+  - A week painted in a single state has no transitions (`[]`).
+  - `time`, `days` and `state` are the facts. `cron` renders them for schedulers, without a time zone (wall-clock):
     - `posix`: five-field Unix cron with **numeric** weekdays, 0 = SUN (as EC2 Auto Scaling scheduled actions use).
       Classic cron doesn't allow ranges of names.
     - `aws`: six-field EventBridge format (`min hour ? month weekday year`) with weekday **names**. AWS numbers run
       1 = SUN, so names avoid off-by-one mistakes. This is not Quartz, which has a leading seconds field.
     - Both list days Sunday-first and never wrap around the week (`FRI`–`MON` becomes `0-1,5-6` /
       `SUN-MON,FRI-SAT`). All seven days become `*`.
-- `base` is always present, also when `transitions` is `[]`. It is the resolved base tier (document BASE, then
-  `--base`, then config tier 0).
+- `base` is always present, also when `transitions` is `[]`. It is the resolved base state (document BASE, then
+  `--base`, then config state 0).
 - `warnings` lists every warning (`code`, `message`, and `line`/`column`/`excerpt` when positioned). Fixtures don't pin
   message text: they hold `"…"`, and the golden runner replaces actual messages with it before comparing.
 - `digests`, written `sha256:<64 lowercase hex>`:
@@ -101,17 +101,17 @@ A diagnostic points at the first character of the offending token:
 
 ## Built-in config assumed
 
-The fixtures assume the tiers from `schema/config.json`: `Off`, `Minimum`, `Medium`, `Maximum` (index 0 = `Off`), four
+The fixtures assume the states from `schema/config.json`: `Off`, `Minimum`, `Medium`, `Maximum` (index 0 = `Off`), four
 styles. The namespace is fixed in code: `SCHEDULE` only.
 
 ## Notes
 
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
-  `unknown-tier`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-tier`, `config-duplicate-symbol` (a warning), `unknown-namespace`,
+  `unknown-state`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
+  `config-schema`, `config-duplicate-state`, `config-duplicate-symbol` (a warning), `unknown-namespace`,
   `style-reuse`, `preview-approximate`, `duplicate-weekday`, `repeated-weekday` (a warning), `missing-kind`, `duplicate-block`,
-  `empty-tier`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
+  `empty-state`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 
 ## Undecided: no fixtures yet
 

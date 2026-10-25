@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Minimum
+> [!SCHEDULE:STATE] Minimum
 > - `00:00` to `00:00` MON-SUN

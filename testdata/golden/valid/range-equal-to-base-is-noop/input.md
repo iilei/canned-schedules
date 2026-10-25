@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER] Minimum
+> [!SCHEDULE:STATE] Minimum
 > - `06:00` to `12:00` TUE

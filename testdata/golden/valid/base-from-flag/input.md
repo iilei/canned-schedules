@@ -3,5 +3,5 @@
 > [!SCHEDULE:META]
 > - schema-version: `1`
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `06:00` to `22:00` MON-FRI

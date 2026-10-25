@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json",
   "schema-version": "1",
-  "tiers": [
+  "states": [
     {
       "id": "Off",
       "display-name": "Off"
@@ -34,7 +34,7 @@
       "symbols": "ascii"
     },
     "styles": {
-      "tiers": [
+      "states": [
         {
           "symbol": ".",
           "color": {

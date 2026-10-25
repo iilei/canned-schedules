@@ -4,106 +4,106 @@
   "base": "Minimum",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:02f75c1d04113f9f823490da74c2f161fb91d26db5e180388a74ab26f7e97dee"
+    "schedule": "sha256:e6143d57c5a7b940fda6ce370f8ef37596eba286fe10a3627b69ec16b5ad1837"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Maximum"
+        "state": "Maximum"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Maximum"
+        "state": "Maximum"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Maximum"
+        "state": "Maximum"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Maximum"
+        "state": "Maximum"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Maximum"
+        "state": "Maximum"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ]
   },
@@ -117,7 +117,7 @@
         "THU",
         "FRI"
       ],
-      "tier": "Maximum",
+      "state": "Maximum",
       "cron": {
         "posix": "0 6 * * 1-5",
         "aws": "0 6 ? * MON-FRI *"
@@ -132,7 +132,7 @@
         "THU",
         "FRI"
       ],
-      "tier": "Minimum",
+      "state": "Minimum",
       "cron": {
         "posix": "0 22 * * 1-5",
         "aws": "0 22 ? * MON-FRI *"

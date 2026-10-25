@@ -19,12 +19,12 @@ const (
 // Diagnostic codes. Golden fixtures pin these, so treat them as part of the contract.
 const (
 	CodeConfigDuplicateSymbol = "config-duplicate-symbol"
-	CodeConfigDuplicateTier   = "config-duplicate-tier"
+	CodeConfigDuplicateState  = "config-duplicate-state"
 	CodeConfigSchema          = "config-schema"
 	CodeDuplicateBlock        = "duplicate-block"
 	CodeDuplicateName         = "duplicate-name"
 	CodeDuplicateWeekday      = "duplicate-weekday"
-	CodeEmptyTier             = "empty-tier"
+	CodeEmptyState            = "empty-state"
 	CodeInvalidFlag           = "invalid-flag"
 	CodeInputFile             = "input-file"
 	CodeInvalidArgs           = "invalid-args"
@@ -48,7 +48,7 @@ const (
 	CodeUnexpectedContent     = "unexpected-content"
 	CodeUnknownKind           = "unknown-kind"
 	CodeUnknownNamespace      = "unknown-namespace"
-	CodeUnknownTier           = "unknown-tier"
+	CodeUnknownState          = "unknown-state"
 )
 
 // programName prefixes diagnostics that belong to no file.
