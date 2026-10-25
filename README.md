@@ -10,8 +10,9 @@ at mistakes by line and column, and turns it into canonical JSON: the state in e
 the moments the state changes, with ready-made cron expressions.
 
 > [!NOTE]
-> Work in progress. The CLI, the input syntax, error reports and previews work end to end. So far there are only
-> [pre-releases](https://github.com/iilei/canned-schedules/releases); the syntax may still change before 1.0.
+> Version 0.x: the CLI, the input syntax, error reports and previews work end to end, and
+> [releases](https://github.com/iilei/canned-schedules/releases) are signed. The contract may still change before 1.0;
+> see [Stability](#stability) for how changes are announced.
 
 ## Example
 
@@ -336,7 +337,7 @@ Without mise, the hooks also work with [pre-commit](https://pre-commit.com), whi
 ```yaml
 repos:
   - repo: https://github.com/iilei/canned-schedules
-    rev: v0.0.1-pre.6
+    rev: v0.1.0
     hooks:
       - id: canned-schedules
 ```
@@ -721,7 +722,9 @@ Replace the whole `states` list to schedule something other than capacity. For e
 
 ## Stability
 
-Until 1.0, any release may break things; a breaking change always comes with a new `schema-version`.
+Until 1.0, any release may break things; a breaking change always comes with a new `schema-version` and a new
+minor version of the tool (`0.1.x` → `0.2.0`). Compatible changes only raise the patch version (`0.1.0` → `0.1.1`),
+so a range such as `^0.1` or `~0.1` never picks up a breaking change.
 
 - **`schema-version` is a date:** the date of the last breaking change to any of the contracts, which are the document
   syntax with its META, the configuration, the JSON output and the error report. This version reads and writes
