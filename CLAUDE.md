@@ -369,8 +369,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   runners), `release:verify <dir>` (a throwaway `GNUPGHOME` with only `release-key.asc`, so no other key of the
   user's can satisfy a signature; `VALIDSIG` must name the release fingerprint), and `example:test`
   (`examples/test-consumer.sh`: the example's tasks in a throwaway git repo with the binary built from the checkout,
-  `MISE_DISABLE_TOOLS` skipping the pinned release). The release key was published nowhere fetchable
-  (`github.com/iilei.gpg` lists only the commit key), so its public half is committed as `release-key.asc`.
+  `MISE_DISABLE_TOOLS` skipping the pinned release). The release key's public half is committed as
+  `release-key.asc` (no email in the user ID, on purpose) and published on `github.com/iilei.gpg`, keys.openpgp.org
+  (findable by fingerprint only, since it has no email) and keyserver.ubuntu.com.
 - **CI calls mise tasks only:** a workflow prepares the environment and runs tasks, so every failure reproduces
   locally with the same command. `check.yml` runs `golden:check`, `check`, `coverage`, `test:wasm`, `web:build` and
   `example:test`; the release smoke job runs `release:smoke` with `install: false` and
@@ -581,12 +582,17 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   the embedded fonts).
 - **goreleaser** (pinned in `mise.toml`, no goreleaser-action): `.goreleaser.yml` builds linux amd64/arm64/armv7, a
   darwin universal binary and windows amd64/arm64 into `dist/release` (so `--clean` spares `dist/site`), reproducibly
-  (`-trimpath`, commit timestamps). It GPG-signs every archive and `checksums.txt` and creates the release as a
-  **draft**. `mise run release:snapshot` builds locally without signing or publishing.
-- **`.github/workflows/release.yml`** on `v*` tags: build (goreleaser, key from `crazy-max/ghaction-import-gpg`),
-  smoke (each native archive verified against `checksums.txt` and run on its runner: ubuntu x86_64 and arm64, macOS,
-  windows amd64 and arm64; armv7 has no runner), publish (a `.sha256` sidecar per archive, then the draft is
-  published; tags with `-` stay pre-releases, never "latest"). Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, in the
+  (`-trimpath`, commit timestamps). It writes an SPDX SBOM per archive (`<archive>.sbom.json`, syft pinned in
+  `mise.toml`; listed in `checksums.txt`, so the signature and the attestation cover them; not byte-reproducible,
+  because syft puts a random UUID into the document namespace), GPG-signs every archive and `checksums.txt`, attaches
+  `release-key.asc`, and creates the release as a **draft**. `mise run release:snapshot` builds locally without
+  signing or publishing. The changelog skips `chore(…)` commits, so Dependabot's don't show.
+- **`.github/workflows/release.yml`** on `v*` tags: build (goreleaser, key from `crazy-max/ghaction-import-gpg`, then
+  `actions/attest-build-provenance` with `subject-checksums: checksums.txt`, so every listed file gets a provenance
+  attestation), smoke (`release:smoke` per archive on its runner: ubuntu x86_64 and arm64, macOS, windows amd64 and
+  arm64, and armv7 under `qemu-user-static` binfmt on ubuntu x86_64), publish (`gh attestation verify` for every
+  archive, a `.sha256` sidecar per archive, then the draft is published; tags with `-` stay pre-releases, never
+  "latest"). mise's `github:` backend verifies the attestations on install. Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, in the
   `release` environment (deployments limited to `v*` tags; the `build` job uses it), so branch workflows can't read
   the key. Release key: a dedicated ed25519 key, `B645234C9CB8175ECA5D78A5C8447A2252E9E7B6` (README and release
   notes print it). Tags: semver pre-releases like `v0.0.1-pre.1`, **no build metadata** (`+…`): Go modules reject it
@@ -594,6 +600,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **`--version`** (`cmd/canned-schedules/version.go`): goreleaser's `-ldflags -X` values pass through verbatim. Without
   them (`go install`, `go build`), the module version from `debug.ReadBuildInfo` is used when it matches the official
   semver.org regex after its `v` (`(devel)` stays `dev`), and `vcs.revision`/`vcs.time` fill in commit and date.
+- **Dependabot** (`.github/dependabot.yml`): `github-actions` (the repo and `examples/consumer`), `gomod` and `npm`
+  (`editor/`), weekly, one grouped PR per ecosystem, `cooldown: default-days: 14` (the two-week rule), commit prefix
+  `chore(deps)`. The tools in `mise.toml` aren't covered (Dependabot doesn't read mise): bump those by hand.
 - **Coverage (Codecov):** the `check` job runs `mise run coverage` and uploads `coverage/coverage.out` with
   `codecov/codecov-action` (secret `CODECOV_TOKEN`, a repo secret so pull requests get it; forks upload tokenless).
   `codecov.yml` makes the statuses informational and turns PR comments off: Codecov serves the README badge, it
