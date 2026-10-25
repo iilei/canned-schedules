@@ -198,8 +198,12 @@ async function loadPresets() {
   const list = await fetch("presets/index.json").then((r) => r.json());
   const texts = await Promise.all(list.map((p) => fetch("presets/" + p.id + ".md").then((r) => (r.ok ? r.text() : ""))));
   list.forEach((p, i) => presets.push({ ...p, text: texts[i] }));
-  const select = $("preset");
-  for (const p of presets) select.append(Object.assign(document.createElement("option"), { value: p.id, textContent: p.label }));
+  for (const p of presets) if (!p.hidden) addPresetOption(p);
+}
+
+// Hidden presets (an easter egg: ?preset=yolo) stay out of the dropdown until they are opened by link.
+function addPresetOption(p) {
+  $("preset").append(Object.assign(document.createElement("option"), { value: p.id, textContent: p.label }));
 }
 
 // Switching presets replaces the editor content; unsaved edits are only dropped after confirmation.
@@ -445,6 +449,7 @@ async function start() {
     ]);
     go.run(instance);
     current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
+    if (current.hidden) addPresetOption(current);
     $("preset").value = current.id;
     editor.value = fromHash() ?? current.text;
     updateReset();
