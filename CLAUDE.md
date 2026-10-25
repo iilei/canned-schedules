@@ -56,7 +56,7 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
 
 ## Input syntax
 
-No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespace (or one of its fixed aliases).
+No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespace.
 
 ```markdown
 # Schedule-Name
@@ -77,9 +77,10 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
 
 ### Structure (decided)
 
-- **Namespace: a fixed allowlist, not configurable** (decided 2026-10-24). `SCHEDULE`, `CANNED-SCHEDULE`,
-  `TO-SCHEDULE`, `CAN-SCHED` and `CONFIG-SCHED` are treated the same and normalised to `SCHEDULE`. They are read
-  case-insensitively and may be mixed in one document. Adding an alias takes a merge request and a new release.
+- **Namespace: a fixed allowlist, not configurable** (decided 2026-10-24). **Only `SCHEDULE` for now** (decided
+  2026-10-25: keep the spec tight; the aliases `CANNED-SCHEDULE`, `TO-SCHEDULE`, `CAN-SCHED` and `CONFIG-SCHED` were
+  dropped). `document.Namespaces` stays a list, so an alias can come back. It is read case-insensitively. Adding an
+  alias takes a merge request and a new release; aliases would be normalised to `SCHEDULE`.
   - An alert type containing `:` whose namespace is not on the list is a **hard error** (`unknown-namespace`), with a
     "did you mean" hint for near-misses such as `SCHEDUEL`. There is no warn-and-ignore mode, which removes the earlier
     conflict between "unknown namespace is an error" and "ignored with a warning in custom-namespace mode".
@@ -196,10 +197,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     colours can still tell tiers apart;
   - **WARN** if `len(styles) < len(tiers)`: round robin then repeats symbols and colours, so the ASCII grid and legend
     become ambiguous.
-- **No namespace in the config** any more (`parser.namespace` was removed). The aliases are a constant in the Go code.
-  Each one matches `^[A-Z](?:-?[A-Z0-9])*$`: a letter first, a letter or digit last, single hyphens between.
+- **No namespace in the config** any more (`parser.namespace` was removed). The namespaces are a constant in the Go code
+  (`document.Namespaces`). Each one matches `^[A-Z](?:-?[A-Z0-9])*$`: a letter first, a letter or digit last, single hyphens between.
 - **Tier id pattern:** `^[A-Za-z](?:-?[A-Za-z0-9])*$`, max 32 chars. It's the same rule as before, written in the same
-  style as the namespace alias rule.
+  style as the namespace rule.
 - **Document META** (`schema/meta.schema.json`):
   - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"1"`, because every META
     value comes from a code span.

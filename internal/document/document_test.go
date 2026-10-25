@@ -66,7 +66,7 @@ func TestParseGoldenFormat(t *testing.T) {
 func TestParseDocument(t *testing.T) {
 	t.Parallel()
 
-	src := "# Office Hours\n\n> [!can-sched:meta] Weekdays only\n> - x-custom-owner: `ops`\n\n" +
+	src := "# Office Hours\n\n> [!schedule:meta] Weekdays only\n> - x-custom-owner: `ops`\n\n" +
 		"> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n"
 
 	doc, diags := Parse([]byte(src))
