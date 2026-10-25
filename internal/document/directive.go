@@ -189,9 +189,13 @@ func (p *parser) add(d *Directive, hasBody bool) {
 		}
 
 		if d.Title.Value != "" && !textRule.MatchString(d.Title.Value) {
-			p.errorf(d.Title.Pos, diag.CodeInvalidHint,
-				"hint %q: 1-80 ASCII letters, digits, spaces or hyphens; starting with a letter, ending with a letter "+
-					"or digit", d.Title.Value)
+			p.errorf(
+				d.Title.Pos,
+				diag.CodeInvalidSummary,
+				"summary %q: 1-80 ASCII letters, digits, spaces or hyphens; starting with a letter, ending with a letter "+
+					"or digit",
+				d.Title.Value,
+			)
 		}
 
 		p.doc.Meta = d

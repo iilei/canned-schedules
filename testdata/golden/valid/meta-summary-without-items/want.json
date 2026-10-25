@@ -1,7 +1,7 @@
 {
   "schema-version": "1",
   "name": "Weekend-Shop 2026",
-  "hint": "Weekend shop",
+  "summary": "Weekend shop",
   "base": "Off",
   "annotations": {},
   "digests": {

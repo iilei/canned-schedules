@@ -1,7 +1,7 @@
 {
   "schema-version": "1",
   "name": "Schedule-Name",
-  "hint": "Office hours",
+  "summary": "Office hours",
   "base": "Minimum",
   "annotations": {
     "x-owner": "team-xyz"

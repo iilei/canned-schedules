@@ -1,4 +1,4 @@
-// Package myst renders the schedule of a valid request as MyST Markdown for Sphinx: the name, the hint and the
+// Package myst renders the schedule of a valid request as MyST Markdown for Sphinx: the name, the summary and the
 // META, BASE and STATE blocks as admonitions with the classes the Sphinx kit styles. The request's free text (editing
 // hints, syntax reference) is left out; it belongs to the issue, not to a handbook page.
 package myst

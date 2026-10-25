@@ -21,7 +21,7 @@
     "name": {
       "$ref": "#/$defs/text"
     },
-    "hint": {
+    "summary": {
       "$ref": "#/$defs/text"
     },
     "base": {
@@ -46,7 +46,7 @@
       ],
       "properties": {
         "schedule": {
-          "description": "SHA-256 of {\"base\": …, \"week\": …} as compact JSON in the key order defined here. Ignores name, hint, annotations and cron rendering.",
+          "description": "SHA-256 of {\"base\": …, \"week\": …} as compact JSON in the key order defined here. Ignores name, summary, annotations and cron rendering.",
           "$ref": "#/$defs/digest"
         }
       }

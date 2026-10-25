@@ -43,7 +43,7 @@ func TestScheduleDigestIgnoresPresentation(t *testing.T) {
 	b := &Output{
 		SchemaVersion: SchemaVersion,
 		Name:          "Plan B",
-		Hint:          "Other words",
+		Summary:       "Other words",
 		Base:          "Off",
 		Annotations: map[string]string{
 			"x-owner": "ops",
@@ -62,7 +62,7 @@ func TestScheduleDigestIgnoresPresentation(t *testing.T) {
 	}
 
 	if a.Digests.Schedule != b.Digests.Schedule {
-		t.Error("name, hint and annotations must not change the schedule digest")
+		t.Error("name, summary and annotations must not change the schedule digest")
 	}
 
 	if a.Digests.Schedule == c.Digests.Schedule {

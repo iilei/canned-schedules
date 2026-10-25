@@ -50,8 +50,8 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 	paint := painter(cfg, color)
 	m := ASCIIModel{Title: diag.Sanitize(out.Name), Ruler: asciiRuler(p.Size)}
 
-	if out.Hint != "" {
-		m.Title += " - " + diag.Sanitize(out.Hint)
+	if out.Summary != "" {
+		m.Title += " - " + diag.Sanitize(out.Summary)
 	}
 
 	for d, name := range days {

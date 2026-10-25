@@ -28,7 +28,7 @@ var metaSchema = sync.OnceValues(func() (*jsonschema.Schema, error) {
 type meta struct {
 	annotations   map[string]string
 	schemaVersion string
-	hint          string
+	summary       string
 }
 
 // metaEntry is one decoded META item with the positions of its key and value.
@@ -46,7 +46,7 @@ func decodeMeta(d *document.Directive) (meta, diag.List) {
 		return m, nil
 	}
 
-	m.hint = d.Title.Value
+	m.summary = d.Title.Value
 
 	entries, diags := metaEntries(d)
 	obj := make(map[string]any, len(entries))

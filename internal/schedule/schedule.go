@@ -33,7 +33,7 @@ type Options struct {
 type Output struct {
 	SchemaVersion string            `json:"schema-version"`
 	Name          string            `json:"name"`
-	Hint          string            `json:"hint,omitempty"`
+	Summary       string            `json:"summary,omitempty"`
 	Base          string            `json:"base"`
 	Annotations   map[string]string `json:"annotations"`
 	Digests       Digests           `json:"digests"`
@@ -56,7 +56,7 @@ type Warning struct { //nolint:govet // fieldalignment: field order is the JSON 
 // Digests identify the schedule a consumer acts on.
 type Digests struct {
 	// Schedule is the SHA-256 of the base state and the painted week: it changes only when what a consumer acts on
-	// changes, never for name, hint, annotations or cron rendering.
+	// changes, never for name, summary, annotations or cron rendering.
 	Schedule string `json:"schedule"`
 }
 
@@ -135,7 +135,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 	out := &Output{
 		SchemaVersion: m.schemaVersion,
 		Name:          doc.Name.Value,
-		Hint:          m.hint,
+		Summary:       m.summary,
 		Base:          base.ID,
 		Annotations:   m.annotations,
 		Week:          weekRuns(week),
