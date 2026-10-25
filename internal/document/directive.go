@@ -66,11 +66,11 @@ func (p *parser) blockquote(bq ast.Node) {
 	}
 
 	rest := line[m[1]:]
-	lead := len(rest) - len(strings.TrimLeft(rest, " \t"))
+	lead := len(rest) - len(TrimLeftSpace(rest))
 	d := Directive{
 		Kind:    kind,
 		KindPos: kindPos,
-		Title:   Text{Value: strings.TrimSpace(rest), Pos: p.lines.pos(first.Start + m[1] + lead)},
+		Title:   Text{Value: TrimSpace(rest), Pos: p.lines.pos(first.Start + m[1] + lead)},
 	}
 
 	hasBody := p.body(&d, para)
@@ -122,7 +122,7 @@ func (p *parser) body(d *Directive, para *ast.Paragraph) bool {
 	for i := 1; i < para.Lines().Len(); i++ {
 		seg := para.Lines().At(i)
 		raw := string(seg.Value(p.src))
-		lead := len(raw) - len(strings.TrimLeft(raw, " \t"))
+		lead := len(raw) - len(TrimLeftSpace(raw))
 		p.unexpected(d, p.lines.pos(seg.Start+lead))
 
 		hasBody = true

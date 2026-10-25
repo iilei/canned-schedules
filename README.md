@@ -79,6 +79,8 @@ are always allowed.
 - Each weekday is written at most once per range: `MON,MON` and `WED-WED` are errors (write `WED`). A day that an
   earlier range already covers, as in `MON-WED,TUE`, gets a warning: it's harmless but usually a typo.
 - Later ranges win where they overlap earlier ones.
+- A no-break space (as pasted from word processors) counts as an ordinary space everywhere spaces are allowed. Other
+  invisible characters, such as a zero-width space, are errors and are shown escaped (`\u200b`) in messages.
 
 The states come from the configuration: `Off`, `Minimum`, `Medium` and `Maximum` by default. A state is anything that
 holds for a stretch of the week, such as a capacity level, a support team or a maintenance mode. To use your own, see
@@ -214,8 +216,6 @@ done
 - **Each generated file is a page:** list them in a toctree, for example with `:glob:` and `schedules/*`. Put prose
   about a schedule on a hand-written page that links to it.
 
-## Error reports
-
 ## Rendering elsewhere
 
 GitHub and GitLab show schedule directives as plain quotes with the marker as text. Tools that follow the Obsidian
@@ -247,6 +247,8 @@ The text after the marker becomes the callout's title (the state id or the hint)
 
 Colours per state, display names and weekday-aware layout need the tool itself: use the [Sphinx kit](#sphinx) or the
 SVG preview for those.
+
+## Error reports
 
 `canned-schedules` never posts anything to GitHub or GitLab. It writes an error report that your CI job or bot can
 use, in one of three shapes:

@@ -26,7 +26,7 @@ var Weekdays = []string{"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"}
 
 var (
 	clock     = regexp.MustCompile(`^([01]?\d|2[0-3]):([0-5]\d)$`)
-	separator = regexp.MustCompile(`^[ \t]+to[ \t]+$`)
+	separator = regexp.MustCompile(`^[ \t\x{00A0}]+to[ \t\x{00A0}]+$`) // See document.IsSpace.
 )
 
 // Range is one parsed range item. Start and End are minutes since midnight; Start == End means 24 hours. Days are
@@ -104,7 +104,7 @@ func wellFormed(toks []document.Token) bool {
 	days := toks[3].Value
 
 	return separator.MatchString(toks[1].Value) &&
-		strings.TrimLeft(days, " \t") != days && strings.TrimSpace(days) != ""
+		document.TrimLeftSpace(days) != days && document.TrimSpace(days) != ""
 }
 
 func parseTime(tok document.Token, sampleInterval int, diags *diag.List) (int, bool) {
@@ -230,7 +230,7 @@ func invalidTime(tok document.Token) diag.Diagnostic {
 func dayAt(toks []dayToken, i int, src document.Token) (int, *diag.Diagnostic) {
 	if i >= len(toks) {
 		d := diag.Errorf(src.Pos, diag.CodeInvalidWeekday, "weekday expression %q is incomplete",
-			strings.TrimSpace(src.Value))
+			document.TrimSpace(src.Value))
 
 		return 0, &d
 	}
@@ -282,10 +282,10 @@ func lexDays(tok document.Token) []dayToken {
 		pos := diag.Pos{Line: tok.Pos.Line, Col: col}
 		col++ // Columns count runes.
 
-		switch r {
-		case ' ', '\t':
+		switch {
+		case document.IsSpace(r):
 			flush()
-		case '-', ',':
+		case r == '-' || r == ',':
 			flush()
 			out = append(out, dayToken{text: string(r), pos: pos})
 		default:

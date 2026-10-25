@@ -165,8 +165,8 @@ func (p *parser) blockText(n ast.Node) Text {
 	}
 
 	raw := b.String()
-	trimmed := strings.TrimSpace(raw)
-	lead := len(raw) - len(strings.TrimLeft(raw, " \t"))
+	trimmed := TrimSpace(raw)
+	lead := len(raw) - len(TrimLeftSpace(raw))
 
 	return Text{Value: trimmed, Pos: p.lines.pos(lines.At(0).Start + lead)}
 }

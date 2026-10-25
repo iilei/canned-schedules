@@ -387,6 +387,21 @@ write(
     want=output("Minimum", [("06:00", "22:00", WD, "Medium")]),
 )
 
+# A no-break space (U+00A0) counts as whitespace wherever the grammar allows whitespace: around the hint and the name,
+# around "to", before and inside the weekday expression, and around the colon of META keys.
+NBSP = "\u00a0"
+write(
+    "valid/nbsp-as-whitespace",
+    doc(
+        f"> [!SCHEDULE-META]{NBSP}Quiet days{NBSP}\n> - x-owner{NBSP}:{NBSP}`team-xyz`\n",
+        "> [!SCHEDULE-BASE] Minimum\n",
+        f"> [!SCHEDULE-STATE]{NBSP}Medium\n> - `06:00`{NBSP}to{NBSP}`22:00`{NBSP}MON{NBSP}-{NBSP}FRI\n",
+        title=f"Office Hours{NBSP}",
+    ),
+    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-owner": "team-xyz"}, name="Office Hours",
+                hint="Quiet days"),
+)
+
 write(
     "valid/alert-permissive-namespace-typo",
     doc(META, "> [!SCHEDULE-BASE] Minimum\n", "> [!SCHEDUEL-STATE] Medium\n> - `06:00` to `22:00` MON\n"),
@@ -677,6 +692,9 @@ err(
     "config-duplicate-state",
     args=["--set-config-at", "states[1]", "--set-config-value", '{"id": "off", "display-name": "Off again"}'],
 )
+# Other invisible characters are not whitespace: a zero-width space glues onto the weekday.
+err("error/zero-width-space-in-weekdays", [META, BASE, "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\u200b-FRI\n"], "MON", "invalid-weekday")
+
 # The separator is a hyphen; the former colon form points to it.
 err("error/marker-colon", [META, BASE, "> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDULE:STATE", "invalid-marker")
 
