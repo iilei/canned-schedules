@@ -274,11 +274,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   because transitions alone don't give the state in effect right now.
 - Each entry: `time`, `days` (**full list**, Monday first), `state`, and `cron` with two dialects: `posix` (five
   fields, numeric weekdays, 0 = SUN; EC2 Auto Scaling) and `aws` (six-field EventBridge format, weekday names). Real
-  Quartz (with a seconds field) only if someone needs it. Last, `sha` (added 2026-10-25): the first 8 hex digits of
-  the SHA-256 of `{"time","days","state"}` as compact JSON, for Terraform resource keys and action names. It hashes the
-  meaning, not the derived cron strings, so a new dialect or a cron fix never renames anything; the schedule digest
-  doesn't include it. Unique within a schedule, since (time, state) already is; 32 bits make collisions across a
-  catalog's schedules irrelevant, and Terraform would refuse a duplicate key anyway.
+  Quartz (with a seconds field) only if someone needs it.
+- **No id or hash per transition (decided 2026-10-25).** A short `sha` over `{"time","days","state"}` shipped in
+  `0.0.1-pre.5` and was removed right after: identity is the consumer's concern (an environment, a prefix, whether
+  changed days should replace or update an action), and a field whose meaning could change silently is the riskiest
+  kind of contract. (time, state) is already unique within a schedule; the README's AWS recipes key on
+  `<HHMM>-<state>` and show how to hash in Terraform if wanted (`jsonencode` sorts keys, so such hashes only match
+  hashes computed the same way).
 - Grouped by (time of day, state); ordered by first minute in the week, then state. Cron day lists are Sunday-first and
   never wrap around the week. All seven days become `*`. No time zone in cron strings.
 - Implemented in `internal/schedule/transitions.go`, with an independent reference in `testdata/golden/gen.py`.
@@ -368,9 +370,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
-  - The example pins `0.0.1-pre.5`, the first release with the transitions' `sha`, which the README's AWS recipes
-    key on (`0.0.1-pre.4` was the first with provenance attestations, which mise verifies on install; `0.0.1-pre.2`
-    the first with the new flags). Bump it deliberately, with releases that have attestations.
+  - The example pins `0.0.1-pre.5` (`0.0.1-pre.4` was the first with provenance attestations, which mise verifies on
+    install; `0.0.1-pre.2` the first with the new flags). Bump it deliberately, with releases that have attestations.
   - `.pre-commit-hooks.yaml` in this repo (`language: golang`, `entry: sh -c` looping over the files, since the CLI
     takes one file per call) for teams without mise; checked with `pre-commit try-repo`.
 - **Tasks in this repo:** `golden:check`, `release:smoke <archive> [--dir]` (`shell = "bash -c"` for the Windows

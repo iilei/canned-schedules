@@ -78,8 +78,7 @@
       "cron": {
         "posix": "0 0 * * 0-1",
         "aws": "0 0 ? * SUN-MON *"
-      },
-      "sha": "ca50afec"
+      }
     },
     {
       "time": "10:00",
@@ -91,8 +90,7 @@
       "cron": {
         "posix": "0 10 * * 0,6",
         "aws": "0 10 ? * SUN,SAT *"
-      },
-      "sha": "519d9414"
+      }
     }
   ],
   "warnings": []

@@ -2,18 +2,12 @@ package schedule
 
 import (
 	"cmp"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/iilei/canned-schedules/internal/expr"
 )
-
-// shaBytes is the length of a transition's sha: 4 bytes, 8 hex digits.
-const shaBytes = 4
 
 // sundayFirst is the day order both cron dialects number: POSIX 0 = SUN, AWS names SUN…SAT (1 = SUN).
 var sundayFirst = []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}
@@ -25,16 +19,6 @@ type Transition struct { //nolint:govet // fieldalignment: field order is the JS
 	Days  []string `json:"days"`
 	State string   `json:"state"`
 	Cron  Cron     `json:"cron"`
-	// Sha identifies the transition by meaning: the first 8 hex digits of the SHA-256 of {"time","days","state"} as
-	// compact JSON. The cron strings are derived, so a new dialect or a formatting fix never changes it.
-	Sha string `json:"sha"`
-}
-
-// shaInput is what a transition's sha covers, in this key order.
-type shaInput struct { //nolint:govet // fieldalignment: field order is the JSON key order the sha is defined on.
-	Time  string   `json:"time"`
-	Days  []string `json:"days"`
-	State string   `json:"state"`
 }
 
 // Cron holds the transition in two cron dialects. Neither carries a time zone: they are wall-clock times.
@@ -114,7 +98,7 @@ func (g transitionGroup) transition() Transition {
 
 	h, m := strconv.Itoa(g.time/minutesPerHour), strconv.Itoa(g.time%minutesPerHour)
 
-	t := Transition{
+	return Transition{
 		Time:  clock(g.time),
 		Days:  names,
 		State: g.state,
@@ -123,21 +107,6 @@ func (g transitionGroup) transition() Transition {
 			AWS:   m + " " + h + " ? * " + compress(sunFirst, func(i int) string { return sundayFirst[i] }) + " *",
 		},
 	}
-	t.Sha = shortSha(t.Time, t.Days, t.State)
-
-	return t
-}
-
-// shortSha hashes what a transition means (time, days, state), never the sha field or the derived cron strings.
-func shortSha(time string, days []string, state string) string {
-	b, err := json.Marshal(shaInput{time, days, state})
-	if err != nil {
-		panic(err) // Strings and a string slice always encode.
-	}
-
-	sum := sha256.Sum256(b)
-
-	return hex.EncodeToString(sum[:shaBytes])
 }
 
 // compress renders sorted Sunday-first day indexes as ranges and lists ("1-5", "0-1,5-6"). It never wraps around

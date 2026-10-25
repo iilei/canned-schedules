@@ -515,8 +515,7 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
       "time": "06:00",
       "days": ["MON", "TUE", "WED", "THU", "FRI"],
       "state": "Medium",
-      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"},
-      "sha": "401b14a3"
+      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
     }
   ],
   "warnings": []
@@ -524,9 +523,8 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 ```
 
 - `week` covers every day from `00:00` to `00:00` in half-open runs; an `end` of `00:00` means the end of the day.
-- `transitions` lists every moment the state changes, grouped by time and state. Each has a `sha`: the first 8 hex
-  digits of the SHA-256 of its `time`, `days` and `state` as compact JSON (the cron strings are derived and left out),
-  for stable names such as Terraform keys or scheduled action names. `cron.posix` is five-field Unix cron
+- `transitions` lists every moment the state changes, grouped by time and state, so time and state together identify
+  a transition within a schedule (there is no id field; see the AWS recipes for naming). `cron.posix` is five-field Unix cron
   (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field format of EventBridge and Application Auto
   Scaling. Neither carries a time
   zone: set it where you schedule them.
@@ -557,15 +555,14 @@ keep next to your infrastructure, keyed by state id:
 }
 ```
 
-With Terraform, `for_each` over the transitions, keyed by each transition's `sha`. It changes only when the
-transition's time, days or state change, never with the tool version or the cron formatting, so Terraform replaces
-exactly the actions whose meaning changed and removes those of transitions that disappear:
+With Terraform, `for_each` over the transitions. Transitions are grouped by time and state, so that pair is a unique,
+stable key, and Terraform removes the actions of transitions that disappear:
 
 ```hcl
 locals {
   schedule = jsondecode(file("${path.module}/office-hours.canned-schedule.json"))
   capacity = jsondecode(file("${path.module}/capacity.json"))
-  transitions = { for t in local.schedule.transitions : t.sha => t }
+  transitions = { for t in local.schedule.transitions : "${replace(t.time, ":", "")}-${t.state}" => t }
 }
 
 resource "aws_autoscaling_schedule" "office_hours" {
@@ -593,7 +590,7 @@ schedule=office-hours.canned-schedule.json
 actions=$(jq -r --slurpfile cap capacity.json --arg prefix "$prefix" '
   .transitions[]
   | ($cap[0][.state] // error("capacity.json has no entry for state \(.state)")) as $c
-  | [$prefix + "-" + .sha, .cron.posix, $c.min, $c.desired, $c.max]
+  | [$prefix + "-" + (.time | sub(":"; "")) + "-" + .state, .cron.posix, $c.min, $c.desired, $c.max]
   | @tsv' "$schedule")
 
 # Remove this schedule's earlier actions, so a transition that was dropped from the request stops firing.
@@ -621,6 +618,22 @@ done <<< "$actions"
 - **No transitions** (one state all week): there are no actions to create. Give the group the base state's capacity
   directly.
 - **Limits:** Auto Scaling allows 125 scheduled actions per group, which is far more than a weekly schedule needs.
+- **Names are yours to define.** The output has no id field on purpose: what makes two actions "the same" depends on
+  your setup, and a field whose meaning could change would be the riskiest part of the contract. The key above,
+  `<HHMM>-<state>`, is unique (transitions are grouped by time and state), readable in the console, and stable: a
+  changed time or state gives a new action, changed days update the existing one. To replace an action whenever any
+  of its facts change, hash them yourself:
+
+  ```hcl
+  transitions = {
+    for t in local.schedule.transitions :
+    substr(sha256(jsonencode({ time = t.time, days = t.days, state = t.state })), 0, 8) => t
+  }
+  ```
+
+  `jsonencode` sorts object keys, so this hash only matches hashes computed the same way: let one tool assign the
+  names. In a shell script, jq can't hash; pipe each entry through `sha256sum` instead. Add your own parts (an
+  environment, the schedule's name) to the key or the name prefix as needed.
 
 #### ECS services and other Application Auto Scaling targets
 
