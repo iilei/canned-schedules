@@ -388,6 +388,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     Latin-1, Braille Patterns, no OpenType features, 16 KB) of Cascadia Mono 2407.24, where every glyph has one width.
     Renamed because the SIL OFL reserves the name "Cascadia Code" for unmodified fonts
     (`fonts/OFL-schedule-braille-mono.txt`). DejaVu Sans Mono was checked first and has no braille.
+  - **Reproducible:** `mise run fonts:braille` runs `assets/build-schedule-braille-mono.py`. It downloads the
+    Cascadia release, checks the zip's SHA-256, runs pyftsubset with the original arguments, renames the font and
+    sets a fixed `head.modified`. With the pinned fontTools 4.55.3 and brotli 1.2.0 the output is byte-identical to
+    the committed font. The script sits outside `assets/fonts`, so it is neither embedded nor published.
   - In terminals the user's font decides; terminals keep a fixed cell width, but the font needs braille glyphs.
 - Build: `mise run web:build` → `dist/site` (static files; `web/style.css` stays readable in the repo and is minified
   into the build by the editor's pinned esbuild; `app.wasm` ~10 MB raw / ~2.4 MB gzip, Go's matching
