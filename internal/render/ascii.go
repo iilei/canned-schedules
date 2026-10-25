@@ -58,15 +58,15 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 		var cells strings.Builder
 
 		for _, sg := range p.segments(d) {
-			i, _ := tierInfo(cfg, sg.tier)
+			i, _ := stateInfo(cfg, sg.state)
 			cells.WriteString(paint(i, strings.Repeat(cfg.Symbol(i), (sg.to-sg.from)/p.Size)))
 		}
 
 		m.Rows = append(m.Rows, ASCIIRow{Label: name, Cells: cells.String()})
 	}
 
-	entries := make([]string, 0, len(cfg.Tiers))
-	for i, t := range cfg.Tiers {
+	entries := make([]string, 0, len(cfg.States))
+	for i, t := range cfg.States {
 		entry := paint(i, cfg.Symbol(i)) + " " + diag.Sanitize(t.DisplayName)
 		if strings.EqualFold(t.ID, out.Base) {
 			entry += " (base)"
@@ -111,7 +111,7 @@ func asciiRuler(size int) []string {
 	return []string{pad + strings.TrimRight(string(labels), " "), pad + strings.TrimRight(string(ticks), " ")}
 }
 
-// painter colours text for tier i, or returns it unchanged without color.
+// painter colours text for state i, or returns it unchanged without color.
 func painter(cfg *config.Config, color bool) func(int, string) string {
 	if !color {
 		return func(_ int, s string) string { return s }
@@ -127,7 +127,7 @@ func painter(cfg *config.Config, color bool) func(int, string) string {
 
 		r, g, b := blend(fg, bg)
 
-		// The cell background carries the tier colour; the symbol, drawn in the page background colour, stays as the
+		// The cell background carries the state colour; the symbol, drawn in the page background colour, stays as the
 		// fallback for readers without colour.
 		return fmt.Sprintf("\x1b[48;2;%d;%d;%dm\x1b[38;2;%d;%d;%dm%s%s", r, g, b, bg[0], bg[1], bg[2], s, ansiReset)
 	}
@@ -153,7 +153,7 @@ func parseHex(s string) (rgba, bool) {
 	return c, true
 }
 
-// blend composites fg over the opaque bg, so translucent tier colours look as they do in the SVG on a dark page.
+// blend composites fg over the opaque bg, so translucent state colours look as they do in the SVG on a dark page.
 func blend(fg, bg rgba) (int, int, int) {
 	mix := func(f, b int) int { return (f*fg[3] + b*(maxChannel-fg[3]) + maxChannel/2) / maxChannel }
 

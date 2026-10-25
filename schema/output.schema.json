@@ -25,7 +25,7 @@
       "$ref": "#/$defs/text"
     },
     "base": {
-      "$ref": "#/$defs/tier-id"
+      "$ref": "#/$defs/state-id"
     },
     "annotations": {
       "type": "object",
@@ -108,7 +108,7 @@
       "maxLength": 80,
       "pattern": "^[A-Za-z](?:[A-Za-z0-9 -]*[A-Za-z0-9])?$"
     },
-    "tier-id": {
+    "state-id": {
       "type": "string",
       "maxLength": 32,
       "pattern": "^[A-Za-z](?:-?[A-Za-z0-9])*$"
@@ -145,7 +145,7 @@
       "required": [
         "start",
         "end",
-        "tier"
+        "state"
       ],
       "properties": {
         "start": {
@@ -154,8 +154,8 @@
         "end": {
           "$ref": "#/$defs/hhmm"
         },
-        "tier": {
-          "$ref": "#/$defs/tier-id"
+        "state": {
+          "$ref": "#/$defs/state-id"
         }
       }
     },
@@ -165,7 +165,7 @@
       "required": [
         "time",
         "days",
-        "tier",
+        "state",
         "cron"
       ],
       "properties": {
@@ -181,8 +181,8 @@
             "$ref": "#/$defs/weekday"
           }
         },
-        "tier": {
-          "$ref": "#/$defs/tier-id"
+        "state": {
+          "$ref": "#/$defs/state-id"
         },
         "cron": {
           "type": "object",

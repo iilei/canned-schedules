@@ -12,7 +12,7 @@ import (
 	"github.com/iilei/canned-schedules/schema"
 )
 
-const src = "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `10:00` to `24:00` SAT\n\t\tx [!SCHEDULE:BASE]\n"
+const src = "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `10:00` to `24:00` SAT\n\t\tx [!SCHEDULE:BASE]\n"
 
 func sample() Report {
 	return Build("requests/office.md", []byte(src), diag.List{

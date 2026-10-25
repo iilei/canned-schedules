@@ -28,7 +28,7 @@ const (
 	// quote with the literal text, which is what GitHub shows for schedule directives.
 	GitHub = "github"
 	// Sphinx renders every alert as an admonition; schedule directives get custom admonitions coloured from the
-	// config's tier styles.
+	// config's state styles.
 	Sphinx = "sphinx"
 )
 
@@ -77,7 +77,7 @@ func (n *Callout) Dump(source []byte, level int) {
 	ast.DumpHelper(n, source, level, map[string]string{"Class": n.Class, "Title": n.Title}, nil)
 }
 
-// Render renders src in the given mode, with tier names and classes from cfg.
+// Render renders src in the given mode, with state names and classes from cfg.
 func Render(src []byte, cfg *config.Config, mode string) (string, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
@@ -179,10 +179,10 @@ func (t *transformer) schedule(kind, title string) *Callout {
 			c.Title += ": " + title
 		}
 	case string(document.KindBase):
-		c.Class, c.Title = "admonition schedule schedule-base "+t.tierClass(title), "Base tier: "+t.tierName(title)
+		c.Class, c.Title = "admonition schedule schedule-base "+t.stateClass(title), "Base state: "+t.stateName(title)
 		c.Body = myst.BaseText
-	case string(document.KindTier):
-		c.Class, c.Title = "admonition schedule schedule-tier "+t.tierClass(title), t.tierName(title)
+	case string(document.KindState):
+		c.Class, c.Title = "admonition schedule schedule-state "+t.stateClass(title), t.stateName(title)
 	default:
 		c.Class, c.Title = "admonition schedule", kind+" "+title
 	}
@@ -190,19 +190,19 @@ func (t *transformer) schedule(kind, title string) *Callout {
 	return c
 }
 
-func (t *transformer) tierClass(id string) string {
-	for i, tier := range t.cfg.Tiers {
-		if strings.EqualFold(tier.ID, id) {
-			return fmt.Sprintf("tier-%d", i)
+func (t *transformer) stateClass(id string) string {
+	for i, state := range t.cfg.States {
+		if strings.EqualFold(state.ID, id) {
+			return fmt.Sprintf("state-%d", i)
 		}
 	}
 
-	return "tier-unknown"
+	return "state-unknown"
 }
 
-func (t *transformer) tierName(id string) string {
-	if tier, ok := t.cfg.Tier(id); ok {
-		return tier.DisplayName
+func (t *transformer) stateName(id string) string {
+	if state, ok := t.cfg.State(id); ok {
+		return state.DisplayName
 	}
 
 	return id

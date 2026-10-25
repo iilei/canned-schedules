@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "schema-version",
-    "tiers",
+    "states",
     "representation"
   ],
   "properties": {
@@ -16,13 +16,13 @@
     "schema-version": {
       "const": "1"
     },
-    "tiers": {
+    "states": {
       "description": "Ordered. Index 0 is the default base. Ids must be unique case-insensitively (checked in Go).",
       "type": "array",
       "minItems": 1,
       "maxItems": 64,
       "items": {
-        "$ref": "#/$defs/tier"
+        "$ref": "#/$defs/state"
       }
     },
     "representation": {
@@ -35,7 +35,7 @@
       ],
       "properties": {
         "theme": {
-          "description": "Page-level colours, independent of tiers.",
+          "description": "Page-level colours, independent of states.",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -59,7 +59,7 @@
           ],
           "properties": {
             "symbols": {
-              "description": "Symbols for the ASCII preview, by tier order: ascii = . : = # (pure ASCII, default), braille = ⠀ ⣀ ⣤ ⣶ ⣿ (Unicode, neutral width), styles = each style's own symbol.",
+              "description": "Symbols for the ASCII preview, by state order: ascii = . : = # (pure ASCII, default), braille = ⠀ ⣀ ⣤ ⣶ ⣿ (Unicode, neutral width), styles = each style's own symbol.",
               "enum": [
                 "ascii",
                 "braille",
@@ -72,16 +72,16 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "tiers"
+            "states"
           ],
           "properties": {
-            "tiers": {
-              "description": "Assigned to tiers round robin: tier i gets styles.tiers[i mod len].",
+            "states": {
+              "description": "Assigned to states round robin: state i gets styles.states[i mod len].",
               "type": "array",
               "minItems": 1,
               "maxItems": 64,
               "items": {
-                "$ref": "#/$defs/tier-style"
+                "$ref": "#/$defs/state-style"
               }
             }
           }
@@ -90,12 +90,12 @@
     }
   },
   "$defs": {
-    "tier-id": {
+    "state-id": {
       "type": "string",
       "maxLength": 32,
       "pattern": "^[A-Za-z](?:-?[A-Za-z0-9])*$"
     },
-    "tier": {
+    "state": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -104,7 +104,7 @@
       ],
       "properties": {
         "id": {
-          "$ref": "#/$defs/tier-id"
+          "$ref": "#/$defs/state-id"
         },
         "display-name": {
           "type": "string",
@@ -150,7 +150,7 @@
         }
       }
     },
-    "tier-style": {
+    "state-style": {
       "type": "object",
       "additionalProperties": false,
       "required": [

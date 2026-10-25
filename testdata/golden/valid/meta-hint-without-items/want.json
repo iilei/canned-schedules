@@ -5,76 +5,76 @@
   "base": "Off",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:57a6253fcc7f9cd8ed728f9b6d45b39d77058ef61ac213edd4c7829e71093b8f"
+    "schedule": "sha256:8deebb578662aa780d93157000376df67f928835a4377095b3d3ba26314dce9f"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "10:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "10:00",
         "end": "18:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "18:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "10:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "10:00",
         "end": "18:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "18:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ]
   },
@@ -85,7 +85,7 @@
         "SAT",
         "SUN"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 10 * * 0,6",
         "aws": "0 10 ? * SUN,SAT *"
@@ -97,7 +97,7 @@
         "SAT",
         "SUN"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 18 * * 0,6",
         "aws": "0 18 ? * SUN,SAT *"

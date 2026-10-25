@@ -87,17 +87,17 @@ type Model struct {
 	Bucket      int         `json:"bucket"`
 }
 
-// Tier carries the CSS class and colour of one configured tier.
-type Tier struct {
+// State carries the CSS class and colour of one configured state.
+type State struct {
 	Class string `json:"class"`
 	Fill  string `json:"fill"`
 }
 
-// Palette holds the page and tier colours of one colour scheme.
+// Palette holds the page and state colours of one colour scheme.
 type Palette struct {
-	Background string `json:"background"`
-	Label      string `json:"label"`
-	Tiers      []Tier `json:"tiers"`
+	Background string  `json:"background"`
+	Label      string  `json:"label"`
+	States     []State `json:"states"`
 }
 
 // Text is a positioned label.
@@ -138,7 +138,7 @@ type Transitions struct {
 	Rows    [][]Text `json:"rows"`
 }
 
-// Legend is the rule above the legend and one swatch per configured tier.
+// Legend is the rule above the legend and one swatch per configured state.
 type Legend struct {
 	Note     *Text    `json:"note"`
 	Swatches []Swatch `json:"swatches"`
@@ -153,7 +153,7 @@ type Swatch struct {
 	Y     float64 `json:"y"`
 }
 
-// SVG renders out as SVG with buckets of size minutes, using the tier order, display names and styles from cfg. The
+// SVG renders out as SVG with buckets of size minutes, using the state order, display names and styles from cfg. The
 // theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark.
 func SVG(out *schedule.Output, cfg *config.Config, size int, theme string) ([]byte, error) {
 	return execute(templates.ScheduleSVG, Build(out, cfg, Downsample(out, cfg, size), theme))
@@ -196,10 +196,10 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Mo
 		day := Day{Label: Text{Text: name, X: margin, Y: y + blockH - dayLabelRaise}}
 
 		for _, sg := range p.segments(d) {
-			i, display := tierInfo(cfg, sg.tier)
+			i, display := stateInfo(cfg, sg.state)
 			day.Runs = append(day.Runs, Run{
-				Class:   tierClass(i),
-				Tooltip: tooltip(display, name, sg, starts[startKey(d, sg.from, sg.tier)]),
+				Class:   stateClass(i),
+				Tooltip: tooltip(display, name, sg, starts[startKey(d, sg.from, sg.state)]),
 				X:       labelW + px(sg.from),
 				Y:       y,
 				Width:   px(sg.to - sg.from),
@@ -230,7 +230,7 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Mo
 	return m
 }
 
-// palette collects the light or dark colours of the theme and the tier styles.
+// palette collects the light or dark colours of the theme and the state styles.
 func palette(cfg *config.Config, dark bool) Palette {
 	surface := cfg.Representation.Theme.Light
 	if dark {
@@ -239,7 +239,7 @@ func palette(cfg *config.Config, dark bool) Palette {
 
 	p := Palette{Background: surface.Background, Label: surface.Label}
 
-	for i := range cfg.Tiers {
+	for i := range cfg.States {
 		c := cfg.Style(i).Color
 		fill := c.Light
 
@@ -247,7 +247,7 @@ func palette(cfg *config.Config, dark bool) Palette {
 			fill = c.Dark
 		}
 
-		p.Tiers = append(p.Tiers, Tier{Class: tierClass(i), Fill: fill})
+		p.States = append(p.States, State{Class: stateClass(i), Fill: fill})
 	}
 
 	return p
@@ -292,7 +292,7 @@ func (m *Model) table(out *schedule.Output, cfg *config.Config, x, top float64) 
 
 	rows := make([][]string, 0, len(out.Transitions))
 	for _, t := range out.Transitions {
-		_, display := tierInfo(cfg, t.Tier)
+		_, display := stateInfo(cfg, t.State)
 		rows = append(rows, []string{compactDays(t.Days) + " " + t.Time + " → " + display, t.Cron.POSIX, t.Cron.AWS})
 	}
 
@@ -325,25 +325,25 @@ func (m *Model) table(out *schedule.Output, cfg *config.Config, x, top float64) 
 	}
 
 	if len(rows) == 0 {
-		m.Transitions.Empty = &Text{Text: "No transitions: one tier all week", X: x, Y: top + tableFirstRow*lineH}
+		m.Transitions.Empty = &Text{Text: "No transitions: one state all week", X: x, Y: top + tableFirstRow*lineH}
 	}
 
 	return top + float64(max(len(rows), 1)+1)*lineH + margin, colX - cellPadding
 }
 
-// legend adds one swatch per configured tier, a note when the preview is approximate, and returns the new right
+// legend adds one swatch per configured state, a note when the preview is approximate, and returns the new right
 // edge.
 func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top, right float64) float64 {
 	x := float64(labelW)
 
-	for i, t := range cfg.Tiers {
+	for i, t := range cfg.States {
 		label := diag.Sanitize(t.DisplayName)
 		if strings.EqualFold(t.ID, out.Base) {
 			label += " (base)"
 		}
 
 		m.Legend.Swatches = append(m.Legend.Swatches, Swatch{
-			Class: tierClass(i),
+			Class: stateClass(i),
 			X:     x,
 			Y:     top + swatchY,
 			Text:  Text{Text: label, X: x + swatchW + swatchGap, Y: top + swatchTextY},
@@ -367,7 +367,7 @@ func approximateNote(p Preview) string {
 
 // approximateText is the shared wording; the ASCII preview prefixes it with "~" to stay pure ASCII.
 func approximateText(p Preview) string {
-	return fmt.Sprintf("%d-minute buckets, %d show their majority tier", p.Size, p.Mixed)
+	return fmt.Sprintf("%d-minute buckets, %d show their majority state", p.Size, p.Mixed)
 }
 
 func dayRuns(out *schedule.Output, d int) []schedule.Run {
@@ -376,7 +376,7 @@ func dayRuns(out *schedule.Output, d int) []schedule.Run {
 	return [][]schedule.Run{w.MON, w.TUE, w.WED, w.THU, w.FRI, w.SAT, w.SUN}[d]
 }
 
-// transitionStarts maps day/minute/tier to the transition that starts a run there.
+// transitionStarts maps day/minute/state to the transition that starts a run there.
 func transitionStarts(ts []schedule.Transition) map[string]*schedule.Transition {
 	starts := map[string]*schedule.Transition{}
 
@@ -384,7 +384,7 @@ func transitionStarts(ts []schedule.Transition) map[string]*schedule.Transition 
 		for _, d := range ts[i].Days {
 			for n, name := range days {
 				if name == d {
-					starts[startKey(n, minutes(ts[i].Time), ts[i].Tier)] = &ts[i]
+					starts[startKey(n, minutes(ts[i].Time), ts[i].State)] = &ts[i]
 				}
 			}
 		}
@@ -393,8 +393,8 @@ func transitionStarts(ts []schedule.Transition) map[string]*schedule.Transition 
 	return starts
 }
 
-func startKey(day, minute int, tier string) string {
-	return strconv.Itoa(day) + "/" + strconv.Itoa(minute) + "/" + tier
+func startKey(day, minute int, state string) string {
+	return strconv.Itoa(day) + "/" + strconv.Itoa(minute) + "/" + state
 }
 
 func tooltip(display, day string, sg segment, start *schedule.Transition) string {
@@ -410,9 +410,9 @@ func clock(mins int) string {
 	return fmt.Sprintf("%02d:%02d", mins/minutesPerHour, mins%minutesPerHour)
 }
 
-// tierInfo returns the configured index and sanitized display name of a tier id.
-func tierInfo(cfg *config.Config, id string) (int, string) {
-	for i, t := range cfg.Tiers {
+// stateInfo returns the configured index and sanitized display name of a state id.
+func stateInfo(cfg *config.Config, id string) (int, string) {
+	for i, t := range cfg.States {
 		if strings.EqualFold(t.ID, id) {
 			return i, diag.Sanitize(t.DisplayName)
 		}
@@ -453,8 +453,8 @@ func compactDays(list []string) string {
 	return strings.Join(parts, ",")
 }
 
-func tierClass(i int) string {
-	return "tier-" + strconv.Itoa(i)
+func stateClass(i int) string {
+	return "state-" + strconv.Itoa(i)
 }
 
 func minutes(hhmm string) int {

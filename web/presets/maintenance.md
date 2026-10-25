@@ -6,5 +6,5 @@ Switched off all week, except a maintenance window from Friday night into Saturd
 
 > [!SCHEDULE:BASE] Off
 
-> [!SCHEDULE:TIER] Minimum
+> [!SCHEDULE:STATE] Minimum
 > - `22:00` to `02:00` FRI

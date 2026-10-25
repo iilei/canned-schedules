@@ -1,5 +1,5 @@
-// Package document parses a schedule document into its syntax: the name, and the META, BASE and TIER directives
-// with positions. It knows nothing about the config, tiers or time expressions.
+// Package document parses a schedule document into its syntax: the name, and the META, BASE and STATE directives
+// with positions. It knows nothing about the config, states or time expressions.
 package document
 
 import (
@@ -15,9 +15,9 @@ import (
 
 // Directive kinds.
 const (
-	KindMeta Kind = "META"
-	KindBase Kind = "BASE"
-	KindTier Kind = "TIER"
+	KindMeta  Kind = "META"
+	KindBase  Kind = "BASE"
+	KindState Kind = "STATE"
 )
 
 // Token kinds.
@@ -69,10 +69,10 @@ type Directive struct {
 
 // Document is the parsed syntax of a schedule document.
 type Document struct {
-	Tiers []Directive
-	Meta  *Directive
-	Base  *Directive
-	Name  Text
+	States []Directive
+	Meta   *Directive
+	Base   *Directive
+	Name   Text
 }
 
 type parser struct {

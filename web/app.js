@@ -94,8 +94,8 @@ function evaluate() {
 }
 
 function render(res) {
-  // Tier colours for the Sphinx admonitions come from the same config as the SVG.
-  $("tier-styles").textContent = res["sphinx-css"] || "";
+  // State colours for the Sphinx admonitions come from the same config as the SVG.
+  $("state-styles").textContent = res["sphinx-css"] || "";
 
   const valid = res.errors === 0;
   state.svg = res.svg || "";

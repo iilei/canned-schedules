@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Off
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `00:00` to `00:00` MON-SUN

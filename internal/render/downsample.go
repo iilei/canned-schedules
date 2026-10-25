@@ -7,39 +7,39 @@ import (
 
 // Preview is the week downsampled into buckets for the visual outputs. The canonical output is never downsampled.
 type Preview struct {
-	// Days holds, per day, the tier id shown in each bucket: 1440/Size entries.
+	// Days holds, per day, the state id shown in each bucket: 1440/Size entries.
 	Days [][]string
 	// Size is the bucket length in minutes; it divides 60.
 	Size int
-	// Mixed counts buckets that contain more than one tier; they show the majority tier, so the preview is
+	// Mixed counts buckets that contain more than one state; they show the majority state, so the preview is
 	// approximate.
 	Mixed int
 }
 
 // segment is a stretch of equal buckets in one day, in minutes [from, to).
 type segment struct {
-	tier string
-	from int
-	to   int
+	state string
+	from  int
+	to    int
 }
 
-// Downsample buckets the week. A bucket shows the tier covering most of its minutes; ties go to the tier that comes
-// later in the configured tier list.
+// Downsample buckets the week. A bucket shows the state covering most of its minutes; ties go to the state that comes
+// later in the configured state list.
 func Downsample(out *schedule.Output, cfg *config.Config, size int) Preview {
 	p := Preview{Size: size}
 
 	for d := range days {
-		minuteTiers := make([]string, 0, minutesPerDay)
+		minuteStates := make([]string, 0, minutesPerDay)
 		for _, r := range dayRuns(out, d) {
 			for range endMinutes(r.End) - minutes(r.Start) {
-				minuteTiers = append(minuteTiers, r.Tier)
+				minuteStates = append(minuteStates, r.State)
 			}
 		}
 
 		buckets := make([]string, 0, minutesPerDay/size)
 		for start := 0; start < minutesPerDay; start += size {
-			tier, mixed := majority(minuteTiers[start:start+size], cfg)
-			buckets = append(buckets, tier)
+			state, mixed := majority(minuteStates[start:start+size], cfg)
+			buckets = append(buckets, state)
 
 			if mixed {
 				p.Mixed++
@@ -52,16 +52,16 @@ func Downsample(out *schedule.Output, cfg *config.Config, size int) Preview {
 	return p
 }
 
-func majority(tiers []string, cfg *config.Config) (string, bool) {
+func majority(states []string, cfg *config.Config) (string, bool) {
 	counts := map[string]int{}
-	for _, t := range tiers {
+	for _, t := range states {
 		counts[t]++
 	}
 
 	best, bestCount, bestIndex := "", -1, -1
 
 	for t, n := range counts {
-		i, _ := tierInfo(cfg, t)
+		i, _ := stateInfo(cfg, t)
 		if n > bestCount || (n == bestCount && i > bestIndex) {
 			best, bestCount, bestIndex = t, n, i
 		}
@@ -74,15 +74,15 @@ func majority(tiers []string, cfg *config.Config) (string, bool) {
 func (p Preview) segments(d int) []segment {
 	var out []segment
 
-	for i, tier := range p.Days[d] {
+	for i, state := range p.Days[d] {
 		from := i * p.Size
-		if n := len(out); n > 0 && out[n-1].tier == tier {
+		if n := len(out); n > 0 && out[n-1].state == state {
 			out[n-1].to = from + p.Size
 
 			continue
 		}
 
-		out = append(out, segment{tier: tier, from: from, to: from + p.Size})
+		out = append(out, segment{state: state, from: from, to: from + p.Size})
 	}
 
 	return out

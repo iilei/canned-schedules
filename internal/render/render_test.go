@@ -66,8 +66,8 @@ func TestGoldenSchedulesRender(t *testing.T) {
 			runs += len(p.segments(d))
 		}
 
-		// Background + runs + one legend swatch per tier.
-		if want := 1 + runs + len(cfg.Tiers); rects != want {
+		// Background + runs + one legend swatch per state.
+		if want := 1 + runs + len(cfg.States); rects != want {
 			t.Errorf("%s: %d rects, want %d", in, rects, want)
 		}
 	}
@@ -96,8 +96,8 @@ func countRects(svg []byte) (int, error) {
 func TestEscaping(t *testing.T) {
 	t.Parallel()
 
-	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:TIER] Maximum\n> - `06:00` to `22:00` MON\n",
-		config.Override{Path: "tiers[3].display-name", Value: `"Max <b>&amp;</b> \"q\" \u0007"`})
+	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:STATE] Maximum\n> - `06:00` to `22:00` MON\n",
+		config.Override{Path: "states[3].display-name", Value: `"Max <b>&amp;</b> \"q\" \u0007"`})
 
 	svg, err := SVG(out, cfg, 15, ThemeAuto)
 	if err != nil {
@@ -116,7 +116,7 @@ func TestEscaping(t *testing.T) {
 func TestBucketTicks(t *testing.T) {
 	t.Parallel()
 
-	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON\n")
+	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n")
 
 	for size, minor := range map[int]bool{60: false, 30: true, 15: true, 5: false, 1: false} {
 		m := Build(out, cfg, Downsample(out, cfg, size), ThemeAuto)
@@ -132,7 +132,7 @@ func TestDownsample(t *testing.T) {
 	// MON 06:07-09:52 Medium on base Off: 06:00 bucket has 8 Medium minutes, 09:45 bucket only 7.
 	out, cfg := evaluate(
 		t,
-		"# Plan\n\n> [!SCHEDULE:BASE] Off\n\n> [!SCHEDULE:TIER] Medium\n> - `06:07` to `09:52` MON\n",
+		"# Plan\n\n> [!SCHEDULE:BASE] Off\n\n> [!SCHEDULE:STATE] Medium\n> - `06:07` to `09:52` MON\n",
 	)
 
 	p := Downsample(out, cfg, 15)
@@ -140,7 +140,7 @@ func TestDownsample(t *testing.T) {
 		t.Errorf("mixed = %d, want 2", p.Mixed)
 	}
 
-	if got := p.segments(0); len(got) != 3 || got[1] != (segment{tier: "Medium", from: 360, to: 585}) {
+	if got := p.segments(0); len(got) != 3 || got[1] != (segment{state: "Medium", from: 360, to: 585}) {
 		t.Errorf("MON segments = %+v", got)
 	}
 
@@ -148,10 +148,10 @@ func TestDownsample(t *testing.T) {
 		t.Errorf("1-minute buckets must be exact: %+v", exact.Mixed)
 	}
 
-	// A 30/30 tie goes to the later tier in the config (Maximum after Off).
+	// A 30/30 tie goes to the later state in the config (Maximum after Off).
 	out, cfg = evaluate(
 		t,
-		"# Plan\n\n> [!SCHEDULE:BASE] Off\n\n> [!SCHEDULE:TIER] Maximum\n> - `00:30` to `01:00` TUE\n",
+		"# Plan\n\n> [!SCHEDULE:BASE] Off\n\n> [!SCHEDULE:STATE] Maximum\n> - `00:30` to `01:00` TUE\n",
 	)
 	if got := Downsample(out, cfg, 60).Days[1][0]; got != "Maximum" {
 		t.Errorf("tie went to %s, want Maximum", got)
@@ -162,7 +162,7 @@ func TestASCII(t *testing.T) {
 	t.Parallel()
 
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:META] Office\n\n> [!SCHEDULE:BASE] Minimum\n\n"+
-		"> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n")
+		"> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n")
 
 	text, err := ASCII(out, cfg, 15, false)
 	if err != nil {
@@ -222,7 +222,7 @@ func TestBlend(t *testing.T) {
 func TestTooltipsAndTable(t *testing.T) {
 	t.Parallel()
 
-	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:TIER] Medium\n"+
+	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:BASE] Minimum\n\n> [!SCHEDULE:STATE] Medium\n"+
 		"> - `06:00` to `22:00` MON-FRI\n> - `22:00` to `02:00` SAT,SUN\n")
 	m := Build(out, cfg, Downsample(out, cfg, 15), ThemeAuto)
 
@@ -267,7 +267,7 @@ func TestCompactDays(t *testing.T) {
 func TestSVGThemes(t *testing.T) {
 	t.Parallel()
 
-	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON\n")
+	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON\n")
 	light, dark := cfg.Representation.Theme.Light.Background, cfg.Representation.Theme.Dark.Background
 
 	for theme, want := range map[string]struct {

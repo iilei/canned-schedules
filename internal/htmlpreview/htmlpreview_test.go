@@ -10,7 +10,7 @@ import (
 const doc = "# Plan\n\n" +
 	"> [!SCHEDULE:META] Office\n> - x-owner: `ops`\n\n" +
 	"> [!SCHEDULE:BASE] Minimum\n\n" +
-	"> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
+	"> [!SCHEDULE:STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
 	"> [!NOTE]\n> Mention MON here.\n\n" +
 	"> [!TIP] with a title\n> text\n\n" +
 	"> [!OTHER:THING] x\n\n" +
@@ -36,7 +36,7 @@ func TestGitHub(t *testing.T) {
 
 	for _, want := range []string{
 		`<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title">Note</p>`,
-		`<blockquote>` + "\n" + `<p>[!SCHEDULE:TIER] Medium</p>`, // GitHub shows schedule directives literally.
+		`<blockquote>` + "\n" + `<p>[!SCHEDULE:STATE] Medium</p>`, // GitHub shows schedule directives literally.
 		`<p>[!TIP] with a title`, // A marker with a title is no GitHub alert.
 	} {
 		if !strings.Contains(html, want) {
@@ -52,8 +52,8 @@ func TestSphinx(t *testing.T) {
 
 	for _, want := range []string{
 		`<div class="admonition schedule schedule-meta"><p class="admonition-title">Schedule: Office</p>`,
-		`<div class="admonition schedule schedule-base tier-1"><p class="admonition-title">Base tier: Minimum</p>`,
-		`<div class="admonition schedule schedule-tier tier-2"><p class="admonition-title">Medium</p>`,
+		`<div class="admonition schedule schedule-base state-1"><p class="admonition-title">Base state: Minimum</p>`,
+		`<div class="admonition schedule schedule-state state-2"><p class="admonition-title">Medium</p>`,
 		`<code>06:00</code> to <code>22:00</code> MON-FRI`,
 		`<div class="admonition note"><p class="admonition-title">Note</p>`,
 		`<div class="admonition tip"><p class="admonition-title">Tip</p>`,

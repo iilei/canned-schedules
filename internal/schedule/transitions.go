@@ -12,13 +12,13 @@ import (
 // sundayFirst is the day order both cron dialects number: POSIX 0 = SUN, AWS names SUN…SAT (1 = SUN).
 var sundayFirst = []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}
 
-// Transition is a moment when the active tier changes. All days that switch to the same tier at the same time are
-// grouped. Time, Days and Tier are the facts; Cron renders them for schedulers.
+// Transition is a moment when the active state changes. All days that switch to the same state at the same time are
+// grouped. Time, Days and State are the facts; Cron renders them for schedulers.
 type Transition struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
-	Time string   `json:"time"`
-	Days []string `json:"days"`
-	Tier string   `json:"tier"`
-	Cron Cron     `json:"cron"`
+	Time  string   `json:"time"`
+	Days  []string `json:"days"`
+	State string   `json:"state"`
+	Cron  Cron     `json:"cron"`
 }
 
 // Cron holds the transition in two cron dialects. Neither carries a time zone: they are wall-clock times.
@@ -29,19 +29,19 @@ type Cron struct {
 	AWS string `json:"aws"`
 }
 
-// transitionGroup collects the minutes of the week at which the week switches to tier at a given time of day.
+// transitionGroup collects the minutes of the week at which the week switches to state at a given time of day.
 type transitionGroup struct {
-	tier    string
+	state   string
 	minutes []int
 	time    int
 }
 
-// transitions finds every minute where the tier changes (the week is cyclic: MON 00:00 follows SUN 23:59), groups
-// them by time of day and tier, and orders the groups by their first minute in the week, then by tier.
+// transitions finds every minute where the state changes (the week is cyclic: MON 00:00 follows SUN 23:59), groups
+// them by time of day and state, and orders the groups by their first minute in the week, then by state.
 func transitions(week []string) []Transition {
 	type key struct {
-		tier string
-		time int
+		state string
+		time  int
 	}
 
 	index := map[key]int{}
@@ -54,7 +54,7 @@ func transitions(week []string) []Transition {
 			continue
 		}
 
-		k := key{tier: week[m], time: m % minutesPerDay}
+		k := key{state: week[m], time: m % minutesPerDay}
 		if i, ok := index[k]; ok {
 			groups[i].minutes = append(groups[i].minutes, m)
 
@@ -62,11 +62,11 @@ func transitions(week []string) []Transition {
 		}
 
 		index[k] = len(groups)
-		groups = append(groups, transitionGroup{tier: k.tier, time: k.time, minutes: []int{m}})
+		groups = append(groups, transitionGroup{state: k.state, time: k.time, minutes: []int{m}})
 	}
 
 	slices.SortStableFunc(groups, func(a, b transitionGroup) int {
-		return cmp.Or(cmp.Compare(a.minutes[0], b.minutes[0]), cmp.Compare(a.tier, b.tier))
+		return cmp.Or(cmp.Compare(a.minutes[0], b.minutes[0]), cmp.Compare(a.state, b.state))
 	})
 
 	out := make([]Transition, 0, len(groups))
@@ -99,9 +99,9 @@ func (g transitionGroup) transition() Transition {
 	h, m := strconv.Itoa(g.time/minutesPerHour), strconv.Itoa(g.time%minutesPerHour)
 
 	return Transition{
-		Time: clock(g.time),
-		Days: names,
-		Tier: g.tier,
+		Time:  clock(g.time),
+		Days:  names,
+		State: g.state,
 		Cron: Cron{
 			POSIX: m + " " + h + " * * " + compress(sunFirst, strconv.Itoa),
 			AWS:   m + " " + h + " ? * " + compress(sunFirst, func(i int) string { return sundayFirst[i] }) + " *",

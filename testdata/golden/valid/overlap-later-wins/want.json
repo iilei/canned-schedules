@@ -4,121 +4,121 @@
   "base": "Minimum",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:847ffb897f83bca834f1d4e4a086a0677e14a80681abdc62d8f15574db8335dd"
+    "schedule": "sha256:8eefd4d9ca3d2c5ed815e1f15d98aa3ac550b7c3aa656f98b632ea41ebecd2c9"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "12:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "12:00",
         "end": "14:00",
-        "tier": "Maximum"
+        "state": "Maximum"
       },
       {
         "start": "14:00",
         "end": "20:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "20:00",
         "end": "23:00",
-        "tier": "Off"
+        "state": "Off"
       },
       {
         "start": "23:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "06:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       },
       {
         "start": "06:00",
         "end": "22:00",
-        "tier": "Medium"
+        "state": "Medium"
       },
       {
         "start": "22:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Minimum"
+        "state": "Minimum"
       }
     ]
   },
@@ -132,7 +132,7 @@
         "THU",
         "FRI"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 6 * * 1-5",
         "aws": "0 6 ? * MON-FRI *"
@@ -146,7 +146,7 @@
         "THU",
         "FRI"
       ],
-      "tier": "Minimum",
+      "state": "Minimum",
       "cron": {
         "posix": "0 22 * * 1-2,4-5",
         "aws": "0 22 ? * MON-TUE,THU-FRI *"
@@ -157,7 +157,7 @@
       "days": [
         "WED"
       ],
-      "tier": "Maximum",
+      "state": "Maximum",
       "cron": {
         "posix": "0 12 * * 3",
         "aws": "0 12 ? * WED *"
@@ -168,7 +168,7 @@
       "days": [
         "WED"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 14 * * 3",
         "aws": "0 14 ? * WED *"
@@ -179,7 +179,7 @@
       "days": [
         "WED"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 20 * * 3",
         "aws": "0 20 ? * WED *"
@@ -190,7 +190,7 @@
       "days": [
         "WED"
       ],
-      "tier": "Minimum",
+      "state": "Minimum",
       "cron": {
         "posix": "0 23 * * 3",
         "aws": "0 23 ? * WED *"

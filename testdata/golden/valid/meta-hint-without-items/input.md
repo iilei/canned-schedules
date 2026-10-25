@@ -4,5 +4,5 @@
 
 > [!SCHEDULE:BASE] Off
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `10:00` to `18:00` SAT,SUN

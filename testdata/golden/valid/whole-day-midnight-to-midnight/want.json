@@ -4,56 +4,56 @@
   "base": "Off",
   "annotations": {},
   "digests": {
-    "schedule": "sha256:f6425d7766d691865fb57e9269002441446fd34a1d9786c45c681dc8aae1577f"
+    "schedule": "sha256:f646afb7af93b6f7b7972f6166bbfb4ef4b2ee6ed1f3393e5c86f80f7fde5609"
   },
   "week": {
     "MON": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "TUE": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "WED": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Medium"
+        "state": "Medium"
       }
     ],
     "THU": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "FRI": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SAT": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ],
     "SUN": [
       {
         "start": "00:00",
         "end": "00:00",
-        "tier": "Off"
+        "state": "Off"
       }
     ]
   },
@@ -63,7 +63,7 @@
       "days": [
         "WED"
       ],
-      "tier": "Medium",
+      "state": "Medium",
       "cron": {
         "posix": "0 0 * * 3",
         "aws": "0 0 ? * WED *"
@@ -74,7 +74,7 @@
       "days": [
         "THU"
       ],
-      "tier": "Off",
+      "state": "Off",
       "cron": {
         "posix": "0 0 * * 4",
         "aws": "0 0 ? * THU *"

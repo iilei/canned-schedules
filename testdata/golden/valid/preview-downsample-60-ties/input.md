@@ -5,8 +5,8 @@
 
 > [!SCHEDULE:BASE] Off
 
-> [!SCHEDULE:TIER] Maximum
+> [!SCHEDULE:STATE] Maximum
 > - `23:00` to `01:30` SUN
 
-> [!SCHEDULE:TIER] Medium
+> [!SCHEDULE:STATE] Medium
 > - `21:30` to `05:30` MON-FRI

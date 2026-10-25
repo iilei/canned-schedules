@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!CAN-SCHED:TIER] Medium
+> [!CAN-SCHED:STATE] Medium
 > - `06:00` to `22:00` MON

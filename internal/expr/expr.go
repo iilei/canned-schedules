@@ -1,4 +1,4 @@
-// Package expr parses the range items of a TIER block: `HH:MM` to `HH:MM` WEEKDAYS.
+// Package expr parses the range items of a STATE block: `HH:MM` to `HH:MM` WEEKDAYS.
 package expr
 
 import (

@@ -5,5 +5,5 @@
 
 > [!SCHEDULE:BASE] Minimum
 
-> [!SCHEDULE:TIER]
+> [!SCHEDULE:STATE] Turbo
 > - `06:00` to `22:00` MON
