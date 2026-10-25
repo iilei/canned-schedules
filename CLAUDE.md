@@ -47,11 +47,11 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
   - **No request digest (dropped 2026-10-25):** a hash of the input bytes earned little. Provenance belongs in git
     SHAs or in an `x-*` META key (an issue link, a commit), and a bot that must pin an issue revision hashes
     the body itself. The `digests` object stays, so a digest can be added later without reshaping the output.
-  - Still proposed: storing the raw input next to the output (`schedules/<name>/source.md` + `schedule.json`).
-    Consumers read only the output; the raw Markdown is never part of the contract.
+  - Storing the source next to its outputs is decided as the `*.canned-schedule.md` convention (see "Schedule files
+    and generated outputs"). Consumers read only the output; the raw Markdown is never part of the contract.
 - **Linting (proposed).** rumdl has no custom rules, and a markdownlint-cli2 JS rule would be a second parser.
-  - Use rumdl for generic style only. Add a per-file ignore for MD028 on schedule files, because adjacent alerts
-    trigger it.
+  - Use rumdl for generic style only. Add a per-file ignore for MD028 on schedule files (`*.canned-schedule.md`),
+    because adjacent alerts trigger it.
   - Add a `lint-schedule` mise task that wraps the Go validator and prints rumdl's concise format,
     `file:line:col CODE message`.
 
@@ -289,6 +289,65 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **A STATE block must contain at least one range** (`empty-state`).
 - **Directives only count at the top level.** A directive nested in a list or another container, or a bold-wrapped
   marker (`> **[!SCHEDULE-STATE]**`), is an error (`misplaced-directive`). It is never silently ignored.
+
+## Schedule files and generated outputs (decided 2026-10-25, not built yet)
+
+- **Suffix `*.canned-schedule.md`** for schedule requests tracked in a repo, e.g.
+  `schedules/on-call.canned-schedule.md`. `.schedule.md` was rejected as too generic (cron jobs, GitHub Actions
+  `on: schedule`, shift plans), because globbing tools (hook, render task, rumdl ignores, the Sphinx idea) would trip
+  over unrelated files; `.canned.md` and `.cs.md` don't explain themselves. Issue templates and golden inputs don't
+  match the glob. The CLI itself never looks at file names; a check that the file name matches the H1 belongs in a
+  task, if anywhere.
+- **Generated files sit next to the source** and are **gitignored by default**, with the pattern limited to the catalog
+  folder (`/schedules/*.canned-schedule.json`, `.svg`, `.txt`), so unrelated files are never caught. Exception: an
+  SVG that should show on GitHub (README) is committed, with a drift check in CI (render, then `git diff
+  --exit-code`), the same choice the README recipe offers for MyST.
+  - `.canned-schedule.json`: the canonical output.
+  - `.canned-schedule.svg`: the week preview, with the canonical source embedded (below).
+  - `.canned-schedule.txt`: the **text form**: the canonical Markdown with the ASCII preview in a `~~~text` fence
+    after the H1. A top-level code block is prose to the parser, so the `.txt` is itself a valid input document that
+    evaluates to the same output; the suffix only tells people it's plain text.
+- **Canonical writer** (`internal/canonical`, next to `internal/myst`): emits only what the contract defines: H1, META
+  (summary, `schema-version`, `x-*` items in source order), BASE, STATE blocks and ranges in source order. Drops
+  prose, other alerts and links. Normalises spelling only: `HH:MM` times, no whitespace inside weekday expressions
+  (`SAT, SUN` → `SAT,SUN`), one blank line between blocks. The author's grouping stays (`MON-WED,TUE` keeps its
+  `repeated-weekday` warning), and ranges never change order. Text goes through `diag.Sanitize`. Test: every valid
+  golden fixture, written canonically and evaluated again, gives the same `want.json` (digest included). The same
+  writer serves the SVG embed, a later `canned-schedules fmt`, and the TOML converter's target.
+- **SVG source embed:** `--svg-embed-source` (opt-in, because `x-*` values such as owners or issue links would travel
+  with every shared picture) puts the canonical Markdown into SVG `<metadata>` as a namespaced element with the
+  schedule digest and the generator version as attributes (e.g. `<cs:source media-type="text/markdown"
+  digest="sha256:…" generator="canned-schedules 0.0.1">`). XML-escaped text via the template's `html` builtin, not
+  CDATA: user text could contain `]]>`. The canonical form rather than the raw source, so prose doesn't travel. The
+  Markdown, not the JSON: the source regenerates everything, and the digest ties the picture to its JSON. Reading
+  it back works with any XML tool; an `extract-source` helper only if asked. Markdown stays the only input format.
+- **New CLI outputs**, following the rules of the others (atomic, only without errors): `--json-output-file <path>`
+  (today JSON can only go to stdout, so one run couldn't print a preview and save the JSON), `--text-output-file
+  <path>` (the text form), and `--output text` for stdout. The terminal gets colours under `--color auto`; files
+  only with `--color always`.
+- **Mise tasks, also for consumers** (`examples/consumer/`, tested in this repo's CI against a `*.canned-schedule.md`
+  copy of the issue template, built from source):
+  - `schedule:render [files…]` (default: every `*.canned-schedule.md`): one CLI call per file writes the three
+    outputs and prints the text form. Keeps going after errors and fails at the end. Deletes the outputs of a source
+    that failed, and outputs whose source is gone, because gitignored stale outputs would look current. (A plain CLI
+    run still leaves earlier outputs alone.)
+  - `schedule:check <file>`: the report as Markdown and JSON, for issue workflows.
+  - `schedule:pre-commit`: checks the **staged** content of staged `*.canned-schedule.md` files (`git diff --cached
+    --name-only --diff-filter=ACMR`, then `git show ":$f"` into a temporary file, because the CLI needs a regular
+    file), maps report paths back, keeps exit codes 1 and 2 apart. Installed with `mise generate git-pre-commit
+    --task schedule:pre-commit`; additionally a `.pre-commit-hooks.yaml` in this repo (`language: golang`) for teams
+    without mise.
+  - The consumer's `mise.toml` installs the binary from the releases (`"github:iilei/canned-schedules"`); check
+    whether that backend verifies `checksums.txt` / `.sha256`, otherwise a task verifies them.
+- **CI calls mise tasks only:** a workflow prepares the environment and runs tasks, so every failure reproduces
+  locally with the same command. Still inline today, to move: the golden check in `check.yml` (`golden:check`), the
+  release smoke test (`release:smoke <archive>`), signature and checksum verification (`release:verify <dir>`, also
+  for users). Publishing steps (`goreleaser release`, `gh release edit`, posting issue comments) stay in workflows:
+  **tasks never talk to GitHub**, so a local run can't post anything. Issue bodies reach tasks only as files
+  (written from an env var, never interpolated with `${{ }}`); task arguments are declared with mise's `usage` spec;
+  task scripts are POSIX `sh`.
+- **Order:** `--json-output-file`, `--text-output-file`/`--output text` and the canonical writer (with tests), then
+  `--svg-embed-source`, then the tasks and `examples/consumer/` with the issue workflow.
 
 ## Error reporting (decided and implemented 2026-10-24)
 
@@ -568,8 +627,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   an old checker never meets new page code; the status line says "offline copy from <date>" when the cache serves.
   About half a day including offline and update testing.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
-  catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
-  previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
+  catalog of approved schedules as `*.canned-schedule.md` files with their generated outputs (see "Schedule files and
+  generated outputs"). CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
   or an internal registry such as Artifactory); a docs handbook (see the Sphinx idea) embeds the presets list,
   summaries and previews, linking to the versioned artifacts.
 - **TOML companion as a converter** (asked 2026-10-25, deferred; worth it for a catalog or tool-generated schedules,
