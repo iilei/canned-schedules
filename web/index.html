@@ -20,7 +20,8 @@
 <body>
 <header class="topbar">
   <div class="brand">
-    <span class="brand-mark" aria-hidden="true">▚</span>
+    <a class="brand-mark" id="home" href="./" title="Start over: the page without settings or document"
+       aria-label="canned-schedules preflight: start over">▚</a>
     <div>
       <h1>canned-schedules <span class="muted">preflight</span></h1>
       <p class="tagline">Weekly capacity schedules from plain Markdown. Validated and rendered in your browser; nothing is uploaded.</p>
@@ -35,6 +36,16 @@
     </div>
   </div>
 </header>
+
+<div class="hud" id="hud" role="status" aria-live="polite">
+  <div class="hud-card">
+    <span class="hud-spinner" aria-hidden="true"></span>
+    <p class="hud-text" id="hud-text">Loading the checker…</p>
+    <p class="hud-progress" id="hud-progress"></p>
+    <p class="hud-note">The checker runs entirely in your browser. Once loaded, it keeps working in this tab, even
+      without a connection.</p>
+  </div>
+</div>
 
 <main class="layout">
   <section class="pane editor-pane" id="editor-pane" aria-label="Schedule request">

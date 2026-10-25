@@ -382,6 +382,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   never reaches the server). **Copy link** builds that URL from the current state (`permalink()` in `app.js`: every
   control explicitly, the theme only when not "system", `#doc=` only when the editor differs from the preset), copies
   it and puts it in the address bar.
+- **Loading overlay:** `#hud` covers the page until the WebAssembly checker runs (`start()` hides it), and stays with
+  the reason when loading fails (no WebAssembly, `app.wasm` not loadable). `fetchWasm()` streams the download to show
+  the megabytes loaded, with a total and percentage only when the response isn't content-encoded (Content-Length
+  would count compressed bytes), then compiles from the bytes. The note says it keeps working offline in this tab;
+  no service worker, so a reload offline isn't promised. The logo links to the page itself
+  (`location.pathname`, no query or fragment) to start over.
 - **Resizable editor:** a splitter between the panes (`role="separator"`) sets the editor's share of the width
   (`--editor-width`, 20–70 %, default 33.3 %): drag, arrow keys or Home/End, double-click to reset. Saved in
   localStorage as a per-browser convenience, not part of the permalink. Hidden below 1100 px, where the panes stack.
