@@ -47,13 +47,6 @@ const maxInputBytes = 256 * kib
 // usageExample is the example attached to command-line usage errors.
 const usageExample = "canned-schedules [flags] request.md"
 
-// Set by goreleaser via -ldflags.
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-)
-
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
@@ -69,7 +62,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 		return exitOK
 	case opts.Version && !diags.HasErrors():
-		fmt.Fprintf(stdout, "canned-schedules %s (%s, %s)\n", version, commit, date)
+		s := buildStamp()
+		fmt.Fprintf(stdout, "canned-schedules %s (%s, %s)\n", s.version, s.commit, s.date)
 
 		return exitOK
 	}
@@ -143,7 +137,7 @@ func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
 			return cli.MyST(opts, src)
 		}},
 		{flag: "--sphinx-kit-output-file", path: opts.Sphinx.KitFile, render: func() ([]byte, error) {
-			return cli.SphinxKit(opts, src, "canned-schedules "+version)
+			return cli.SphinxKit(opts, src, "canned-schedules "+buildStamp().version)
 		}},
 	} {
 		if o.path == "" {
