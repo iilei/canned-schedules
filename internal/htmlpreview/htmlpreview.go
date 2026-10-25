@@ -250,21 +250,16 @@ func (r *calloutRenderer) render(w util.BufWriter, _ []byte, n ast.Node, enterin
 		titleClass = "markdown-alert-title"
 	}
 
-	// Like the MyST output: a META block with only a hint has nothing to box, so it is a paragraph.
-	if c.Schedule && c.ChildCount() == 0 && c.Body == "" && strings.Contains(c.Class, "schedule-meta") {
-		if entering {
-			_, _ = fmt.Fprintf(w, "<p>%s</p>\n", util.EscapeHTML([]byte(strings.TrimPrefix(c.Title, "Schedule: "))))
-		}
-
-		return ast.WalkSkipChildren, nil
-	}
-
 	if entering {
 		_, _ = fmt.Fprintf(w, `<div class="%s"><p class="%s">%s</p>`+"\n",
 			util.EscapeHTML([]byte(c.Class)), titleClass, util.EscapeHTML([]byte(c.Title)))
 
-		if c.Body != "" {
+		switch {
+		case c.Body != "":
 			_, _ = fmt.Fprintf(w, "<p>%s</p>\n", util.EscapeHTML([]byte(c.Body)))
+		case c.Schedule && c.ChildCount() == 0 && strings.Contains(c.Class, "schedule-meta"):
+			// Like the MyST output (myst.EmptyBody): a META block without items keeps an invisible body.
+			_, _ = w.WriteString("<p>&nbsp;</p>\n")
 		}
 
 		return ast.WalkContinue, nil

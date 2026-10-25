@@ -73,6 +73,23 @@ func TestSphinx(t *testing.T) {
 	}
 }
 
+func TestMetaWithoutItemsIsAnAdmonition(t *testing.T) {
+	t.Parallel()
+
+	cfg, _ := config.Load(nil)
+
+	html, err := Render([]byte("# Shop\n\n> [!SCHEDULE-META] Weekend shop\n"), cfg, Sphinx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `<div class="admonition schedule schedule-meta"><p class="admonition-title">Schedule: Weekend shop</p>` +
+		"\n<p>&nbsp;</p>\n</div>"
+	if !strings.Contains(html, want) {
+		t.Errorf("a META block with only a hint must render as an admonition, like the MyST output:\n%s", html)
+	}
+}
+
 func TestSafety(t *testing.T) {
 	t.Parallel()
 
