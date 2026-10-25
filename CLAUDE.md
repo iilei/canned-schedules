@@ -496,7 +496,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **`.github/workflows/release.yml`** on `v*` tags: build (goreleaser, key from `crazy-max/ghaction-import-gpg`),
   smoke (each native archive verified against `checksums.txt` and run on its runner: ubuntu x86_64 and arm64, macOS,
   windows amd64 and arm64; armv7 has no runner), publish (a `.sha256` sidecar per archive, then the draft is
-  published; tags with `-` stay pre-releases, never "latest"). Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`.
+  published; tags with `-` stay pre-releases, never "latest"). Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, in the
+  `release` environment (deployments limited to `v*` tags; the `build` job uses it), so branch workflows can't read
+  the key. Release key: a dedicated ed25519 key, `B645234C9CB8175ECA5D78A5C8447A2252E9E7B6` (README and release
+  notes print it). Tags: semver pre-releases like `v0.0.1-pre.1`, **no build metadata** (`+…`): Go modules reject it
+  and semver ignores it for ordering.
 - **CI matrix:** `check.yml` also builds and tests on ubuntu, macos and windows (Go only). `.gitattributes` forces LF
   so Windows checkouts don't break the golden fixtures; `assets/fonts` stays byte-identical. Tests avoid OS
   specifics: drive letters for absolute paths, no permission bits on Windows, diagnostic codes instead of OS error

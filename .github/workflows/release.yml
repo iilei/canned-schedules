@@ -4,7 +4,7 @@ name: release
 #   build   goreleaser cross-compiles, GPG-signs every archive and checksums.txt, and creates the release as a draft.
 #   smoke   each native binary is checked against checksums.txt and run on a matching runner (armv7 has no runner).
 #   publish adds a .sha256 sidecar per archive and publishes the draft, only after every smoke test passed.
-# Secrets: GPG_PRIVATE_KEY (ASCII-armoured private key) and GPG_PASSPHRASE.
+# Secrets (environment "release", v* tags only): GPG_PRIVATE_KEY (ASCII-armoured private key) and GPG_PASSPHRASE.
 on:
   push:
     tags: ["v*"]
@@ -20,6 +20,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # The GPG secrets live in this environment, which only v* tags may deploy to.
+    environment: release
     permissions:
       contents: write # Creates the draft release and uploads its assets.
     steps:
