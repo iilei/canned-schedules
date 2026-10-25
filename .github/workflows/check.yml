@@ -39,6 +39,17 @@ jobs:
       # fmt:check, vet, lint, test (race detector) and build.
       - run: mise run check
 
+      # Coverage of every package (-coverpkg=./...) into coverage/coverage.out, uploaded to Codecov for the README
+      # badge. Pull requests from forks get no secrets; Codecov accepts those uploads without a token for public repos.
+      - run: mise run coverage
+
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/coverage.out
+          disable_search: true
+          fail_ci_if_error: true
+
       # The same test suites compiled to WebAssembly and run under Node: the browser page must give the same results
       # as the CLI.
       - run: mise run test:wasm
