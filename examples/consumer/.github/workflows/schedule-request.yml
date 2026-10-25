@@ -1,0 +1,63 @@
+name: schedule request
+
+# Checks a schedule request issue and keeps one comment on it up to date: the report, and for a valid request the
+# preview. The check is the schedule:check mise task, so `mise run schedule:check body.md` gives the same result
+# locally; only posting the comment happens here.
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: schedule-request-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # The issue template sets this label (.github/ISSUE_TEMPLATE/canned_schedule_request.md).
+    if: contains(github.event.issue.labels.*.name, 'Schedule')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write # Posts or updates the comment.
+    steps:
+      # Actions are pinned to commit SHAs; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Installs the canned-schedules release pinned in mise.toml.
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      # The body is untrusted input: it reaches the shell only through an environment variable and a file, never
+      # through ${{ }} inside the script.
+      - name: Write the issue body to a file
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: printf '%s\n' "$BODY" > "$RUNNER_TEMP/request.md"
+
+      - id: check
+        continue-on-error: true
+        run: mise run schedule:check "$RUNNER_TEMP/request.md" "$RUNNER_TEMP/report"
+
+      - name: Post or update the comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          set -eu
+          body="$RUNNER_TEMP/report/comment.md"
+          id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$ISSUE/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- canned-schedules -->"))) | .id' |
+            head -n 1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F "body=@$body" > /dev/null
+          else
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$body"
+          fi
+
+      - name: Fail when the request has errors
+        if: steps.check.outcome == 'failure'
+        run: exit 1

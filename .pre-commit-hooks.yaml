@@ -1,0 +1,8 @@
+# For https://pre-commit.com, for teams without mise (with mise, see examples/consumer). pre-commit builds the binary
+# from the tag with `go install`, then checks each staged *.canned-schedule.md file; the CLI takes one file per call.
+- id: canned-schedules
+  name: canned schedules
+  description: Check *.canned-schedule.md schedule requests with canned-schedules
+  language: golang
+  entry: sh -c 'rc=0; for f; do canned-schedules "$f" > /dev/null || rc=1; done; exit $rc' --
+  files: \.canned-schedule\.md$

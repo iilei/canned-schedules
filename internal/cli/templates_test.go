@@ -54,7 +54,7 @@ func TestDocsPreview(t *testing.T) {
 		t.Fatal("the template must evaluate")
 	}
 
-	svg, err := SVG(&opts, out)
+	svg, err := SVG(&opts, out, nil, "")
 	if err != nil {
 		t.Fatal(err)
 	}

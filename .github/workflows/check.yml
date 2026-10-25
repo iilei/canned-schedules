@@ -22,19 +22,13 @@ jobs:
         with:
           persist-credentials: false
 
-      # The golden fixtures are the spec and come from testdata/golden/gen.py (standard library only). Regenerate
-      # them and fail if anything changed or appeared, so fixtures can't drift from their generator.
-      - name: Golden fixtures match gen.py
-        run: |
-          python3 testdata/golden/gen.py
-          if [ -n "$(git status --porcelain -- testdata/golden)" ]; then
-            git status --short -- testdata/golden
-            echo "::error::testdata/golden differs from gen.py; run python3 testdata/golden/gen.py and commit the result"
-            exit 1
-          fi
-
-      # Installs the tools pinned in mise.toml (Go, golangci-lint, Node) and caches them.
+      # Installs the tools pinned in mise.toml (Go, golangci-lint, Node) and caches them. Every step below is a mise
+      # task, so each failure reproduces locally with the same command.
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      # The golden fixtures are the spec and come from testdata/golden/gen.py (standard library only), so they can't
+      # drift from their generator.
+      - run: mise run golden:check
 
       # fmt:check, vet, lint, test (race detector) and build.
       - run: mise run check
@@ -56,6 +50,10 @@ jobs:
 
       # The preflight page builds (WebAssembly, static files).
       - run: mise run web:build
+
+      # The consumer example (examples/consumer): its tasks against a copy of the issue template, with the binary
+      # built from this commit.
+      - run: mise run example:test
 
   # Builds and tests on the three common systems, so OS-specific behaviour (paths shown as ~/..., separators, atomic
   # file writes) is checked where it runs. Release binaries are cross-compiled by goreleaser either way.

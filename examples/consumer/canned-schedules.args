@@ -1,0 +1,5 @@
+# Arguments for every canned-schedules call of the schedule tasks, one per line (blank lines and # comments skipped).
+# Only GitHub's standard alerts are allowed next to the schedule directives, so a typo such as [!SCHEDUEL-STATE]
+# fails instead of being read as prose.
+--error-unless-alert-pattern
+(?i)NOTE|TIP|IMPORTANT|WARNING|CAUTION

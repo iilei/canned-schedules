@@ -15,6 +15,7 @@ import (
 const (
 	OutputJSON  = "json"
 	OutputASCII = "ascii"
+	OutputText  = "text"
 
 	ColorAuto   = "auto"
 	ColorAlways = "always"
@@ -29,8 +30,13 @@ const (
 // PreviewOptions configure the visual outputs (SVG and ASCII). They never change the canonical JSON content, only
 // whether a preview-approximate warning is added.
 type PreviewOptions struct {
-	// Output is --output: json (default) prints the canonical JSON to stdout, ascii prints the ASCII preview instead.
+	// Output is --output: json (default) prints the canonical JSON to stdout, ascii the ASCII preview, text the text
+	// form (the canonical request with the ASCII preview).
 	Output string
+	// JSONFile is --json-output-file; empty means none.
+	JSONFile string
+	// TextFile is --text-output-file; empty means none.
+	TextFile string
 	// ASCIIFile is --ascii-output-file; empty means none.
 	ASCIIFile string
 	// Color is --color: auto (default), always or never.
@@ -43,6 +49,8 @@ type PreviewOptions struct {
 	downsampleRaw string
 	// Downsample is the bucket size in minutes (--preview-downsample[=N], --no-preview-downsample means 1).
 	Downsample int
+	// SVGEmbedSource is --svg-embed-source: the SVG carries the canonical request in its metadata.
+	SVGEmbedSource bool
 	// noDownsample records --no-preview-downsample to detect the conflicting combination.
 	noDownsample bool
 	// downsampleSet records an explicit --preview-downsample.
@@ -58,9 +66,10 @@ func (f downsampleFlag) String() string { return "" }
 // IsBoolFlag lets the flag appear without a value.
 func (downsampleFlag) IsBoolFlag() bool { return true }
 
-// Requested reports whether any preview is produced.
+// Requested reports whether any preview is produced. The text form contains the ASCII preview.
 func (p *PreviewOptions) Requested() bool {
-	return p.SVGFile != "" || p.ASCIIFile != "" || p.Output == OutputASCII
+	return p.SVGFile != "" || p.ASCIIFile != "" || p.TextFile != "" || p.Output == OutputASCII ||
+		p.Output == OutputText
 }
 
 // Set records the raw value; checkPreviewFlags validates it, because the flag package would word any error here as
@@ -74,11 +83,18 @@ func (f downsampleFlag) Set(s string) error {
 
 func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 	p.Downsample = DefaultDownsample
-	fs.StringVar(&p.Output, "output", OutputJSON, "What stdout carries: the canonical JSON or the ASCII preview")
+	fs.StringVar(&p.Output, "output", OutputJSON, "What stdout carries: the canonical JSON, the ASCII preview or the "+
+		"text form (the canonical request with the ASCII preview)")
+	fs.StringVar(&p.JSONFile, "json-output-file", "",
+		"Write the canonical JSON (only when the document has no errors)")
 	fs.StringVar(&p.SVGFile, "svg-output-file", "", "Write an SVG preview (only when the document has no errors)")
 	fs.StringVar(&p.SVGTheme, "svg-theme", render.ThemeAuto, "SVG colours: `auto` (follow the viewer), `light` or "+
 		"`dark`")
+	fs.BoolVar(&p.SVGEmbedSource, "svg-embed-source", false, "Embed the canonical request in the SVG's metadata, "+
+		"with the schedule digest; needs `--svg-output-file`")
 	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "Write an ASCII preview (only when the document has no errors)")
+	fs.StringVar(&p.TextFile, "text-output-file", "", "Write the text form: the canonical request with the ASCII "+
+		"preview, itself a valid request (only when the document has no errors)")
 	fs.StringVar(&p.Color, "color", ColorAuto, "Colours in the ASCII preview; `auto` means on a terminal only, and "+
 		"not with `NO_COLOR`")
 	fs.Var(downsampleFlag{p}, "preview-downsample", "Preview buckets in minutes (must divide 60); `=N` needs the `=`")
@@ -92,7 +108,7 @@ func checkPreviewFlags(p *PreviewOptions) diag.List {
 		flag, value string
 		allowed     []string
 	}{
-		{"--output", p.Output, []string{OutputJSON, OutputASCII}},
+		{"--output", p.Output, []string{OutputJSON, OutputASCII, OutputText}},
 		{"--color", p.Color, []string{ColorAuto, ColorAlways, ColorNever}},
 		{"--svg-theme", p.SVGTheme, []string{render.ThemeAuto, render.ThemeLight, render.ThemeDark}},
 	} {
@@ -100,6 +116,11 @@ func checkPreviewFlags(p *PreviewOptions) diag.List {
 			diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "%s %q: use %s", c.flag, c.value,
 				strings.Join(c.allowed, ", ")))
 		}
+	}
+
+	if p.SVGEmbedSource && p.SVGFile == "" {
+		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
+			"--svg-embed-source needs --svg-output-file"))
 	}
 
 	return append(diags, checkDownsample(p)...)

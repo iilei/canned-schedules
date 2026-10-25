@@ -59,6 +59,9 @@ const (
 	swatchTextY    = 26 // Legend text baseline below the legend rule.
 	pixelPrecision = 100
 
+	// SourceNamespace is the XML namespace of the source element in an SVG's metadata.
+	SourceNamespace = "https://github.com/iilei/canned-schedules#svg-source"
+
 	minutesPerHour = 60
 	hoursPerDay    = 24
 	minutesPerDay  = hoursPerDay * minutesPerHour
@@ -70,7 +73,9 @@ var days = []string{"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"}
 // Model is the render model the SVG template operates on. Strings are raw; the template escapes them.
 type Model struct {
 	// Dark is the palette for prefers-color-scheme: dark; only set in auto mode.
-	Dark        *Palette    `json:"dark"`
+	Dark *Palette `json:"dark"`
+	// Source is the request embedded in the metadata (--svg-embed-source); nil means none.
+	Source      *Source     `json:"source"`
 	Palette     Palette     `json:"palette"`
 	Scheme      string      `json:"scheme"`
 	Font        string      `json:"font"`
@@ -86,6 +91,16 @@ type Model struct {
 	Width       float64     `json:"width"`
 	Height      float64     `json:"height"`
 	Bucket      int         `json:"bucket"`
+}
+
+// Source is the canonical request an SVG carries in its metadata, so the picture can regenerate everything. The digest
+// ties it to its JSON without regenerating anything.
+type Source struct {
+	Namespace string `json:"namespace"`
+	MediaType string `json:"mediaType"`
+	Digest    string `json:"digest"`
+	Generator string `json:"generator"`
+	Text      string `json:"text"`
 }
 
 // State carries the CSS class and colour of one configured state.
@@ -155,9 +170,18 @@ type Swatch struct {
 }
 
 // SVG renders out as SVG with buckets of size minutes, using the state order, display names and styles from cfg. The
-// theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark.
-func SVG(out *schedule.Output, cfg *config.Config, size int, theme string) ([]byte, error) {
-	return execute(templates.ScheduleSVG, Build(out, cfg, Downsample(out, cfg, size), theme))
+// theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark. A non-nil source is
+// embedded in the metadata; its Namespace and MediaType are filled in here.
+func SVG(out *schedule.Output, cfg *config.Config, size int, theme string, source *Source) ([]byte, error) {
+	m := Build(out, cfg, Downsample(out, cfg, size), theme)
+
+	if source != nil {
+		s := *source
+		s.Namespace, s.MediaType = SourceNamespace, "text/markdown"
+		m.Source = &s
+	}
+
+	return execute(templates.ScheduleSVG, m)
 }
 
 // execute renders a preview template; see templates.Execute.

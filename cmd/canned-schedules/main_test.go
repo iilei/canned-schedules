@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"os"
 	"path/filepath"
 	"strings"
@@ -231,4 +233,142 @@ func TestJSONIsNotHTMLEscaped(t *testing.T) {
 	if strings.Contains(stderr.String(), `\u003e`) {
 		t.Errorf("the JSON report must not HTML-escape:\n%s", stderr.String())
 	}
+}
+
+// TestCatalogOutputs runs the call the schedule:render task makes: the text form on stdout, and the JSON, the SVG with
+// its embedded source and the text form as files.
+func TestCatalogOutputs(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	jsonFile, svgFile, textFile := filepath.Join(
+		dir,
+		"s.json",
+	), filepath.Join(
+		dir,
+		"s.svg",
+	), filepath.Join(
+		dir,
+		"s.txt",
+	)
+
+	var stdout, stderr bytes.Buffer
+
+	code := run([]string{
+		"--output", "text", "--json-output-file", jsonFile, "--svg-output-file", svgFile, "--svg-embed-source",
+		"--text-output-file", textFile, basic,
+	}, &stdout, &stderr)
+	if code != exitOK {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+
+	var stdoutJSON bytes.Buffer
+	run([]string{basic}, &stdoutJSON, &stderr)
+
+	if b, _ := os.ReadFile(jsonFile); !bytes.Equal(b, stdoutJSON.Bytes()) {
+		t.Errorf("--json-output-file differs from the JSON on stdout:\n%s", b)
+	}
+
+	text, _ := os.ReadFile(textFile)
+	if !bytes.Equal(text, stdout.Bytes()) || !strings.Contains(string(text), "~~~text\n") ||
+		!strings.Contains(string(text), "> [!SCHEDULE-STATE]") {
+		t.Errorf("text form: file %q, stdout %q", text, stdout.String())
+	}
+
+	// The text form and the source embedded in the SVG are requests with the same schedule digest.
+	want := digest(t, stdoutJSON.Bytes())
+
+	if got := digest(t, evaluateFile(t, dir, "text.md", text)); got != want {
+		t.Errorf("text form digest %s, want %s", got, want)
+	}
+
+	src, attrDigest := embedded(t, svgFile)
+	if attrDigest != want {
+		t.Errorf("SVG digest attribute %s, want %s", attrDigest, want)
+	}
+
+	if got := digest(t, evaluateFile(t, dir, "embedded.md", []byte(src))); got != want {
+		t.Errorf("embedded source digest %s, want %s", got, want)
+	}
+
+	if code := run([]string{"--svg-embed-source", basic}, &stdout, &stderr); code != exitInvalid ||
+		!strings.Contains(stderr.String(), "--svg-embed-source needs --svg-output-file") {
+		t.Errorf("--svg-embed-source alone: exit %d, stderr %q", code, stderr.String())
+	}
+}
+
+func TestSVGWithoutEmbedHasNoMetadata(t *testing.T) {
+	t.Parallel()
+
+	target := filepath.Join(t.TempDir(), "s.svg")
+
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--svg-output-file", target, basic}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("exit code = %d", code)
+	}
+
+	if b, _ := os.ReadFile(target); bytes.Contains(b, []byte("<metadata>")) {
+		t.Error("the source is embedded only with --svg-embed-source")
+	}
+}
+
+func evaluateFile(t *testing.T, dir, name string, content []byte) []byte {
+	t.Helper()
+
+	path := filepath.Join(dir, name)
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{path}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("%s: exit %d, stderr %q\n%s", name, code, stderr.String(), content)
+	}
+
+	return stdout.Bytes()
+}
+
+func digest(t *testing.T, out []byte) string {
+	t.Helper()
+
+	var o struct {
+		Digests struct {
+			Schedule string `json:"schedule"`
+		} `json:"digests"`
+	}
+
+	if err := json.Unmarshal(out, &o); err != nil || o.Digests.Schedule == "" {
+		t.Fatalf("no digest in %s (%v)", out, err)
+	}
+
+	return o.Digests.Schedule
+}
+
+// embedded reads the source element from an SVG's metadata with a plain XML parser.
+func embedded(t *testing.T, path string) (string, string) {
+	t.Helper()
+
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var svg struct {
+		Metadata struct {
+			Source struct {
+				Digest string `xml:"digest,attr"`
+				Text   string `xml:",chardata"`
+			} `xml:"https://github.com/iilei/canned-schedules#svg-source source"`
+		} `xml:"metadata"`
+	}
+
+	if err := xml.Unmarshal(b, &svg); err != nil {
+		t.Fatal(err)
+	}
+
+	if svg.Metadata.Source.Text == "" {
+		t.Fatalf("no embedded source in %s", b)
+	}
+
+	return svg.Metadata.Source.Text, svg.Metadata.Source.Digest
 }

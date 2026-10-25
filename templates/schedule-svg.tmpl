@@ -9,8 +9,16 @@
   dark (--svg-theme) emit one fixed palette, which pages with their own theme toggle need. No CSS custom properties,
   because several SVG renderers (librsvg, image converters, PDF pipelines) don't support them. Every rule is scoped to
   .canned-schedule, because an SVG inlined into HTML shares the page's style sheet.
+
+  With --svg-embed-source, the metadata carries the canonical request as escaped text (not CDATA: the request could
+  contain "]]>"), with the schedule digest and the generator.
 */ -}}
 <svg xmlns="http://www.w3.org/2000/svg" class="canned-schedule" width="{{ .width }}" height="{{ .height }}" viewBox="0 0 {{ .width }} {{ .height }}" style="color-scheme: {{ .scheme }}" font-family="{{ html .font }}">
+  {{- with .source }}
+  <metadata>
+    <cs:source xmlns:cs="{{ html .namespace }}" media-type="{{ html .mediaType }}" digest="{{ html .digest }}" generator="{{ html .generator }}">{{ html .text }}</cs:source>
+  </metadata>
+  {{- end }}
   <style>
     {{- with .palette }}
     .canned-schedule .background { fill: {{ html .background }}; }

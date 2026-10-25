@@ -94,7 +94,12 @@ holds for a stretch of the week, such as a capacity level, a support team or a m
 Prebuilt binaries for Linux (x86_64, arm64, armv7), macOS (universal) and Windows (amd64, arm64) are attached to
 each [GitHub release](https://github.com/iilei/canned-schedules/releases). Every archive comes with a GPG signature
 (`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists them all and is signed as well. The release key's
-fingerprint is `B645 234C 9CB8 175E CA5D  78A5 C844 7A22 52E9 E7B6` (ed25519).
+fingerprint is `B645 234C 9CB8 175E CA5D  78A5 C844 7A22 52E9 E7B6` (ed25519); the public key is
+[`release-key.asc`](release-key.asc). In a checkout, `mise run release:verify <dir>` checks a downloaded release
+(`gh release download <tag> --dir <dir>`) against that key alone, plus the checksums and sidecars.
+
+With [mise](https://mise.jdx.dev), `mise use github:iilei/canned-schedules@<version>` installs a release binary and
+checks it against the SHA-256 digest GitHub records for the download (not the GPG signature).
 
 Or build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
 
@@ -135,17 +140,20 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 
 **Outputs**
 
-| Flag                              | Default | Meaning                                                                                |
-| --------------------------------- | ------- | -------------------------------------------------------------------------------------- |
-| `--output json\|ascii`            | `json`  | What stdout carries: the canonical JSON or the ASCII preview                           |
-| `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                            |
-| `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                             |
-| `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                          |
-| `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR` |
-| `--preview-downsample[=N]`        | `15`    | Preview buckets in minutes (must divide 60); `=N` needs the `=`                        |
-| `--no-preview-downsample`         |         | Preview at 1-minute resolution (1440 columns per day)                                  |
-| `--myst-output-file <path>`       |         | Write the schedule as MyST for Sphinx (only when the document has no errors)           |
-| `--sphinx-kit-output-file <path>` |         | Write the Sphinx kit zip (only when the document has no errors)                        |
+| Flag                              | Default | Meaning                                                                                                                          |
+| --------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `--output json\|ascii\|text`      | `json`  | What stdout carries: the canonical JSON, the ASCII preview or the text form (the canonical request with the ASCII preview)       |
+| `--json-output-file <path>`       |         | Write the canonical JSON (only when the document has no errors)                                                                  |
+| `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                      |
+| `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                       |
+| `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata, with the schedule digest; needs `--svg-output-file`                           |
+| `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                    |
+| `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors) |
+| `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                           |
+| `--preview-downsample[=N]`        | `15`    | Preview buckets in minutes (must divide 60); `=N` needs the `=`                                                                  |
+| `--no-preview-downsample`         |         | Preview at 1-minute resolution (1440 columns per day)                                                                            |
+| `--myst-output-file <path>`       |         | Write the schedule as MyST for Sphinx (only when the document has no errors)                                                     |
+| `--sphinx-kit-output-file <path>` |         | Write the Sphinx kit zip (only when the document has no errors)                                                                  |
 
 **Error report**
 
@@ -207,6 +215,80 @@ good preview with a broken one.
 The SVG comes from the built-in [`templates/schedule-svg.tmpl`](templates/schedule-svg.tmpl). The tool computes all
 coordinates, colours and labels, so the template is plain markup that also runs with gomplate.
 
+With `--svg-embed-source`, the SVG also carries the request in its `<metadata>`: the canonical form (see below) as a
+`cs:source` element with the schedule digest and the generating version as attributes. The picture can then
+regenerate everything, and the digest ties it to its JSON. It is opt-in, because `x-*` values such as owners or issue
+links then travel with every copy of the picture. Any XML tool reads it back, for example:
+
+```sh
+xmllint --xpath 'string(//*[local-name()="source"])' preview.svg > request.md
+```
+
+### Text form
+
+`--output text` (or `--text-output-file <path>`) gives the request's **canonical form** with the ASCII preview in a
+fenced block after the name:
+
+````markdown
+# Office Hours
+
+~~~text
+Office Hours - Weekdays with a late Friday
+
+    00:00                   06:00                   12:00                   18:00
+    + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | :
+MON ::::::::::::::::::::::::================================================================::::::::
+...
+~~~
+
+> [!SCHEDULE-META] Weekdays with a late Friday
+
+> [!SCHEDULE-BASE] Minimum
+
+> [!SCHEDULE-STATE] Medium
+> - `06:00` to `22:00` MON-FRI
+````
+
+The canonical form keeps only what the syntax defines: the name, META, BASE and the STATE blocks with their ranges, in
+source order. Prose, other alerts and links are dropped. Times are written `HH:MM`, weekday expressions without spaces
+(`SAT, SUN` becomes `SAT,SUN`) and state names as the configuration spells them; grouping and order stay as written.
+The text form is itself a valid request that evaluates to the same output and digest, because the parser reads a
+code block as prose.
+
+## Schedules in a repo
+
+Keep each approved schedule as a `*.canned-schedule.md` file, for example `schedules/on-call.canned-schedule.md`. The
+suffix lets tools find them without catching unrelated Markdown. [`examples/consumer`](examples/consumer) is a
+ready-to-copy setup, tested in this repo's CI:
+
+- **`mise run schedule:render [file...]`** renders every schedule (or the given ones) into three files next to it and
+  prints the text form, in colour on a terminal:
+  - `.canned-schedule.json`: the canonical output;
+  - `.canned-schedule.svg`: the preview, with the request embedded;
+  - `.canned-schedule.txt`: the text form.
+
+  It reports every broken file before failing. When a file fails, its outputs are deleted, and so are outputs whose
+  source is gone, so nothing stale looks current. Files git tracks are never deleted.
+- **The outputs are gitignored** by the example's `.gitignore`. To show a preview on GitHub, commit that SVG instead
+  and let CI render and run `git diff --exit-code`.
+- **`mise run schedule:check <file> [out-dir]`** checks one request, for example an issue body, and writes
+  `report.md`, `report.json`, `comment.md` (the comment to post) and, when valid, the JSON and the text form. The
+  example's issue workflow runs it and posts the comment; the task itself never talks to GitHub.
+- **`mise run schedule:pre-commit`** checks what is staged, not the working tree. Install it as a git hook with
+  `mise generate git-pre-commit --write --task schedule:pre-commit`.
+- **`canned-schedules.args`** holds flags for every call, one per line. The example makes alerts strict, so a typo
+  such as `[!SCHEDUEL-STATE]` fails instead of being read as prose.
+
+Without mise, the hooks also work with [pre-commit](https://pre-commit.com), which builds the binary from the tag:
+
+```yaml
+repos:
+  - repo: https://github.com/iilei/canned-schedules
+    rev: v0.0.1-pre.2
+    hooks:
+      - id: canned-schedules
+```
+
 ## Sphinx
 
 The preflight page's Sphinx view is not a mock-up: the same look is available for real Sphinx docs built with the
@@ -239,8 +321,8 @@ for an invalid request and exits with 1.
 In CI, run a step like this before `sphinx-build`:
 
 ```sh
-for src in schedules/*/source.md; do
-  name=$(basename "$(dirname "$src")")
+for src in schedules/*.canned-schedule.md; do
+  name=$(basename "$src" .canned-schedule.md)
   canned-schedules --myst-output-file "docs/schedules/$name.md" "$src" >/dev/null
 done
 ```

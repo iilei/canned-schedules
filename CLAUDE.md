@@ -290,7 +290,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Directives only count at the top level.** A directive nested in a list or another container, or a bold-wrapped
   marker (`> **[!SCHEDULE-STATE]**`), is an error (`misplaced-directive`). It is never silently ignored.
 
-## Schedule files and generated outputs (decided 2026-10-25, not built yet)
+## Schedule files and generated outputs (decided and implemented 2026-10-25)
 
 - **Suffix `*.canned-schedule.md`** for schedule requests tracked in a repo, e.g.
   `schedules/on-call.canned-schedule.md`. `.schedule.md` was rejected as too generic (cron jobs, GitHub Actions
@@ -322,32 +322,62 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   Markdown, not the JSON: the source regenerates everything, and the digest ties the picture to its JSON. Reading
   it back works with any XML tool; an `extract-source` helper only if asked. Markdown stays the only input format.
 - **New CLI outputs**, following the rules of the others (atomic, only without errors): `--json-output-file <path>`
-  (today JSON can only go to stdout, so one run couldn't print a preview and save the JSON), `--text-output-file
-  <path>` (the text form), and `--output text` for stdout. The terminal gets colours under `--color auto`; files
-  only with `--color always`.
-- **Mise tasks, also for consumers** (`examples/consumer/`, tested in this repo's CI against a `*.canned-schedule.md`
-  copy of the issue template, built from source):
-  - `schedule:render [files…]` (default: every `*.canned-schedule.md`): one CLI call per file writes the three
-    outputs and prints the text form. Keeps going after errors and fails at the end. Deletes the outputs of a source
-    that failed, and outputs whose source is gone, because gitignored stale outputs would look current. (A plain CLI
-    run still leaves earlier outputs alone.)
-  - `schedule:check <file>`: the report as Markdown and JSON, for issue workflows.
-  - `schedule:pre-commit`: checks the **staged** content of staged `*.canned-schedule.md` files (`git diff --cached
-    --name-only --diff-filter=ACMR`, then `git show ":$f"` into a temporary file, because the CLI needs a regular
-    file), maps report paths back, keeps exit codes 1 and 2 apart. Installed with `mise generate git-pre-commit
-    --task schedule:pre-commit`; additionally a `.pre-commit-hooks.yaml` in this repo (`language: golang`) for teams
-    without mise.
-  - The consumer's `mise.toml` installs the binary from the releases (`"github:iilei/canned-schedules"`); check
-    whether that backend verifies `checksums.txt` / `.sha256`, otherwise a task verifies them.
+  (before, JSON could only go to stdout, so one run couldn't print a preview and save the JSON), `--text-output-file
+  <path>` (the text form) and `--output text` for stdout. The terminal gets colours under `--color auto`; files only
+  with `--color always`. `--svg-embed-source` without `--svg-output-file` is `invalid-flag`. The text form and the
+  SVG embed count as previews (`preview-approximate` applies).
+- **Implementation:** `internal/canonical` (`Render`, `Text`; code spans get a longer backtick fence and space
+  padding when a value needs it, the preview fence grows past any tilde run in the preview), `cli.Canonical`,
+  `cli.Text`, `cli.SVG(opts, out, src, generator)`, `render.Source` in the SVG model (key `source`, always emitted,
+  `null` without the embed; namespace `render.SourceNamespace`). Tests: `TestCanonicalRoundTrip` (every valid and
+  warn fixture, canonical and text form, same output with warnings reduced to codes, canonical form a fixed point),
+  `internal/canonical` unit tests (exact spelling, code spans parsed back by goldmark, fences), and
+  `TestCatalogOutputs` (the render task's call; the text form and the source read back from the SVG with
+  `encoding/xml` give the same digest). The SVG template with a source is byte-identical under gomplate 5.2.0, and
+  librsvg renders it. `xmllint --xpath 'string(//*[local-name()="source"])'` reads the source back.
+- **Consumer example** (`examples/consumer/`): `mise.toml` (the pinned release via the `github:` backend and three
+  tasks), `scripts/canned-schedule` (the tasks in POSIX `sh`, also runnable without mise), `canned-schedules.args`
+  (flags for every call, one per line; the example sets `--error-unless-alert-pattern` to the five GFM alert types),
+  `.gitignore`, the issue template, `schedules/office-hours.canned-schedule.md` (the GitLab template, so it can't
+  drift) and `.github/workflows/schedule-request.yml`. `CANNED_SCHEDULES` overrides the binary,
+  `CANNED_SCHEDULES_ARGS` the args file.
+  - `schedule:render [file…]` (default: `git ls-files --cached --others --exclude-standard`, else `find`): one CLI
+    call per file writes the three outputs and prints the text form (colour reaches a terminal through `mise run`).
+    Keeps going after errors and fails at the end. Deletes the outputs of a source that failed, and (full runs
+    only) outputs whose source is gone, but **never a file git tracks**. A plain CLI run still leaves earlier
+    outputs alone.
+  - `schedule:check <file> [out-dir]`: `report.md` (markdown-gfm), `report.json`, `comment.md` (marker
+    `<!-- canned-schedules -->`, the report, and for a valid request the text form in an 8-tilde fence) and, when
+    valid, `schedule.json` and `schedule.txt`. Issue bodies arrive with CRLF line endings; that works.
+  - `schedule:pre-commit`: checks the **staged** content (`git diff --cached --name-only --diff-filter=ACMR`, then
+    `git show ":$f"` into a temporary directory at the same relative path, so reports name the repo path), and exits
+    with the worst code (1 document errors, 2 usage). Installed with `mise generate git-pre-commit --write --task
+    schedule:pre-commit`.
+  - Task arguments use mise's `usage` spec. With `usage`, mise passes arguments only as `$usage_<name>`; a variadic
+    one is a shell-quoted string, unpacked with `eval "set -- ${usage_file:-}"` (checked with quotes, spaces and
+    `$(…)` in names).
+  - The issue workflow writes the body to a file from an env var, runs `schedule:check`, finds its earlier comment
+    by the marker (posted by `github-actions[bot]`) and updates it, otherwise comments; it runs only for issues with
+    the template's `Schedule` label.
+  - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
+    then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
+    `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
+  - The example pins `0.0.1-pre.2`, the first release with the new flags; tag that version after this merges.
+  - `.pre-commit-hooks.yaml` in this repo (`language: golang`, `entry: sh -c` looping over the files, since the CLI
+    takes one file per call) for teams without mise; checked with `pre-commit try-repo`.
+- **Tasks in this repo:** `golden:check`, `release:smoke <archive> [--dir]` (`shell = "bash -c"` for the Windows
+  runners), `release:verify <dir>` (a throwaway `GNUPGHOME` with only `release-key.asc`, so no other key of the
+  user's can satisfy a signature; `VALIDSIG` must name the release fingerprint), and `example:test`
+  (`examples/test-consumer.sh`: the example's tasks in a throwaway git repo with the binary built from the checkout,
+  `MISE_DISABLE_TOOLS` skipping the pinned release). The release key was published nowhere fetchable
+  (`github.com/iilei.gpg` lists only the commit key), so its public half is committed as `release-key.asc`.
 - **CI calls mise tasks only:** a workflow prepares the environment and runs tasks, so every failure reproduces
-  locally with the same command. Still inline today, to move: the golden check in `check.yml` (`golden:check`), the
-  release smoke test (`release:smoke <archive>`), signature and checksum verification (`release:verify <dir>`, also
-  for users). Publishing steps (`goreleaser release`, `gh release edit`, posting issue comments) stay in workflows:
-  **tasks never talk to GitHub**, so a local run can't post anything. Issue bodies reach tasks only as files
-  (written from an env var, never interpolated with `${{ }}`); task arguments are declared with mise's `usage` spec;
-  task scripts are POSIX `sh`.
-- **Order:** `--json-output-file`, `--text-output-file`/`--output text` and the canonical writer (with tests), then
-  `--svg-embed-source`, then the tasks and `examples/consumer/` with the issue workflow.
+  locally with the same command. `check.yml` runs `golden:check`, `check`, `coverage`, `test:wasm`, `web:build` and
+  `example:test`; the release smoke job runs `release:smoke` with `install: false` and
+  `MISE_TASK_RUN_AUTO_INSTALL=false`, so five runners don't install Go and Node. Publishing steps (`goreleaser
+  release`, `gh release edit`, posting issue comments) stay in workflows: **tasks never talk to GitHub**, so a local
+  run can't post anything. Issue bodies reach tasks only as files (written from an env var, never interpolated with
+  `${{ }}`); task scripts are POSIX `sh`.
 
 ## Error reporting (decided and implemented 2026-10-24)
 
@@ -613,7 +643,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - With `SUN`, the weekend lands in the first and last rows, so `MON` stays the default.
   - About 1–2 h of work, including new `want.preview` fixtures via `gen.py`.
 - **MyST generated during the Sphinx build** (asked 2026-10-25, deferred). The kit's extension would run the CLI
-  when the build starts (`builder-inited`), for `canned_schedules_sources = "schedules/*/source.md"` in `conf.py`,
+  when the build starts (`builder-inited`), for `canned_schedules_sources = "schedules/*.canned-schedule.md"` in `conf.py`,
   and write the MyST pages before Sphinx reads them. The Go tool still parses and validates, and an invalid request
   fails the build, so nothing drifts. That is the difference from the rejected Python transform that would have
   rendered GFM inside Sphinx without validating it.
@@ -682,6 +712,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - `internal/htmlpreview`, `internal/web`, `cmd/canned-schedules-wasm`, `web/`: the browser preflight page (see
     "Preflight page").
   - `internal/myst`, `internal/sphinxkit`, `assets/`: MyST output and the Sphinx kit (see "Sphinx kit").
+  - `internal/canonical`: the canonical form and the text form (see "Schedule files and generated outputs").
+  - `examples/consumer/`, `examples/test-consumer.sh`: the setup for repos that use the tool (same section).
   - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`, `schedule-ascii.tmpl`,
     `sphinx-schedule.css.tmpl`), embedded.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and
