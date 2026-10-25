@@ -278,11 +278,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **No id or hash per transition (decided 2026-10-25).** A short `sha` over `{"time","days","state"}` shipped in
   `0.0.1-pre.5` and was removed right after: identity is the consumer's concern (an environment, a prefix, whether
   changed days should replace or update an action), and a field whose meaning could change silently is the riskiest
-  kind of contract. (time, state) is already unique within a schedule, but not across schedules (two schedules
-  with the same state at the same time collide when they share a group or a `for_each` map; the README says to add
-  the schedule's name then); the README's AWS recipes key on
-  `<HHMM>-<state>` and show how to hash in Terraform if wanted (`jsonencode` sorts keys, so such hashes only match
-  hashes computed the same way).
+  kind of contract. The README's AWS recipes key on `<HHMM>-<days>-<state>` (`2200-FRI_SAT-Minimum`): every fact,
+  readable, unique within one schedule; changed days give a new name, so the action is replaced (leave the days out
+  to update in place). Not unique across schedules: when several share a group or a `for_each` map, the schedule's
+  name goes into the key. No hash variant: a readable key carries the same information.
 - Grouped by (time of day, state); ordered by first minute in the week, then state. Cron day lists are Sunday-first and
   never wrap around the week. All seven days become `*`. No time zone in cron strings.
 - Implemented in `internal/schedule/transitions.go`, with an independent reference in `testdata/golden/gen.py`.

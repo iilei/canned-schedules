@@ -555,14 +555,14 @@ keep next to your infrastructure, keyed by state id:
 }
 ```
 
-With Terraform, `for_each` over the transitions. Transitions are grouped by time and state, so that pair is a unique,
-stable key, and Terraform removes the actions of transitions that disappear:
+With Terraform, `for_each` over the transitions, keyed by time, days and state (`0600-MON_TUE_WED_THU_FRI-Medium`), so
+the key says what the action does, and Terraform removes the actions of transitions that disappear:
 
 ```hcl
 locals {
   schedule = jsondecode(file("${path.module}/office-hours.canned-schedule.json"))
   capacity = jsondecode(file("${path.module}/capacity.json"))
-  transitions = { for t in local.schedule.transitions : "${replace(t.time, ":", "")}-${t.state}" => t }
+  transitions = { for t in local.schedule.transitions : "${replace(t.time, ":", "")}-${join("_", t.days)}-${t.state}" => t }
 }
 
 resource "aws_autoscaling_schedule" "office_hours" {
@@ -590,7 +590,8 @@ schedule=office-hours.canned-schedule.json
 actions=$(jq -r --slurpfile cap capacity.json --arg prefix "$prefix" '
   .transitions[]
   | ($cap[0][.state] // error("capacity.json has no entry for state \(.state)")) as $c
-  | [$prefix + "-" + (.time | sub(":"; "")) + "-" + .state, .cron.posix, $c.min, $c.desired, $c.max]
+  | [$prefix + "-" + (.time | sub(":"; "")) + "-" + (.days | join("_")) + "-" + .state, .cron.posix, $c.min,
+     $c.desired, $c.max]
   | @tsv' "$schedule")
 
 # Remove this schedule's earlier actions, so a transition that was dropped from the request stops firing.
@@ -620,24 +621,14 @@ done <<< "$actions"
 - **Limits:** Auto Scaling allows 125 scheduled actions per group, which is far more than a weekly schedule needs.
 - **Names are yours to define.** The output has no id field on purpose: what makes two actions "the same" depends on
   your setup, and a field whose meaning could change would be the riskiest part of the contract. The key above,
-  `<HHMM>-<state>`, is unique **within one schedule** (transitions are grouped by time and state, so two STATE blocks
-  with the same state and time become one transition), readable in the console, and stable: a changed time or state
-  gives a new action, changed days update the existing one. Across schedules it is not unique: two schedules with a
-  `Minimum` at `22:00` both give `2200-Minimum`. Action names only need to be unique per group, so one schedule per
+  `<HHMM>-<days>-<state>`, carries every fact of the transition, so it is unique within one schedule and readable in
+  the console. Changing a transition's time, days or state gives it a new name, so the action is replaced. To update
+  actions in place when only their days change, leave the days out (`<HHMM>-<state>` is still unique within one
+  schedule, since transitions are grouped by time and state).
+- **Several schedules in one group:** keys are unique within one schedule only. Two schedules with a `Minimum` on
+  Friday at `22:00` both give `2200-FRI-Minimum`. Action names only need to be unique per group, so one schedule per
   group is fine; when several schedules share a group or one `for_each` map (where `merge()` would silently keep only
-  one of them), put the schedule's name into the key, e.g. `maintenance-2200-Minimum`. To replace an action whenever
-  any of its facts change, hash them yourself:
-
-  ```hcl
-  transitions = {
-    for t in local.schedule.transitions :
-    substr(sha256(jsonencode({ time = t.time, days = t.days, state = t.state })), 0, 8) => t
-  }
-  ```
-
-  `jsonencode` sorts object keys, so this hash only matches hashes computed the same way: let one tool assign the
-  names. In a shell script, jq can't hash; pipe each entry through `sha256sum` instead. The same applies across
-  schedules: add the schedule's name (or an environment) to the hash input or the key.
+  one of them), put the schedule's name into the key, e.g. `maintenance-2200-FRI-Minimum`.
 
 #### ECS services and other Application Auto Scaling targets
 
