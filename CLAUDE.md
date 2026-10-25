@@ -56,22 +56,22 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
 
 ## Input syntax
 
-No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespace.
+No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDULE` namespace, a hyphen and a kind.
 
 ```markdown
 # Schedule-Name
 
-> [!SCHEDULE:META]
+> [!SCHEDULE-META]
 > - schema-version: `1`
 > - x-owner: `team-xyz`
 
-> [!SCHEDULE:BASE] Minimum
+> [!SCHEDULE-BASE] Minimum
 
-> [!SCHEDULE:STATE] Regular
+> [!SCHEDULE-STATE] Regular
 > - `06:00` to `22:00` MON-FRI
 > - `10:00` to `00:00` SAT,SUN
 
-> [!SCHEDULE:STATE] Maximum
+> [!SCHEDULE-STATE] Maximum
 > - `22:00` to `02:00` FRI
 ```
 
@@ -81,13 +81,24 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   2026-10-25: keep the spec tight; the aliases `CANNED-SCHEDULE`, `TO-SCHEDULE`, `CAN-SCHED` and `CONFIG-SCHED` were
   dropped). `document.Namespaces` stays a list, so an alias can come back. It is read case-insensitively. Adding an
   alias takes a merge request and a new release; aliases would be normalised to `SCHEDULE`.
-  - An alert type containing `:` whose namespace is not on the list is a **hard error** (`unknown-namespace`), with a
-    "did you mean" hint for near-misses such as `SCHEDUEL`. There is no warn-and-ignore mode, which removes the earlier
-    conflict between "unknown namespace is an error" and "ignored with a warning in custom-namespace mode".
-  - Alerts without `:` (NOTE, TIP, …) are prose for humans and are ignored.
-  - An unknown kind in a known namespace (`SCHEDULE:TEIR`) is a hard error (`unknown-kind`).
-- **Title on the marker line** carries the name (`STATE`, `BASE`). That isn't GFM alert syntax, but it's harmless: GitHub
-  and GitLab show custom alerts as literal text anyway, and our goldmark extension defines the grammar.
+  - **Hyphen, not colon (decided 2026-10-25):** `[!SCHEDULE-STATE]`. Callout tools that accept custom types (Obsidian
+    convention: rehype-callouts `[\w-]+`, mkdocs-callouts, Obsidian) reject `:`, so the hyphen lets documents render
+    as callouts elsewhere. `document.SplitMarker` is the one place that recognises directives (the parser and the
+    page's preview use it). The old colon form (`[!SCHEDULE:STATE]`) is an `invalid-marker` error pointing to the
+    hyphen.
+  - **Other alerts are prose by default** (NOTE, TIP, custom callouts such as `[!custom-question]`), including
+    near-misses of the namespace (`[!SCHEDUEL-STATE]`): no fuzzy matching in the parser.
+  - **`--error-unless-alert-pattern <regex>` (decided 2026-10-25)** makes this strict: every alert that isn't a
+    schedule directive must match, otherwise `disallowed-alert` at the marker. Go RE2 syntax, `(?i)` for case, and the
+    tool anchors it (`^(?:…)$`), because an unanchored `^A|B$` silently splits the anchors. Schedule directives are
+    always allowed, so forgetting `SCHEDULE-` in the pattern can't reject every directive. An invalid pattern is
+    `invalid-flag`. CI and issue bots should set it (e.g. `'(?i)NOTE|TIP|IMPORTANT|WARNING|CAUTION'`) to catch
+    namespace typos. A customisable prefix (env var or flag) was considered and rejected: hidden state, and the page
+    and templates couldn't follow it.
+  - An unknown kind in a known namespace (`SCHEDULE-TEIR`) is a hard error (`unknown-kind`).
+- **Title on the marker line** carries the name (`STATE`, `BASE`). GitHub and GitLab show custom alerts as literal
+  text; the Obsidian callout convention (custom type plus title) matches this shape, and our goldmark extension
+  defines the grammar.
 - **META** is a list of `key: `value`` items, in one form only. A list renders the same everywhere, while `>` lines
   without a list form one paragraph, and whether they break depends on the renderer.
   - Allowed keys: `schema-version` and `x-*` (free-form). Nothing else for now. Shortened from `x-custom-*` on
@@ -96,7 +107,7 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
     `x-custom-*` keys still validate as `x-` keys named `custom-*`.
   - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
     block is absent or just lacks the key, the version built into the binary (currently `"1"`) applies.
-  - **Text after the META marker is the schedule's hint** (`[!SCHEDULE:META] Office hours only`). It is trimmed, then
+  - **Text after the META marker is the schedule's hint** (`[!SCHEDULE-META] Office hours only`). It is trimmed, then
     validated with the same rule as the name (see below), and output as `hint`. A META block with a hint and no items is
     allowed.
   - `x-*` keys are allowed **only in META**. Their values are uninterpreted strings, passed through to the output
@@ -146,7 +157,7 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   with later ranges winning where they overlap. Every minute gets exactly one state. The transitions for ASG scheduled
   actions are derived from the painted week as an output, not written by the user.
 - **BASE via CLI flags:**
-  - `--require-base true`: the document must contain `[!SCHEDULE:BASE]`. `--base` must not be given (error).
+  - `--require-base true`: the document must contain `[!SCHEDULE-BASE]`. `--base` must not be given (error).
   - `--require-base false` (**the default**): the base comes from the first of these that exists: the document's
     BASE, then `--base <state>` (must name a valid state), then the first state (index 0) in the config.
 - **Preview downsampling (visual only, decided 2026-10-24; supersedes the earlier GCD-based grid):** previews (SVG
@@ -165,7 +176,7 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
 
 - **STATE, not TIER (decided 2026-10-25):** the model maps every minute to one value from an ordered list, which fits
   more than capacity tiers (on-call teams, support hours, maintenance modes). "Tier" implied ranking and clashed with
-  escalation tiers in on-call. Renamed everywhere: the kind (`[!SCHEDULE:STATE]`), `state` in `week` and
+  escalation tiers in on-call. Renamed everywhere: the kind (`[!SCHEDULE-STATE]`), `state` in `week` and
   `transitions`, the config's `states` and `representation.styles.states`, error codes (`empty-state`,
   `unknown-state`, …), CSS classes (`schedule-state`, `state-N`, `--state`). No `TIER` alias. Config order stays a
   technical detail (default base, preview tie-breaking), not "more" or "less". The defaults remain the capacity
@@ -262,11 +273,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Name and hint share one text rule** (`invalid-name`, `invalid-hint`): trimmed, 1–80 chars, ASCII; starts with a
   letter; may contain letters, digits, spaces and `-`; ends with a letter or digit. Regex:
   `^[A-Za-z](?:[A-Za-z0-9 -]{0,78}[A-Za-z0-9])?$`.
-- **A marker with a namespace but no kind** (`[!SCHEDULE]`, `[!SCHEDULE:]`) is an error (`missing-kind`).
+- **A marker with a namespace but no kind** (`[!SCHEDULE]`, `[!SCHEDULE-]`) is an error (`missing-kind`).
 - **At most one META block and one BASE block** (`duplicate-block`, reported at the second one).
 - **A STATE block must contain at least one range** (`empty-state`).
 - **Directives only count at the top level.** A directive nested in a list or another container, or a bold-wrapped
-  marker (`> **[!SCHEDULE:STATE]**`), is an error (`misplaced-directive`). It is never silently ignored.
+  marker (`> **[!SCHEDULE-STATE]**`), is an error (`misplaced-directive`). It is never silently ignored.
 
 ## Error reporting (decided and implemented 2026-10-24)
 

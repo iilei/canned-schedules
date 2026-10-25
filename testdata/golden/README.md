@@ -42,7 +42,7 @@ A diagnostic points at the first character of the offending token:
 
 - a value in a code span: the first character *inside* the backticks (`24:00` → the `2`);
 - a weekday expression: the first character of the bad token;
-- an alert marker: the first character after `[!` (`SCHEDULE:TEIR` → the `S`);
+- an alert marker: the first character after `[!` (`SCHEDULE-TEIR` → the `S`);
 - a malformed range item: the first character of the list item's content (after `- `).
 
 ## Canonical output (draft v1)
@@ -109,7 +109,7 @@ styles. The namespace is fixed in code: `SCHEDULE` only.
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
 - Diagnostic codes are a draft vocabulary: `invalid-time`, `invalid-weekday`, `invalid-range`, `unknown-kind`,
   `unknown-state`, `missing-title`, `missing-base`, `meta-schema`, `sample-interval`, `invalid-flag`, `invalid-override`,
-  `config-schema`, `config-duplicate-state`, `config-duplicate-symbol` (a warning), `unknown-namespace`,
+  `config-schema`, `config-duplicate-state`, `config-duplicate-symbol` (a warning), `invalid-marker`, `disallowed-alert`,
   `style-reuse`, `preview-approximate`, `duplicate-weekday`, `repeated-weekday` (a warning), `missing-kind`, `duplicate-block`,
   `empty-state`, `misplaced-directive`, `unexpected-content`, `missing-name`, `duplicate-name`, `invalid-name`, `invalid-hint`.
 

@@ -43,12 +43,13 @@ const theme = EditorView.theme({
   },
 });
 
-// Schedule markers ([!SCHEDULE:STATE], [!NOTE]) are plain text to Markdown; give them their own colour.
+// Schedule markers ([!SCHEDULE-STATE], [!NOTE]) are plain text to Markdown; give them their own colour.
 const markers = new MatchDecorator({
   regexp: /^(?:\s*>\s*)\[![A-Za-z][A-Za-z0-9:-]*\]/g,
   decorate: (add, from, to, match) => {
     const start = from + match[0].indexOf("[!");
-    add(start, to, Decoration.mark({ class: match[0].includes(":") ? "cm-schedule-marker" : "cm-alert-marker" }));
+    const schedule = /\[!schedule(?:-|\])/i.test(match[0]);
+    add(start, to, Decoration.mark({ class: schedule ? "cm-schedule-marker" : "cm-alert-marker" }));
   },
 });
 const markerPlugin = ViewPlugin.define((view) => ({

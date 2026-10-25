@@ -23,7 +23,7 @@ var ErrInvalid = errors.New("the request has errors")
 // Render parses src and renders its schedule. It needs MyST's colon_fence extension. Items are written
 // as in the request: weekdays get no {abbr} roles, which would only add noise to a file people read.
 func Render(src []byte, cfg *config.Config) (string, error) {
-	doc, diags := document.Parse(src)
+	doc, diags := document.Parse(src, document.Options{})
 	if diags.HasErrors() {
 		return "", ErrInvalid
 	}

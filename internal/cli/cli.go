@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"regexp"
+	"regexp/syntax"
 	"strconv"
 
 	"github.com/iilei/canned-schedules/internal/config"
@@ -71,6 +73,18 @@ func Parse(args []string) (Options, diag.List) {
 	fs.Func("require-base", "true|false (default false): the document must contain a BASE block", func(s string) error {
 		v, err := parseBool(s)
 		opts.Schedule.RequireBase = v
+
+		return err
+	})
+	fs.Func("error-unless-alert-pattern", "regular expression (Go syntax, matched as a whole) that every alert other "+
+		"than a schedule directive must match; omitted, any alert is allowed", func(s string) error {
+		re, err := regexp.Compile(`^(?:` + s + `)$`)
+		opts.Schedule.AlertPattern = re
+
+		// The syntax error alone: the full error quotes the anchored expression in backticks.
+		if se := (*syntax.Error)(nil); errors.As(err, &se) {
+			return errors.New(string(se.Code))
+		}
 
 		return err
 	})

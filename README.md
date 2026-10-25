@@ -15,16 +15,16 @@ the moments the state changes, with ready-made cron expressions.
 ```markdown
 # Office Hours
 
-> [!SCHEDULE:META] Weekdays with a late Friday
+> [!SCHEDULE-META] Weekdays with a late Friday
 > - x-owner: `team-xyz`
 
-> [!SCHEDULE:BASE] Minimum
+> [!SCHEDULE-BASE] Minimum
 
-> [!SCHEDULE:STATE] Medium
+> [!SCHEDULE-STATE] Medium
 > - `06:00` to `22:00` MON-FRI
 > - `10:00` to `18:00` SAT
 
-> [!SCHEDULE:STATE] Maximum
+> [!SCHEDULE-STATE] Maximum
 > - `16:00` to `00:00` FRI
 ```
 
@@ -51,16 +51,20 @@ mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:808
 
 ## Syntax
 
-A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE:…]` marker.
+A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE-…]` marker.
 Everything else is free text for humans, including standard alerts such as `[!NOTE]`.
 
 | Block                     | Required      | Content                                                                                     |
 | ------------------------- | ------------- | ------------------------------------------------------------------------------------------- |
-| `[!SCHEDULE:META] hint`   | no            | Optional hint after the marker; list items `` x-<name>: `value` `` for your own bookkeeping |
-| `[!SCHEDULE:BASE] state`  | no            | The state wherever no range applies                                                         |
-| `[!SCHEDULE:STATE] state` | one per state | A list of ranges                                                                            |
+| `[!SCHEDULE-META] hint`   | no            | Optional hint after the marker; list items `` x-<name>: `value` `` for your own bookkeeping |
+| `[!SCHEDULE-BASE] state`  | no            | The state wherever no range applies                                                         |
+| `[!SCHEDULE-STATE] state` | one per state | A list of ranges                                                                            |
 
-`SCHEDULE` is the only namespace. Markers and state names are case-insensitive.
+`SCHEDULE` is the only namespace, joined to the kind with a hyphen. Markers and state names are case-insensitive. Any
+other alert, including a misspelt `[!SCHEDUEL-STATE]`, is free text unless `--error-unless-alert-pattern` restricts
+which alerts may appear: with `--error-unless-alert-pattern '(?i)NOTE|TIP|IMPORTANT|WARNING|CAUTION'`, any other alert
+is an error. The pattern is Go regular expression syntax, matched against the whole alert type; schedule directives
+are always allowed.
 
 **Ranges** are written `` `start` to `end` WEEKDAYS ``:
 
@@ -99,27 +103,28 @@ the file, unreadable input, report not writable):
 request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
 ```
 
-| Flag                          | Default     | Meaning                                                                         |
-| ----------------------------- | ----------- | ------------------------------------------------------------------------------- |
-| `--sample-interval <minutes>` | `1`         | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)           |
-| `--require-base true\|false`  | `false`     | `true`: the document must contain a BASE block; can't be combined with `--base` |
-| `--base <state>`              | first state | Base state when the document has no BASE block                                  |
-| `--set-config-at <path>`      |             | Config path to replace, e.g. `representation.styles.states[0]` (repeatable)     |
-| `--set-config-value <json>`   |             | JSON value for the matching `--set-config-at` (repeatable)                      |
-| `--output json\|ascii`        | `json`      | What stdout carries: the canonical JSON or the ASCII preview                    |
-| `--svg-output-file <path>`    |             | Write an SVG preview (only when the document has no errors)                     |
-| `--svg-theme <theme>`         | `auto`      | SVG colours: `auto` (follow the viewer), `light` or `dark`                      |
-| `--ascii-output-file <path>`  |             | Write an ASCII preview (only when the document has no errors)                   |
-| `--myst-output-file <path>`   |             | Write the schedule as MyST for Sphinx (only when the document has no errors)    |
-| `--sphinx-kit-output-file`    |             | Write the Sphinx kit zip (only when the document has no errors)                 |
-| `--preview-downsample[=N]`    | 15          | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
-| `--no-preview-downsample`     |             | Preview at 1-minute resolution (1440 columns per day)                           |
-| `--ascii-symbols <preset>`    | `ascii`     | Symbols in the ASCII preview: `ascii`, `braille` or `styles`                    |
-| `--color auto\|always\|never` | `auto`      | Colours in the ASCII preview; auto = terminal only, and not with `NO_COLOR`     |
-| `--error-output-file <path>`  | stderr      | Write the error report to this file (always, even when empty)                   |
-| `--error-output-format`       | `txt`       | Error report format: `txt` or `json`                                            |
-| `--error-report-template`     |             | Render the error report with the built-in `markdown-gfm` template instead       |
-| `--version`                   |             | Print the version                                                               |
+| Flag                                   | Default     | Meaning                                                                         |
+| -------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `--sample-interval <minutes>`          | `1`         | Every time must be a multiple of it; must divide 60 (e.g. `15`, `60`)           |
+| `--require-base true\|false`           | `false`     | `true`: the document must contain a BASE block; can't be combined with `--base` |
+| `--base <state>`                       | first state | Base state when the document has no BASE block                                  |
+| `--set-config-at <path>`               |             | Config path to replace, e.g. `representation.styles.states[0]` (repeatable)     |
+| `--set-config-value <json>`            |             | JSON value for the matching `--set-config-at` (repeatable)                      |
+| `--output json\|ascii`                 | `json`      | What stdout carries: the canonical JSON or the ASCII preview                    |
+| `--svg-output-file <path>`             |             | Write an SVG preview (only when the document has no errors)                     |
+| `--svg-theme <theme>`                  | `auto`      | SVG colours: `auto` (follow the viewer), `light` or `dark`                      |
+| `--ascii-output-file <path>`           |             | Write an ASCII preview (only when the document has no errors)                   |
+| `--myst-output-file <path>`            |             | Write the schedule as MyST for Sphinx (only when the document has no errors)    |
+| `--sphinx-kit-output-file`             |             | Write the Sphinx kit zip (only when the document has no errors)                 |
+| `--preview-downsample[=N]`             | 15          | Preview buckets in minutes (must divide 60); `=N` needs the `=`                 |
+| `--no-preview-downsample`              |             | Preview at 1-minute resolution (1440 columns per day)                           |
+| `--ascii-symbols <preset>`             | `ascii`     | Symbols in the ASCII preview: `ascii`, `braille` or `styles`                    |
+| `--color auto\|always\|never`          | `auto`      | Colours in the ASCII preview; auto = terminal only, and not with `NO_COLOR`     |
+| `--error-output-file <path>`           | stderr      | Write the error report to this file (always, even when empty)                   |
+| `--error-output-format`                | `txt`       | Error report format: `txt` or `json`                                            |
+| `--error-report-template`              |             | Render the error report with the built-in `markdown-gfm` template instead       |
+| `--error-unless-alert-pattern <regex>` |             | Every alert other than a schedule directive must match (whole type, Go syntax)  |
+| `--version`                            |             | Print the version                                                               |
 
 ## Previews
 
@@ -210,6 +215,38 @@ done
   about a schedule on a hand-written page that links to it.
 
 ## Error reports
+
+## Rendering elsewhere
+
+GitHub and GitLab show schedule directives as plain quotes with the marker as text. Tools that follow the Obsidian
+callout convention (a custom type plus a title on the marker line) render them as callouts. We recommend
+[rehype-callouts](https://github.com/lin-stephanie/rehype-callouts) for remark/rehype sites such as Astro. It only
+renders types it knows, so register the three kinds:
+
+```js
+import rehypeCallouts from "rehype-callouts";
+
+rehype().use(rehypeCallouts, {
+  callouts: {
+    "schedule-meta": { title: "Schedule" },
+    "schedule-base": { title: "Base state" },
+    "schedule-state": { title: "State" },
+  },
+});
+```
+
+The text after the marker becomes the callout's title (the state id or the hint), and each block gets
+`data-callout="schedule-state"` (lowercase) for styling with one of its themes:
+
+```css
+[data-callout="schedule-state"] {
+  --rc-color-light: #2f855a;
+  --rc-color-dark: #68d391;
+}
+```
+
+Colours per state, display names and weekday-aware layout need the tool itself: use the [Sphinx kit](#sphinx) or the
+SVG preview for those.
 
 `canned-schedules` never posts anything to GitHub or GitLab. It writes an error report that your CI job or bot can
 use, in one of three shapes:
@@ -318,12 +355,12 @@ Replace the whole `states` list to schedule something other than capacity. For e
 ```markdown
 # On-Call
 
-> [!SCHEDULE:BASE] Nobody
+> [!SCHEDULE-BASE] Nobody
 
-> [!SCHEDULE:STATE] Team-EU
+> [!SCHEDULE-STATE] Team-EU
 > - `06:00` to `14:00` MON-FRI
 
-> [!SCHEDULE:STATE] Team-US
+> [!SCHEDULE-STATE] Team-US
 > - `14:00` to `22:00` MON-FRI
 ```
 

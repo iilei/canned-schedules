@@ -2,4 +2,4 @@
 
 The bare minimum: a name and a base state. Without ranges, the base applies all week.
 
-> [!SCHEDULE:BASE] Medium
+> [!SCHEDULE-BASE] Medium
