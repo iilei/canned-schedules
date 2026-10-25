@@ -42,8 +42,10 @@ The full syntax reference is at the end of this request.
 >
 > - `[!SCHEDULE-META]` (optional): text after the marker is a short summary. List items are free-form entries for
 >   your own bookkeeping, written like `` x-owner: `team-xyz` ``.
-> - `[!SCHEDULE-BASE] <state>` (optional): the state wherever no range applies.
-> - `[!SCHEDULE-STATE] <state>`: one block per state, each with a list of ranges.
+> - `[!SCHEDULE-BASE] <state>` (optional): the state wherever no range applies. Without it, the first state listed
+>   below applies.
+> - `[!SCHEDULE-STATE] <state>` (any number): a list of ranges in that state. A state may appear in several blocks;
+>   later ranges win where they overlap.
 >
 > **States:** `Off`, `Minimum`, `Medium`, `Maximum`.
 >

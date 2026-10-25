@@ -1,0 +1,159 @@
+{
+  "schema-version": "1",
+  "name": "Schedule-Name",
+  "base": "Minimum",
+  "annotations": {},
+  "digests": {
+    "schedule": "sha256:0f6bcc4e8554d59592d74d228de3df7dc869da29c3946fb917517d4be3d9cea5"
+  },
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "06:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "06:00",
+        "end": "08:00",
+        "state": "Medium"
+      },
+      {
+        "start": "08:00",
+        "end": "09:00",
+        "state": "Maximum"
+      },
+      {
+        "start": "09:00",
+        "end": "10:00",
+        "state": "Medium"
+      },
+      {
+        "start": "10:00",
+        "end": "18:00",
+        "state": "Minimum"
+      },
+      {
+        "start": "18:00",
+        "end": "20:00",
+        "state": "Medium"
+      },
+      {
+        "start": "20:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Minimum"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "06:00",
+      "days": [
+        "MON"
+      ],
+      "state": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1",
+        "aws": "0 6 ? * MON *"
+      }
+    },
+    {
+      "time": "08:00",
+      "days": [
+        "MON"
+      ],
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 1",
+        "aws": "0 8 ? * MON *"
+      }
+    },
+    {
+      "time": "09:00",
+      "days": [
+        "MON"
+      ],
+      "state": "Medium",
+      "cron": {
+        "posix": "0 9 * * 1",
+        "aws": "0 9 ? * MON *"
+      }
+    },
+    {
+      "time": "10:00",
+      "days": [
+        "MON"
+      ],
+      "state": "Minimum",
+      "cron": {
+        "posix": "0 10 * * 1",
+        "aws": "0 10 ? * MON *"
+      }
+    },
+    {
+      "time": "18:00",
+      "days": [
+        "MON"
+      ],
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 1",
+        "aws": "0 18 ? * MON *"
+      }
+    },
+    {
+      "time": "20:00",
+      "days": [
+        "MON"
+      ],
+      "state": "Minimum",
+      "cron": {
+        "posix": "0 20 * * 1",
+        "aws": "0 20 ? * MON *"
+      }
+    }
+  ],
+  "warnings": []
+}
