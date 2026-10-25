@@ -83,7 +83,7 @@ func TestMetaWithoutItemsIsAnAdmonition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := `<div class="admonition schedule schedule-meta"><p class="admonition-title">Schedule: Weekend shop</p>` +
+	want := `<div class="admonition schedule schedule-meta schedule-empty"><p class="admonition-title">Schedule: Weekend shop</p>` +
 		"\n<p>&nbsp;</p>\n</div>"
 	if !strings.Contains(html, want) {
 		t.Errorf("a META block with only a hint must render as an admonition, like the MyST output:\n%s", html)

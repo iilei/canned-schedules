@@ -72,7 +72,7 @@ func TestHintWithoutItemsIsAnAdmonition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "# Shop\n\n:::{admonition} Schedule: Weekend shop\n:class: schedule schedule-meta\n" + EmptyBody + "\n:::\n" +
+	want := "# Shop\n\n:::{admonition} Schedule: Weekend shop\n:class: schedule schedule-meta schedule-empty\n" + EmptyBody + "\n:::\n" +
 		"\n:::{admonition} Base state: Off\n:class: schedule schedule-base state-0\n" + BaseText + "\n:::\n"
 	if got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)

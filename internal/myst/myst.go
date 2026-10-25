@@ -42,12 +42,13 @@ func Render(src []byte, cfg *config.Config) (string, error) {
 			title += ": " + m.Title.Value
 		}
 
-		body := ""
+		class, body := "schedule schedule-meta", ""
 		if len(m.Items) == 0 {
-			body = EmptyBody
+			// schedule-empty lets the stylesheet collapse the box to its title bar.
+			class, body = class+" schedule-empty", EmptyBody
 		}
 
-		admonition(&b, title, "schedule schedule-meta", m.Items, body)
+		admonition(&b, title, class, m.Items, body)
 	}
 
 	if base := doc.Base; base != nil {

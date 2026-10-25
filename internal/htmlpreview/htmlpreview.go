@@ -251,14 +251,22 @@ func (r *calloutRenderer) render(w util.BufWriter, _ []byte, n ast.Node, enterin
 	}
 
 	if entering {
+		// Like the MyST output (myst.EmptyBody): a META block without items keeps an invisible body, and
+		// schedule-empty lets the stylesheet collapse the box to its title bar.
+		empty := c.Body == "" && c.Schedule && c.ChildCount() == 0 && strings.Contains(c.Class, "schedule-meta")
+
+		class := c.Class
+		if empty {
+			class += " schedule-empty"
+		}
+
 		_, _ = fmt.Fprintf(w, `<div class="%s"><p class="%s">%s</p>`+"\n",
-			util.EscapeHTML([]byte(c.Class)), titleClass, util.EscapeHTML([]byte(c.Title)))
+			util.EscapeHTML([]byte(class)), titleClass, util.EscapeHTML([]byte(c.Title)))
 
 		switch {
 		case c.Body != "":
 			_, _ = fmt.Fprintf(w, "<p>%s</p>\n", util.EscapeHTML([]byte(c.Body)))
-		case c.Schedule && c.ChildCount() == 0 && strings.Contains(c.Class, "schedule-meta"):
-			// Like the MyST output (myst.EmptyBody): a META block without items keeps an invisible body.
+		case empty:
 			_, _ = w.WriteString("<p>&nbsp;</p>\n")
 		}
 
