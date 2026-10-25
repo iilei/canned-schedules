@@ -480,7 +480,8 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 
 - `week` covers every day from `00:00` to `00:00` in half-open runs; an `end` of `00:00` means the end of the day.
 - `transitions` lists every moment the state changes, grouped by time and state. `cron.posix` is five-field Unix cron
-  (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field EventBridge format. Neither carries a time
+  (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field format of EventBridge and Application Auto
+  Scaling. Neither carries a time
   zone: set it where you schedule them.
 - `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
   line, column and excerpt. No file names: the output depends only on the document and the flags.
@@ -568,6 +569,47 @@ done <<< "$actions"
 - **No transitions** (one state all week): there are no actions to create. Give the group the base state's capacity
   directly.
 - **Limits:** Auto Scaling allows 125 scheduled actions per group, which is far more than a weekly schedule needs.
+
+#### ECS services and other Application Auto Scaling targets
+
+Application Auto Scaling (ECS services, DynamoDB capacity, Aurora replicas, Lambda provisioned concurrency, …) takes
+the six-field format, so use `cron.aws` there, wrapped as `cron(...)`. Its actions set min and max only; there is no
+desired count. The target has to be registered before its scheduled actions, here with the base state's capacity:
+
+```hcl
+resource "aws_appautoscaling_target" "app" {
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  min_capacity       = local.capacity[local.schedule.base].min
+  max_capacity       = local.capacity[local.schedule.base].max
+
+  # The scheduled actions move min and max; without this, every apply would reset them to the base state's values.
+  lifecycle {
+    ignore_changes = [min_capacity, max_capacity]
+  }
+}
+
+resource "aws_appautoscaling_scheduled_action" "office_hours" {
+  for_each = local.transitions
+
+  name               = "office-hours-${each.key}"
+  service_namespace  = aws_appautoscaling_target.app.service_namespace
+  resource_id        = aws_appautoscaling_target.app.resource_id
+  scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
+  schedule           = "cron(${each.value.cron.aws})"
+  timezone           = "Etc/UTC"
+
+  scalable_target_action {
+    min_capacity = local.capacity[each.value.state].min
+    max_capacity = local.capacity[each.value.state].max
+  }
+}
+```
+
+`local.transitions` and `local.capacity` are the ones from the EC2 example. With the AWS CLI, the same values go to
+`aws application-autoscaling put-scheduled-action` (`--schedule "cron(...)" --timezone Etc/UTC
+--scalable-target-action MinCapacity=…,MaxCapacity=…`).
 
 ## Configuration
 
