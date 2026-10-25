@@ -1,14 +1,14 @@
 # Canned Schedules
 
-Weekly capacity schedules from human-friendly Markdown: validate, preview and export.
+Weekly schedules that humans and machines agree on.
 
 Teams propose a schedule in a GitHub or GitLab issue, written in plain Markdown. `canned-schedules` checks it, points
 at mistakes by line and column, and turns it into canonical JSON: the state in effect at every minute of the week, plus
 the moments the state changes, with ready-made cron expressions.
 
 > [!NOTE]
-> Work in progress. The CLI, the input syntax, error reports and previews work end to end; releases are still to
-> come.
+> Work in progress. The CLI, the input syntax, error reports and previews work end to end. So far there are only
+> [pre-releases](https://github.com/iilei/canned-schedules/releases); the syntax may still change before 1.0.
 
 ## Example
 

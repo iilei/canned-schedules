@@ -164,7 +164,8 @@ release:
   header: |
     ## canned-schedules {{ .Tag }} ({{ .Date }})
 
-    Weekly capacity schedules from human-friendly Markdown - validate, preview and export.
+    Weekly schedules that humans and machines agree on: written in Markdown, validated, previewed and exported as
+    JSON and cron.
   footer: |
     **Full Changelog**: https://github.com/iilei/canned-schedules/compare/{{ .PreviousTag }}...{{ .Tag }}
 
