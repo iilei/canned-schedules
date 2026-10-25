@@ -10,6 +10,7 @@ import (
 	"regexp/syntax"
 	"strconv"
 
+	"github.com/iilei/canned-schedules/internal/canonical"
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/internal/myst"
@@ -205,14 +206,53 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	return out, diags
 }
 
-// SVG renders the SVG preview of a successfully evaluated document with the same config overrides.
-func SVG(opts *Options, out *schedule.Output) ([]byte, error) {
+// SVG renders the SVG preview of a successfully evaluated document with the same config overrides. With
+// --svg-embed-source it carries the canonical form of src, the schedule digest and generator (the tool and version).
+func SVG(opts *Options, out *schedule.Output, src []byte, generator string) ([]byte, error) {
 	cfg, err := previewConfig(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return render.SVG(out, cfg, opts.Preview.Downsample, opts.Preview.SVGTheme)
+	var source *render.Source
+
+	if opts.Preview.SVGEmbedSource {
+		c, err := canonical.Render(src, cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		source = &render.Source{Text: c, Digest: out.Digests.Schedule, Generator: generator}
+	}
+
+	return render.SVG(out, cfg, opts.Preview.Downsample, opts.Preview.SVGTheme, source)
+}
+
+// Canonical writes the canonical form of a successfully evaluated document.
+func Canonical(opts *Options, src []byte) ([]byte, error) {
+	cfg, err := previewConfig(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := canonical.Render(src, cfg)
+
+	return []byte(c), err
+}
+
+// Text writes the text form: the canonical request with the ASCII preview (ANSI colours when color is true).
+func Text(opts *Options, out *schedule.Output, src []byte, color bool) ([]byte, error) {
+	c, err := Canonical(opts, src)
+	if err != nil {
+		return nil, err
+	}
+
+	preview, err := ASCII(opts, out, color)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(canonical.Text(string(c), preview)), nil
 }
 
 // ASCII renders the ASCII preview, with ANSI colours when color is true.

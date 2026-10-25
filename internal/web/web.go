@@ -47,7 +47,7 @@ func Evaluate(src []byte, args []string) Result {
 
 		if out != nil {
 			res.JSON = encode(out)
-			res.SVG = string(must(cli.SVG(&opts, out)))
+			res.SVG = string(must(cli.SVG(&opts, out, src, "")))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
 		}

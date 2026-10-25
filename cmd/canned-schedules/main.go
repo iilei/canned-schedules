@@ -90,54 +90,77 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitUsage
 	}
 
-	if opts.Preview.Output == cli.OutputASCII {
-		text, err := cli.ASCII(&opts, out, colorOn(opts.Preview.Color, stdout))
-		if err != nil {
-			fmt.Fprintln(stderr, err)
+	var (
+		data []byte
+		err  error
+	)
 
-			return exitInvalid
-		}
-
-		if _, err := stdout.Write(text); err != nil {
-			return exitInvalid
-		}
-
-		return exitOK
+	switch color := colorOn(opts.Preview.Color, stdout); opts.Preview.Output {
+	case cli.OutputASCII:
+		data, err = cli.ASCII(&opts, out, color)
+	case cli.OutputText:
+		data, err = cli.Text(&opts, out, src, color)
+	default:
+		data, err = encodeJSON(out)
 	}
 
-	enc := json.NewEncoder(stdout)
-	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false) // Excerpts start with ">"; this JSON is not embedded in HTML.
-
-	if err := enc.Encode(out); err != nil {
+	if err != nil {
 		fmt.Fprintln(stderr, err)
 
+		return exitInvalid
+	}
+
+	if _, err := stdout.Write(data); err != nil {
 		return exitInvalid
 	}
 
 	return exitOK
 }
 
-// writeOutputs writes the requested output files: SVG and ASCII previews, MyST and the Sphinx kit. It only runs for
-// documents without errors, so a failed run leaves earlier files untouched rather than replacing them with broken
-// ones. The ASCII file gets colours only with --color always.
+// encodeJSON returns the canonical JSON as printed and written (--json-output-file).
+func encodeJSON(out *schedule.Output) ([]byte, error) {
+	var buf bytes.Buffer
+
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false) // Excerpts start with ">"; this JSON is not embedded in HTML.
+
+	if err := enc.Encode(out); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// writeOutputs writes the requested output files: the JSON, SVG and ASCII previews, the text form, MyST and the
+// Sphinx kit. It only runs for documents without errors, so a failed run leaves earlier files untouched rather than
+// replacing them with broken ones. The ASCII and text files get colours only with --color always.
 func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
+	fileColor := opts.Preview.Color == cli.ColorAlways
+	generator := "canned-schedules " + buildStamp().version
+
 	for _, o := range []struct {
 		render func() ([]byte, error)
 		flag   string
 		path   string
 	}{
+		{flag: "--json-output-file", path: opts.Preview.JSONFile, render: func() ([]byte, error) {
+			return encodeJSON(out)
+		}},
 		{flag: "--svg-output-file", path: opts.Preview.SVGFile, render: func() ([]byte, error) {
-			return cli.SVG(opts, out)
+			return cli.SVG(opts, out, src, generator)
 		}},
 		{flag: "--ascii-output-file", path: opts.Preview.ASCIIFile, render: func() ([]byte, error) {
-			return cli.ASCII(opts, out, opts.Preview.Color == cli.ColorAlways)
+			return cli.ASCII(opts, out, fileColor)
+		}},
+		{flag: "--text-output-file", path: opts.Preview.TextFile, render: func() ([]byte, error) {
+			return cli.Text(opts, out, src, fileColor)
 		}},
 		{flag: "--myst-output-file", path: opts.Sphinx.MySTFile, render: func() ([]byte, error) {
 			return cli.MyST(opts, src)
 		}},
 		{flag: "--sphinx-kit-output-file", path: opts.Sphinx.KitFile, render: func() ([]byte, error) {
-			return cli.SphinxKit(opts, src, "canned-schedules "+buildStamp().version)
+			return cli.SphinxKit(opts, src, generator)
 		}},
 	} {
 		if o.path == "" {

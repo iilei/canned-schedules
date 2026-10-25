@@ -1,0 +1,26 @@
+# Canned schedules in a repo: copy this file (or merge its sections), scripts/canned-schedule, canned-schedules.args
+# and .gitignore into your repo. See README.md.
+
+[tools]
+# The release binary from GitHub. mise checks the download against the SHA-256 digest GitHub records for the asset;
+# the GPG signatures can be checked with the canned-schedules repo's release:verify task.
+"github:iilei/canned-schedules" = "0.0.1-pre.2"
+
+[tasks."schedule:render"]
+description = "Render *.canned-schedule.md files into .json, .svg and .txt next to them, and print the text form"
+usage = '''
+arg "[file]..." var=#true help="Schedule files (default: every *.canned-schedule.md that git doesn't ignore)"
+'''
+run = 'eval "set -- ${usage_file:-}"; sh scripts/canned-schedule render "$@"'
+
+[tasks."schedule:check"]
+description = "Check one schedule request (e.g. an issue body) and write the report and the comment to post"
+usage = '''
+arg "<file>" help="The request, e.g. an issue body written to a file"
+arg "[out_dir]" default="canned-schedule-report" help="Where report.md, report.json, comment.md and the outputs go"
+'''
+run = 'sh scripts/canned-schedule check "$usage_file" "$usage_out_dir"'
+
+[tasks."schedule:pre-commit"]
+description = "Check the staged content of staged *.canned-schedule.md files (install: mise generate git-pre-commit --task schedule:pre-commit --write)"
+run = "sh scripts/canned-schedule pre-commit"

@@ -79,29 +79,17 @@ jobs:
           name: release
           path: release
 
-      - name: Verify, unpack and run
+      # mise only, no tools: the smoke test needs none, and five runners would otherwise install Go and Node.
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          install: false
+
+      # The same task runs locally on the archives from mise run release:snapshot.
+      - run: mise run release:smoke "$ARCHIVE" --dir release
         shell: bash
         env:
           ARCHIVE: ${{ matrix.archive }}
-        run: |
-          set -euo pipefail
-          cd release
-          file=$(ls -- *_"$ARCHIVE")
-          sum=$(command -v sha256sum || echo "shasum -a 256")
-          grep -F "  $file" checksums.txt | $sum --check -
-          mkdir bin
-          case "$file" in
-            *.zip) unzip -q "$file" -d bin ;;
-            *) tar -xzf "$file" -C bin ;;
-          esac
-          test -f bin/LICENSE.md
-          test -f bin/THIRD_PARTY_LICENSES.md
-          exe=bin/canned-schedules
-          if [ -f bin/canned-schedules.exe ]; then exe=bin/canned-schedules.exe; fi
-          "$exe" --version
-          "$exe" --help > /dev/null
-          "$exe" ../.gitlab/issue_templates/canned_schedule_request.md > out.json
-          grep -q '"schema-version": "1"' out.json
+          MISE_TASK_RUN_AUTO_INSTALL: "false"
 
   publish:
     needs: smoke

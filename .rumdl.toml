@@ -26,3 +26,5 @@ column-align = "auto"
 ".github/ISSUE_TEMPLATE/canned_schedule_request.md" = ["MD025", "MD028", "MD032"]
 ".gitlab/issue_templates/*.md" = ["MD028", "MD032"]
 "web/presets/*.md" = ["MD028", "MD032"]
+"**/*.canned-schedule.md" = ["MD028", "MD032"]
+"examples/consumer/.github/ISSUE_TEMPLATE/canned_schedule_request.md" = ["MD025", "MD028", "MD032"]

@@ -1,0 +1,173 @@
+#!/bin/sh
+# Schedule tasks for a repo that keeps canned schedules as *.canned-schedule.md files. The mise tasks in mise.toml
+# call this script; it runs without mise as well (sh scripts/canned-schedule render).
+#
+#   render [file...]        Render each file (default: every *.canned-schedule.md) into .json, .svg (with the
+#                           canonical source embedded) and .txt next to it, and print the text form.
+#   check <file> [out-dir]  Check one request (an issue body) and write report.md, report.json, comment.md and, when
+#                           valid, schedule.json and schedule.txt into out-dir (default canned-schedule-report).
+#   pre-commit              Check the staged content of every staged *.canned-schedule.md file.
+#
+# The binary is canned-schedules on PATH, or $CANNED_SCHEDULES. Every call also gets the arguments listed in
+# canned-schedules.args (one per line; blank lines and lines starting with # are skipped), or $CANNED_SCHEDULES_ARGS.
+# Nothing here talks to GitHub or GitLab: posting a comment is the workflow's job.
+set -eu
+
+suffix=.canned-schedule
+cs=${CANNED_SCHEDULES:-canned-schedules}
+args_file=${CANNED_SCHEDULES_ARGS:-canned-schedules.args}
+
+# Absolute paths, because pre-commit runs the binary from a temporary directory.
+case $cs in */*) cs=$(cd "$(dirname "$cs")" && pwd)/$(basename "$cs") ;; esac
+case $args_file in /*) ;; *) args_file=$(pwd)/$args_file ;; esac
+
+# Newline is the only separator in file lists, so names with spaces work; globbing is off for the same reason.
+nl='
+'
+IFS=$nl
+set -f
+
+# cs_run [flags...] file runs the binary with the arguments from the args file first.
+cs_run() {
+	if [ -f "$args_file" ]; then
+		n=$#
+		while IFS= read -r line || [ -n "$line" ]; do
+			case $line in '' | '#'*) continue ;; esac
+			set -- "$@" "$line"
+		done <"$args_file"
+		# Rotate the n original arguments behind the args file's, so the file stays last.
+		i=0
+		while [ "$i" -lt "$n" ]; do
+			a=$1
+			shift
+			set -- "$@" "$a"
+			i=$((i + 1))
+		done
+	fi
+	"$cs" "$@"
+}
+
+in_git() { git rev-parse --git-dir >/dev/null 2>&1; }
+
+tracked() { in_git && git ls-files --error-unmatch -- "$1" >/dev/null 2>&1; }
+
+# sources lists the schedule files: tracked or untracked but not ignored in git, otherwise everything below here.
+sources() {
+	if in_git; then
+		git ls-files --cached --others --exclude-standard -- "*$suffix.md"
+	else
+		find . -name "*$suffix.md" -not -path '*/.git/*' | sed 's|^\./||'
+	fi
+}
+
+# generated lists the generated files below here.
+generated() {
+	find . \( -name "*$suffix.json" -o -name "*$suffix.svg" -o -name "*$suffix.txt" \) -not -path '*/.git/*' |
+		sed 's|^\./||'
+}
+
+# discard removes generated files, but never one that git tracks: a committed preview stays for git to show.
+discard() {
+	for g in "$@"; do
+		if [ -f "$g" ] && ! tracked "$g"; then
+			rm -f -- "$g"
+			echo "removed $g" >&2
+		fi
+	done
+}
+
+render() {
+	full=false
+	if [ $# -eq 0 ]; then
+		full=true
+		set -- $(sources)
+	fi
+
+	failed=0
+	for f in "$@"; do
+		base=${f%.md}
+		if [ $# -gt 1 ]; then printf '==> %s <==\n' "$f"; fi
+		if cs_run --output text --json-output-file "$base.json" --svg-output-file "$base.svg" --svg-embed-source \
+			--text-output-file "$base.txt" "$f"; then
+			:
+		else
+			failed=1
+			# A stale output of the last good version would look current, and git doesn't show ignored files.
+			discard "$base.json" "$base.svg" "$base.txt"
+		fi
+		if [ $# -gt 1 ]; then echo; fi
+	done
+
+	if $full; then
+		for g in $(generated); do
+			src=${g%.*}.md
+			if [ ! -f "$src" ]; then discard "$g"; fi
+		done
+	fi
+
+	return $failed
+}
+
+check() {
+	if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+		echo "usage: check <file> [out-dir]" >&2
+		return 2
+	fi
+
+	f=$1
+	out=${2:-canned-schedule-report}
+	mkdir -p "$out"
+	rm -f "$out/report.md" "$out/report.json" "$out/comment.md" "$out/schedule.json" "$out/schedule.txt"
+
+	code=0
+	cs_run --error-output-file "$out/report.md" --error-report-template markdown-gfm \
+		--json-output-file "$out/schedule.json" --text-output-file "$out/schedule.txt" "$f" >/dev/null || code=$?
+	cs_run --error-output-file "$out/report.json" --error-output-format json "$f" >/dev/null || :
+
+	# The comment a workflow posts: the marker it finds the comment by, the report, and for a valid request the text
+	# form inside a fence, so nothing in it renders as Markdown.
+	{
+		echo '<!-- canned-schedules -->'
+		cat "$out/report.md"
+		if [ -f "$out/schedule.txt" ]; then
+			printf '\n<details open><summary>Preview</summary>\n\n~~~~~~~~text\n'
+			cat "$out/schedule.txt"
+			printf '~~~~~~~~\n\n</details>\n'
+		fi
+	} >"$out/comment.md"
+
+	return $code
+}
+
+pre_commit() {
+	staged=$(git diff --cached --name-only --diff-filter=ACMR -- "*$suffix.md")
+	if [ -z "$staged" ]; then return 0; fi
+
+	tmp=$(mktemp -d)
+	trap 'rm -rf "$tmp"' EXIT
+
+	worst=0
+	for f in $staged; do
+		# The staged content, at the same relative path, so the report names the file as it is in the repo.
+		mkdir -p "$tmp/$(dirname "$f")"
+		git show ":$f" >"$tmp/$f"
+		code=0
+		(cd "$tmp" && cs_run "$f" >/dev/null) || code=$?
+		if [ "$code" -gt "$worst" ]; then worst=$code; fi
+	done
+
+	return $worst
+}
+
+cmd=${1:-}
+if [ $# -gt 0 ]; then shift; fi
+
+case $cmd in
+render) render "$@" ;;
+check) check "$@" ;;
+pre-commit) pre_commit "$@" ;;
+*)
+	echo "usage: canned-schedule render [file...] | check <file> [out-dir] | pre-commit" >&2
+	exit 2
+	;;
+esac

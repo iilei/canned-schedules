@@ -47,7 +47,7 @@ func TestGoldenSchedulesRender(t *testing.T) {
 
 		out, cfg := evaluate(t, string(src))
 
-		svg, err := SVG(out, cfg, 15, ThemeAuto)
+		svg, err := SVG(out, cfg, 15, ThemeAuto, nil)
 		if err != nil {
 			t.Fatalf("%s: %v", in, err)
 		}
@@ -99,7 +99,7 @@ func TestEscaping(t *testing.T) {
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE-STATE] Maximum\n> - `06:00` to `22:00` MON\n",
 		config.Override{Path: "states[3].display-name", Value: `"Max <b>&amp;</b> \"q\" \u0007"`})
 
-	svg, err := SVG(out, cfg, 15, ThemeAuto)
+	svg, err := SVG(out, cfg, 15, ThemeAuto, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func TestSVGThemes(t *testing.T) {
 		ThemeLight: {has: []string{light, "color-scheme: light"}, lacks: []string{dark, "prefers-color-scheme"}},
 		ThemeDark:  {has: []string{dark, "color-scheme: dark"}, lacks: []string{light, "prefers-color-scheme"}},
 	} {
-		svg, err := SVG(out, cfg, 15, theme)
+		svg, err := SVG(out, cfg, 15, theme, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -80,6 +80,84 @@ echo "wrote $out"
 description = "Build the release archives locally (no signing, no publishing) into dist/release"
 run = "goreleaser release --snapshot --clean --skip=sign,publish"
 
+[tasks."release:smoke"]
+description = "Check one release archive against checksums.txt, unpack it and run the binary (the release smoke test)"
+usage = '''
+arg "<archive>" help="Archive name suffix, e.g. linux_x86_64.tar.gz or windows_amd64.zip"
+flag "--dir <dir>" default="dist/release" help="Directory with the archives and checksums.txt"
+'''
+# Git Bash on the Windows runners; mise would use cmd there otherwise.
+shell = "bash -c"
+run = '''
+set -eu
+root=$(pwd)
+cd "$usage_dir"
+file=$(ls -- *_"$usage_archive")
+sum=$(command -v sha256sum || echo "shasum -a 256")
+grep -F "  $file" checksums.txt | $sum --check -
+bin=$(mktemp -d)
+trap 'rm -rf "$bin"' EXIT
+case "$file" in
+  *.zip) unzip -q "$file" -d "$bin" ;;
+  *) tar -xzf "$file" -C "$bin" ;;
+esac
+test -f "$bin/LICENSE.md"
+test -f "$bin/THIRD_PARTY_LICENSES.md"
+exe=$bin/canned-schedules
+if [ -f "$bin/canned-schedules.exe" ]; then exe=$bin/canned-schedules.exe; fi
+"$exe" --version
+"$exe" --help > /dev/null
+"$exe" "$root/.gitlab/issue_templates/canned_schedule_request.md" | grep -q '"schema-version": "1"'
+echo "smoke test passed: $file"
+'''
+
+[tasks."release:verify"]
+description = "Verify a downloaded release: GPG signatures (key in release-key.asc), checksums and .sha256 sidecars"
+usage = '''
+arg "<dir>" help="Directory with the downloaded release files (gh release download <tag>)"
+'''
+run = '''
+set -eu
+key=$(pwd)/release-key.asc
+fpr=B645234C9CB8175ECA5D78A5C8447A2252E9E7B6
+cd "$usage_dir"
+# A throwaway keyring with only the release key, so no other key of the user's can satisfy a signature.
+GNUPGHOME=$(mktemp -d)
+export GNUPGHOME
+trap 'rm -rf "$GNUPGHOME"' EXIT
+gpg --batch --quiet --import "$key"
+verify() {
+  gpg --batch --status-fd 1 --verify "$1.sig" "$1" 2>/dev/null | grep -q "^\[GNUPG:\] VALIDSIG .* $fpr\$" || {
+    echo "BAD signature: $1" >&2
+    exit 1
+  }
+}
+verify checksums.txt
+sum=$(command -v sha256sum || echo "shasum -a 256")
+$sum --check --ignore-missing checksums.txt
+for f in *.tar.gz *.zip; do
+  [ -e "$f" ] || continue
+  verify "$f"
+  if [ -f "$f.sha256" ] && [ "$(cut -c1-64 "$f.sha256")" != "$($sum "$f" | cut -c1-64)" ]; then
+    echo "BAD sidecar: $f.sha256" >&2
+    exit 1
+  fi
+done
+echo "release verified: signed by $fpr, checksums and sidecars match"
+'''
+
+[tasks."golden:check"]
+description = "Regenerate testdata/golden from gen.py and fail if anything changed or appeared"
+run = '''
+set -eu
+python3 testdata/golden/gen.py
+if [ -n "$(git status --porcelain -- testdata/golden)" ]; then
+  git status --short -- testdata/golden
+  echo "testdata/golden differs from gen.py; run python3 testdata/golden/gen.py and commit the result" >&2
+  exit 1
+fi
+'''
+
 [tasks.docs]
 description = "Regenerate the README's generated sections (flag tables, diagnostic codes) from the code"
 run = "UPDATE_DOCS=1 go test ./internal/cli -run TestReadmeReference -count=1"
@@ -138,3 +216,7 @@ env -i HOME="$HOME" \
   GOCACHE="$(go env GOCACHE)" GOMODCACHE="$(go env GOMODCACHE)" GOOS=js GOARCH=wasm \
   go test -exec="$wasm/go_js_wasm_exec" ./internal/... ./schema/
 '''
+
+[tasks."example:test"]
+description = "Test examples/consumer: its tasks in a throwaway git repo, with the binary built from this checkout"
+run = "sh examples/test-consumer.sh"
