@@ -390,6 +390,19 @@ write(
 # A no-break space (U+00A0) counts as whitespace wherever the grammar allows whitespace: around the summary and the name,
 # around "to", before and inside the weekday expression, and around the colon of META keys.
 NBSP = "\u00a0"
+# A state may appear in several STATE blocks; ranges paint in source order across blocks.
+write(
+    "valid/same-state-in-several-blocks",
+    doc(
+        META, "> [!SCHEDULE-BASE] Minimum\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `10:00` MON\n",
+        "> [!SCHEDULE-STATE] Maximum\n> - `08:00` to `09:00` MON\n",
+        "> [!SCHEDULE-STATE] Medium\n> - `18:00` to `20:00` MON\n",
+    ),
+    want=output("Minimum", [("06:00", "10:00", ["MON"], "Medium"), ("08:00", "09:00", ["MON"], "Maximum"),
+                            ("18:00", "20:00", ["MON"], "Medium")]),
+)
+
 write(
     "valid/nbsp-as-whitespace",
     doc(

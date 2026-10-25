@@ -55,11 +55,11 @@ mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:808
 A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE-…]` marker.
 Everything else is free text for humans, including standard alerts such as `[!NOTE]`.
 
-| Block                      | Required      | Content                                                                                        |
-| -------------------------- | ------------- | ---------------------------------------------------------------------------------------------- |
-| `[!SCHEDULE-META] summary` | no            | Optional summary after the marker; list items `` x-<name>: `value` `` for your own bookkeeping |
-| `[!SCHEDULE-BASE] state`   | no            | The state wherever no range applies                                                            |
-| `[!SCHEDULE-STATE] state`  | one per state | A list of ranges                                                                               |
+| Block                      | Required                         | Content                                                                                               |
+| -------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `[!SCHEDULE-META] summary` | no                               | Optional summary after the marker; list items `` x-<name>: `value` `` for your own bookkeeping        |
+| `[!SCHEDULE-BASE] state`   | no, unless `--require-base true` | The state wherever no range applies. Without the block: `--base`, else the first configured state     |
+| `[!SCHEDULE-STATE] state`  | no                               | A list of ranges in that state. Any number of blocks; a state may appear in several, later ranges win |
 
 `SCHEDULE` is the only namespace, joined to the kind with a hyphen. Markers and state names are case-insensitive. Any
 other alert, including a misspelt `[!SCHEDUEL-STATE]`, is free text unless `--error-unless-alert-pattern` restricts
