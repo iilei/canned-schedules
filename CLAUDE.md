@@ -389,7 +389,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     Renamed because the SIL OFL reserves the name "Cascadia Code" for unmodified fonts
     (`fonts/OFL-schedule-braille-mono.txt`). DejaVu Sans Mono was checked first and has no braille.
   - In terminals the user's font decides; terminals keep a fixed cell width, but the font needs braille glyphs.
-- Build: `mise run web:build` → `dist/site` (static files, `app.wasm` ~10 MB raw / ~2.4 MB gzip, Go's matching
+- Build: `mise run web:build` → `dist/site` (static files; `web/style.css` stays readable in the repo and is minified
+  into the build by the editor's pinned esbuild; `app.wasm` ~10 MB raw / ~2.4 MB gzip, Go's matching
   `wasm_exec.js`, the GitLab template as `template.md`, `version.txt`). `mise run web:serve [--port N]` serves it on 127.0.0.1 only (default port 8080).
 - Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
   minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
