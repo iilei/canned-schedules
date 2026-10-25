@@ -20,7 +20,7 @@ The full syntax reference is at the end of this request.
 -->
 
 > [!SCHEDULE:META] Weekdays with a late Friday
-> - x-custom-owner: `team-xyz`
+> - x-owner: `team-xyz`
 
 > [!SCHEDULE:BASE] Minimum
 
@@ -41,7 +41,7 @@ The full syntax reference is at the end of this request.
 > **Blocks**
 >
 > - `[!SCHEDULE:META]` (optional): text after the marker is a short hint. List items are free-form entries for
->   your own bookkeeping, written like `` x-custom-owner: `team-xyz` ``.
+>   your own bookkeeping, written like `` x-owner: `team-xyz` ``.
 > - `[!SCHEDULE:BASE] <tier>` (optional): the tier wherever no range applies.
 > - `[!SCHEDULE:TIER] <tier>`: one block per tier, each with a list of ranges.
 >

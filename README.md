@@ -16,7 +16,7 @@ the moments the tier changes, with ready-made cron expressions.
 # Office Hours
 
 > [!SCHEDULE:META] Weekdays with a late Friday
-> - x-custom-owner: `team-xyz`
+> - x-owner: `team-xyz`
 
 > [!SCHEDULE:BASE] Minimum
 
@@ -56,7 +56,7 @@ Everything else is free text for humans, including standard alerts such as `[!NO
 
 | Block                   | Required     | Content                                                                                            |
 | ----------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
-| `[!SCHEDULE:META] hint` | no           | Optional hint after the marker; list items `` x-custom-<name>: `value` `` for your own bookkeeping |
+| `[!SCHEDULE:META] hint` | no           | Optional hint after the marker; list items `` x-<name>: `value` `` for your own bookkeeping        |
 | `[!SCHEDULE:BASE] tier` | no           | The tier wherever no range applies                                                                 |
 | `[!SCHEDULE:TIER] tier` | one per tier | A list of ranges                                                                                   |
 
@@ -249,7 +249,7 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
   "name": "Office Hours",
   "hint": "Weekdays with a late Friday",
   "base": "Minimum",
-  "annotations": {"x-custom-owner": "team-xyz"},
+  "annotations": {"x-owner": "team-xyz"},
   "digests": {"schedule": "sha256:…"},
   "week": {
     "MON": [
@@ -278,7 +278,7 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
 - `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
   line, column and excerpt. No file names: the output depends only on the document and the flags.
 - `digests.schedule` changes only when the base or the week changes, never for the name, hint, annotations or
-  prose. To trace a schedule back to its source, carry a git SHA or an issue link in an `x-custom-*` META key.
+  prose. To trace a schedule back to its source, carry a git SHA or an issue link in an `x-*` META key.
 - The schema is [`schema/output.schema.json`](schema/output.schema.json); details in
   [`testdata/golden/README.md`](testdata/golden/README.md).
 

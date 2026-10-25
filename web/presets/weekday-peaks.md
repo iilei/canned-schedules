@@ -4,7 +4,7 @@ Steady service during the week, with more capacity at lunch time and in the afte
 overlap, so the peaks sit on top of the daytime range.
 
 > [!SCHEDULE:META] Steady service with lunch and afternoon peaks
-> - x-custom-owner: `team-web`
+> - x-owner: `team-web`
 
 > [!SCHEDULE:BASE] Minimum
 

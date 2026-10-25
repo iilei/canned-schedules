@@ -2,8 +2,8 @@
 
 > [!SCHEDULE:META]
 > - schema-version: `1`
-> - x-custom-owner: `team-xyz`
-> - x-custom-ticket: `OPS-1234`
+> - x-owner: `team-xyz`
+> - x-ticket: `OPS-1234`
 
 > [!SCHEDULE:BASE] Minimum
 

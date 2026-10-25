@@ -46,7 +46,7 @@ func TestScheduleDigestIgnoresPresentation(t *testing.T) {
 		Hint:          "Other words",
 		Base:          "Off",
 		Annotations: map[string]string{
-			"x-custom-owner": "ops",
+			"x-owner": "ops",
 		},
 		Week:        week,
 		Transitions: []Transition{},

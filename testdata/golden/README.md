@@ -53,7 +53,7 @@ A diagnostic points at the first character of the offending token:
   "name": "Schedule-Name",
   "hint": "Office hours only",
   "base": "Minimum",
-  "annotations": {"x-custom-owner": "team-xyz"},
+  "annotations": {"x-owner": "team-xyz"},
   "digests": {"schedule": "sha256:10ab…"},
   "week": {
     "MON": [{"start": "00:00", "end": "06:00", "tier": "Minimum"}, …],
@@ -76,7 +76,7 @@ A diagnostic points at the first character of the offending token:
 - Tier names use the **config's spelling** of the id, whatever case the document used.
 - Times are always `HH:MM` in the output, even when the input used `H:MM` (`6:00` → `06:00`).
 - `name` comes from the H1. `hint` is the text after the META marker and is **omitted** when there is none.
-- `annotations` holds every `x-custom-*` META key verbatim (`{}` if none).
+- `annotations` holds every `x-*` META key verbatim (`{}` if none).
 - `transitions` lists every moment the active tier changes. The week is cyclic, so MON 00:00 follows SUN 23:59.
   - Days that switch to the same tier at the same time are grouped into one entry. `days` is the full list, Monday
     first.

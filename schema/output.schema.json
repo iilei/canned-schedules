@@ -32,7 +32,7 @@
       "maxProperties": 40,
       "additionalProperties": false,
       "patternProperties": {
-        "^x-custom-[a-z0-9](?:-?[a-z0-9]){0,39}$": {
+        "^x-[a-z0-9](?:-?[a-z0-9]){0,39}$": {
           "type": "string",
           "maxLength": 48
         }

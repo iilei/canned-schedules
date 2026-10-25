@@ -44,7 +44,7 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
   JSON, written `sha256:<hex>`. Name, hint, annotations, prose and range wording that paints the same minutes don't
   change it. `base` is part of it because consumers use it as the fallback, for example when `transitions` is `[]`.
   - **No request digest (dropped 2026-10-25):** a hash of the input bytes earned little. Provenance belongs in git
-    SHAs or in an `x-custom-*` META key (an issue link, a commit), and a bot that must pin an issue revision hashes
+    SHAs or in an `x-*` META key (an issue link, a commit), and a bot that must pin an issue revision hashes
     the body itself. The `digests` object stays, so a digest can be added later without reshaping the output.
   - Still proposed: storing the raw input next to the output (`schedules/<name>/source.md` + `schedule.json`).
     Consumers read only the output; the raw Markdown is never part of the contract.
@@ -63,7 +63,7 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
 
 > [!SCHEDULE:META]
 > - schema-version: `1`
-> - x-custom-owner: `team-xyz`
+> - x-owner: `team-xyz`
 
 > [!SCHEDULE:BASE] Minimum
 
@@ -90,13 +90,16 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   and GitLab show custom alerts as literal text anyway, and our goldmark extension defines the grammar.
 - **META** is a list of `key: `value`` items, in one form only. A list renders the same everywhere, while `>` lines
   without a list form one paragraph, and whether they break depends on the renderer.
-  - Allowed keys: `schema-version` and `x-custom-*` (free-form). Nothing else for now.
+  - Allowed keys: `schema-version` and `x-*` (free-form). Nothing else for now. Shortened from `x-custom-*` on
+    2026-10-25: `x-` is the OpenAPI convention, and RFC 6648's objection to `X-` headers doesn't apply, because these
+    keys are user bookkeeping and never become standard. Keys without `x-` stay reserved for the spec. Old
+    `x-custom-*` keys still validate as `x-` keys named `custom-*`.
   - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
     block is absent or just lacks the key, the version built into the binary (currently `"1"`) applies.
   - **Text after the META marker is the schedule's hint** (`[!SCHEDULE:META] Office hours only`). It is trimmed, then
     validated with the same rule as the name (see below), and output as `hint`. A META block with a hint and no items is
     allowed.
-  - `x-custom-*` keys are allowed **only in META**. Their values are uninterpreted strings, passed through to the output
+  - `x-*` keys are allowed **only in META**. Their values are uninterpreted strings, passed through to the output
     (for example under `annotations`). They must never affect the domain model.
 - **TIER items as ranges:** in each item, the times are code spans, `to` is a literal keyword that is part of the
   contract, and the weekday expression is plain text. In goldmark, an item is `Code, Text(" to "), Code, Text(days)`.
@@ -174,7 +177,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 - **A repo-level JSON file with a JSON Schema next to it**, both embedded in the binary with `go:embed`. The built-in
   config is validated by **tests**, not at runtime.
-- **No custom schema.** The schema is fixed. Extension happens only through `x-custom-*` keys in document META.
+- **No custom schema.** The schema is fixed. Extension happens only through `x-*` keys in document META.
 - **Shape:** domain and representation are kept separate.
 
   ```text
@@ -190,7 +193,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     mapping by ordering both lists.
   - Colours: `#RRGGBB` or `#RRGGBBAA` (`"color": {"light": "#54C6A5D9", "dark": "#9D82EAD9"}`).
   - `symbol` is one character, used by the ASCII preview with the `styles` preset.
-  - Every object has `additionalProperties: false`. `x-custom-*` is not allowed in the config.
+  - Every object has `additionalProperties: false`. `x-*` is not allowed in the config.
 - **Checks JSON Schema can't express** (done in Go, covered by tests):
   - tier ids unique after upper-casing;
   - repeated style symbols are a **warning** (`config-duplicate-symbol`, decided 2026-10-24: permissive), because
@@ -204,7 +207,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Document META** (`schema/meta.schema.json`):
   - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"1"`, because every META
     value comes from a code span.
-  - Otherwise only `x-custom-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
+  - Otherwise only `x-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
   - At most 40 custom keys (`maxProperties: 41`). Each value is a string of at most 48 chars, so 40 × 48 = 1920 chars,
     which stays under the 2 KB budget for ASCII. JSON Schema counts code points, not bytes, so non-ASCII values can
     exceed 2 KB slightly. That was accepted in exchange for checking everything in the schema.

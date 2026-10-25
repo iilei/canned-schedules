@@ -1,7 +1,7 @@
 # Schedule-Name
 
 > [!SCHEDULE:META] Office hours
-> - x-custom-owner: `team-xyz`
+> - x-owner: `team-xyz`
 
 > [!SCHEDULE:BASE] Minimum
 

@@ -368,15 +368,15 @@ write(
 write(
     "valid/annotations",
     doc(
-        "> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-custom-owner: `team-xyz`\n"
-        "> - x-custom-ticket: `OPS-1234`\n",
+        "> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-owner: `team-xyz`\n"
+        "> - x-ticket: `OPS-1234`\n",
         "> [!SCHEDULE:BASE] Minimum\n",
         "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
     want=output(
         "Minimum",
         [("06:00", "22:00", WD, "Medium")],
-        {"x-custom-owner": "team-xyz", "x-custom-ticket": "OPS-1234"},
+        {"x-owner": "team-xyz", "x-ticket": "OPS-1234"},
     ),
 )
 
@@ -433,11 +433,11 @@ write(
 write(
     "valid/meta-default-schema-version",
     doc(
-        "> [!SCHEDULE:META] Office hours\n> - x-custom-owner: `team-xyz`\n",
+        "> [!SCHEDULE:META] Office hours\n> - x-owner: `team-xyz`\n",
         "> [!SCHEDULE:BASE] Minimum\n",
         "> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
-    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-custom-owner": "team-xyz"}, hint="Office hours"),
+    want=output("Minimum", [("06:00", "22:00", WD, "Medium")], {"x-owner": "team-xyz"}, hint="Office hours"),
 )
 
 write(
@@ -591,14 +591,14 @@ err("error/meta-wrong-schema-version", ["> [!SCHEDULE:META]\n> - schema-version:
 err("error/meta-unknown-key", ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - owner: `team-xyz`\n", BASE], "owner", "meta-schema")
 err(
     "error/meta-custom-value-too-long",
-    ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-custom-note: `" + "x" * 49 + "`\n", BASE],
+    ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-note: `" + "x" * 49 + "`\n", BASE],
     "x" * 49,
     "meta-schema",
 )
 err(
     "error/meta-custom-key-uppercase",
-    ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-custom-Owner: `team-xyz`\n", BASE],
-    "x-custom-Owner",
+    ["> [!SCHEDULE:META]\n> - schema-version: `1`\n> - x-Owner: `team-xyz`\n", BASE],
+    "x-Owner",
     "meta-schema",
 )
 err(
