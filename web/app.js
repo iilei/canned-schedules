@@ -273,7 +273,98 @@ async function copyMarkdown() {
   setTimeout(() => { b.textContent = "Copy Markdown"; }, 1500);
 }
 
+// ---- resizable editor ----------------------------------------------------------------------------------------------
+
+// The splitter between the panes sets the editor's share of the layout width (--editor-width, in percent): drag it,
+// use the arrow keys (Home/End for the limits), or double-click it to reset. Remembered per browser.
+const SPLIT = { min: 20, max: 70, initial: 33.3, step: 2, key: "editor-width" };
+let split = SPLIT.initial;
+
+function setSplit(pct, save) {
+  split = Math.min(SPLIT.max, Math.max(SPLIT.min, pct));
+  $("splitter").parentElement.style.setProperty("--editor-width", split + "%");
+  $("splitter").setAttribute("aria-valuenow", String(Math.round(split)));
+  if (save) try { localStorage.setItem(SPLIT.key, String(split)); } catch (_) {}
+}
+
+function wireSplitter() {
+  const handle = $("splitter");
+  const layout = handle.parentElement;
+  let saved = NaN;
+  try { saved = parseFloat(localStorage.getItem(SPLIT.key)); } catch (_) {}
+  setSplit(Number.isFinite(saved) ? saved : SPLIT.initial, false);
+
+  handle.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    try { handle.setPointerCapture(e.pointerId); } catch (_) {} // Keeps the drag when the pointer leaves the handle.
+    layout.classList.add("resizing");
+    const move = (ev) => {
+      const r = layout.getBoundingClientRect();
+      setSplit(((ev.clientX - r.left) / r.width) * 100, false);
+    };
+    const end = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", end);
+      handle.removeEventListener("pointercancel", end);
+      layout.classList.remove("resizing");
+      setSplit(split, true);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+  });
+  handle.addEventListener("keydown", (e) => {
+    const next = { ArrowLeft: split - SPLIT.step, ArrowRight: split + SPLIT.step, Home: SPLIT.min, End: SPLIT.max }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    setSplit(next, true);
+  });
+  handle.addEventListener("dblclick", () => setSplit(SPLIT.initial, true));
+}
+
+// ---- permalink -----------------------------------------------------------------------------------------------------
+
+// The page state as a URL: the preset, the form controls and the views as query parameters, and the document in the
+// fragment as base64url, only when it differs from the preset. Fragments never reach the server.
+const CONTROLS = ["downsample", "sample-interval", "symbols"];
+
+function permalink() {
+  const q = new URLSearchParams();
+  if (current) q.set("preset", current.id);
+  if (state.theme !== "system") q.set("theme", state.theme);
+  q.set("view", state.flavour);
+  q.set("tab", state.tab);
+  for (const id of CONTROLS) q.set(id, $(id).value);
+  const url = new URL(location.pathname, location.origin);
+  url.search = q.toString();
+  if (dirty()) url.hash = "doc=" + toBase64url(editor.value);
+  return url.href;
+}
+
+function toBase64url(text) {
+  const bytes = new TextEncoder().encode(text);
+  let bin = "";
+  // In chunks: spreading a large array into fromCharCode overflows the call stack.
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// Copies the permalink and puts it in the address bar, so a reload keeps the state as well.
+async function copyLink() {
+  const url = permalink();
+  history.replaceState(null, "", url);
+  const b = $("copy-link");
+  try {
+    await navigator.clipboard.writeText(url);
+    b.textContent = "Link copied";
+  } catch (_) {
+    b.textContent = "Link in address bar";
+  }
+  setTimeout(() => { b.textContent = "Copy link"; }, 1500);
+}
+
 function wire() {
+  wireSplitter();
   for (const b of $("theme").querySelectorAll("button")) b.addEventListener("click", () => setTheme(b.dataset.value));
   for (const b of $("flavour").querySelectorAll("button")) {
     b.addEventListener("click", () => {
@@ -289,6 +380,7 @@ function wire() {
   $("preset").addEventListener("change", () => choosePreset($("preset").value));
   $("reset").addEventListener("click", () => { if (current) load(current.text); });
   $("copy-md").addEventListener("click", copyMarkdown);
+  $("copy-link").addEventListener("click", copyLink);
   $("download-svg").addEventListener("click", () => download("schedule.svg", "image/svg+xml", state.svg));
   $("download-myst").addEventListener("click", () => download("schedule.md", "text/markdown", state.myst));
   $("download-kit").addEventListener("click", downloadKit);
@@ -312,7 +404,8 @@ function fromHash() {
   }
 }
 
-// Views can be linked: ?theme=dark&view=sphinx&tab=json&symbols=braille&preset=minimal
+// Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
+// (see permalink). Unknown values are ignored.
 function applyQuery() {
   const q = new URLSearchParams(location.search);
   const theme = q.get("theme");
@@ -326,8 +419,10 @@ function applyQuery() {
   pressed($("flavour"), state.flavour);
   const preset = q.get("preset");
   if (preset) state.preset = preset;
-  const symbols = q.get("symbols");
-  if (symbols === "ascii" || symbols === "braille") $("symbols").value = symbols;
+  for (const id of CONTROLS) {
+    const v = q.get(id);
+    if (v !== null && Array.from($(id).options).some((o) => o.value === v)) $(id).value = v;
+  }
   const tab = q.get("tab");
   if (["rendered", "diagnostics", "json", "ascii"].includes(tab)) selectTab(tab);
 }
@@ -354,8 +449,6 @@ async function start() {
     editor.value = fromHash() ?? current.text;
     updateReset();
     ready = true;
-    const v = await fetch("version.txt").then((r) => (r.ok ? r.text() : "")).catch(() => "");
-    $("version").textContent = v.trim();
     evaluate();
   } catch (err) {
     showStatus("err", "Couldn't load the checker: " + err);

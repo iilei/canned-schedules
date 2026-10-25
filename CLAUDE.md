@@ -377,9 +377,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme), the Markdown as a Sphinx page
   with custom admonitions (the default, left in the switch) or as a GitHub issue (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
   editor, the JSON and the ASCII preview. Options: preview buckets, sample interval, ASCII symbols. Theme toggle
-  (system/light/dark, saved in localStorage); `?theme=`, `?view=`, `?tab=`, `?symbols=` and `?preset=` make views
-  linkable, and
-  `#doc=<base64url>` opens a document (a fragment, so it never reaches the server).
+  (system/light/dark, saved in localStorage); `?preset=`, `?theme=`, `?view=`, `?tab=`, `?downsample=`,
+  `?sample-interval=` and `?symbols=` make views linkable, and `#doc=<base64url>` opens a document (a fragment, so it
+  never reaches the server). **Copy link** builds that URL from the current state (`permalink()` in `app.js`: every
+  control explicitly, the theme only when not "system", `#doc=` only when the editor differs from the preset), copies
+  it and puts it in the address bar.
+- **Resizable editor:** a splitter between the panes (`role="separator"`) sets the editor's share of the width
+  (`--editor-width`, 20–70 %, default 33.3 %): drag, arrow keys or Home/End, double-click to reset. Saved in
+  localStorage as a per-browser convenience, not part of the permalink. Hidden below 1100 px, where the panes stack.
 - **Editor (decided 2026-10-24): CodeMirror 6**, in `editor/` (`src/editor.js`, `build.mjs`, `package.json` with
   exact versions and a lockfile; `.npmrc` turns install scripts off). `web:build` runs `npm ci --prefix editor` and
   `node editor/build.mjs dist/site`, which bundles with esbuild into `editor.js` (IIFE, sets
@@ -424,7 +429,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - In terminals the user's font decides; terminals keep a fixed cell width, but the font needs braille glyphs.
 - Build: `mise run web:build` → `dist/site` (static files; `web/style.css` stays readable in the repo and is minified
   into the build by the editor's pinned esbuild; `app.wasm` ~10 MB raw / ~2.4 MB gzip, Go's matching
-  `wasm_exec.js`, the GitLab template as `template.md`, `version.txt`). `mise run web:serve [--port N]` serves it on 127.0.0.1 only (default port 8080).
+  `wasm_exec.js`, the GitLab template as `template.md`, `version.txt`, which identifies the deployed build but is not shown on the page). `mise run web:serve [--port N]` serves it on 127.0.0.1 only (default port 8080).
 - Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
   minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
 - Deploy: `.github/workflows/pages.yml` publishes `dist/site` on pushes to `master` (SHA-pinned
@@ -468,8 +473,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-- **Permissible kinds (next step, to explore):** which directive kinds exist besides META, BASE and STATE. Today every
-  coloured block is a state; explore whether other kinds are needed and what they would mean.
+- **Go documentation (to do, asked 2026-10-25):** the code already follows the conventions (package comments
+  everywhere, every exported identifier documented, `godot`). Still to do:
+  1. `-h`/`--help` prints a synopsis and the flags to stdout and exits 0 (today it is an `invalid-flag` error, exit 2).
+  2. Fix stale package comments: `render` (also ASCII and downsampling), `templates` (also SVG, ASCII, Sphinx CSS).
+  3. A usage synopsis as the command's doc comment (input, outputs, exit codes, pointer to the README).
+  4. Enable revive's `exported` rule in `.golangci.yml` (passes today), so it stays that way.
+  Skipped on purpose: `Example` tests (everything is `internal/`) and a separate docs site (README plus pkg.go.dev).
 
 ## Future ideas (not scheduled — don't build unasked)
 
