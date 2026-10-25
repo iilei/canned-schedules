@@ -96,7 +96,8 @@ root=$(pwd)
 cd "$usage_dir"
 file=$(ls -- *_"$usage_archive")
 sum=$(command -v sha256sum || echo "shasum -a 256")
-grep -F "  $file" checksums.txt | $sum --check -
+# The exact name: "<archive>.sbom.json" contains the archive's name, so a substring match would pick its line too.
+awk -v f="$file" '$2 == f' checksums.txt | $sum --check -
 bin=$(mktemp -d)
 trap 'rm -rf "$bin"' EXIT
 case "$file" in
