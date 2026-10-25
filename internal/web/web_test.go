@@ -36,6 +36,11 @@ func TestEvaluateValid(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !strings.HasPrefix(res.Text, "# Office Hours\n\n~~~text\n") ||
+		!strings.Contains(res.Text, "> [!SCHEDULE-BASE]") {
+		t.Errorf("the text form must be the canonical request with the preview:\n%s", res.Text)
+	}
+
 	if !strings.Contains(res.SVG, `digest="`+out.Digests.Schedule+`"`) ||
 		!strings.Contains(res.SVG, "&gt; [!SCHEDULE-STATE] Medium") ||
 		!strings.Contains(res.SVG, `generator="canned-schedules preflight page`) {
