@@ -172,7 +172,8 @@ release:
 
     ### Binary Download
     Download the archive for your platform from the assets below. Each archive has a detached GPG signature
-    (`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists all of them and is signed too:
+    (`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists all of them and is signed too, with the release
+    key `B645 234C 9CB8 175E CA5D  78A5 C844 7A22 52E9 E7B6`:
 
     ```bash
     gpg --verify checksums.txt.sig checksums.txt

@@ -91,7 +91,8 @@ holds for a stretch of the week, such as a capacity level, a support team or a m
 
 Prebuilt binaries for Linux (x86_64, arm64, armv7), macOS (universal) and Windows (amd64, arm64) are attached to
 each [GitHub release](https://github.com/iilei/canned-schedules/releases). Every archive comes with a GPG signature
-(`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists them all and is signed as well.
+(`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists them all and is signed as well. The release key's
+fingerprint is `B645 234C 9CB8 175E CA5D  78A5 C844 7A22 52E9 E7B6` (ed25519).
 
 Or build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
 
