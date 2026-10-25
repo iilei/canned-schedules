@@ -6,10 +6,11 @@ new one appears.
 
 ## Goal
 
-Contributors propose weekly capacity schedules through a GitHub/GitLab **issue template** written in simple Markdown.
-The Markdown is parsed, validated and rendered as a preview (ASCII/SVG). The core model has to work with any cloud
-provider. The first target is AWS ASG scheduled actions. **Readability for humans comes first**: the input contract
-should read like prose, with backticks marking only the values a machine has to read precisely.
+Contributors propose weekly schedules (capacity, on-call, support hours) through a GitHub/GitLab **issue template**
+written in simple Markdown. The Markdown is parsed, validated and rendered as a preview (ASCII/SVG). The core model
+has to work with any cloud provider. The first target is AWS ASG scheduled actions. **Readability for humans comes
+first**: the input contract should read like prose, with backticks marking only the values a machine has to read
+precisely.
 
 ## How the design evolved (newest last)
 
