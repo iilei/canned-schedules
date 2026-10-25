@@ -42,15 +42,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "request",
-        "effective"
+        "schedule"
       ],
       "properties": {
-        "request": {
-          "description": "SHA-256 of the exact input bytes.",
-          "$ref": "#/$defs/digest"
-        },
-        "effective": {
+        "schedule": {
           "description": "SHA-256 of {\"base\": …, \"week\": …} as compact JSON in the key order defined here. Ignores name, hint, annotations and cron rendering.",
           "$ref": "#/$defs/digest"
         }

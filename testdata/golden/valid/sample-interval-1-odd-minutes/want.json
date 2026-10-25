@@ -4,8 +4,7 @@
   "base": "Minimum",
   "annotations": {},
   "digests": {
-    "request": "sha256:739eb7766bd58f692cd4ee8e976236fa93356b689dbcb9951e641305d9e89d0b",
-    "effective": "sha256:11db9958ba50b7d0aa92fa53662ffd047f72ee42c2ae796b027c695f66a71449"
+    "schedule": "sha256:11db9958ba50b7d0aa92fa53662ffd047f72ee42c2ae796b027c695f66a71449"
   },
   "week": {
     "MON": [

@@ -50,13 +50,11 @@ type Warning struct { //nolint:govet // fieldalignment: field order is the JSON 
 	Excerpt *diag.Excerpt `json:"excerpt,omitempty"`
 }
 
-// Digests identify the request and the effective schedule.
+// Digests identify the schedule a consumer acts on.
 type Digests struct {
-	// Request is the SHA-256 of the exact input bytes: any edit, prose included, changes it.
-	Request string `json:"request"`
-	// Effective is the SHA-256 of the base tier and the painted week: it changes only when what a consumer acts on
+	// Schedule is the SHA-256 of the base tier and the painted week: it changes only when what a consumer acts on
 	// changes, never for name, hint, annotations or cron rendering.
-	Effective string `json:"effective"`
+	Schedule string `json:"schedule"`
 }
 
 // Week lists the runs of each day, Monday first. Field order defines the JSON key order.
@@ -142,7 +140,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		Warnings:      Warnings(src, diags),
 	}
 
-	if err := out.Finish(src); err != nil {
+	if err := out.Finish(); err != nil {
 		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
 			"internal error, please report it: the output fails its own schema: %v", err))
 	}

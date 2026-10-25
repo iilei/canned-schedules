@@ -229,7 +229,7 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
   "hint": "Weekdays with a late Friday",
   "base": "Minimum",
   "annotations": {"x-custom-owner": "team-xyz"},
-  "digests": {"request": "sha256:…", "effective": "sha256:…"},
+  "digests": {"schedule": "sha256:…"},
   "week": {
     "MON": [
       {"start": "00:00", "end": "06:00", "tier": "Minimum"},
@@ -256,7 +256,8 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
   zone: set it where you schedule them.
 - `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
   line, column and excerpt. No file names: the output depends only on the document and the flags.
-- `digests.request` identifies the exact input; `digests.effective` changes only when the base or the week changes.
+- `digests.schedule` changes only when the base or the week changes, never for the name, hint, annotations or
+  prose. To trace a schedule back to its source, carry a git SHA or an issue link in an `x-custom-*` META key.
 - The schema is [`schema/output.schema.json`](schema/output.schema.json); details in
   [`testdata/golden/README.md`](testdata/golden/README.md).
 

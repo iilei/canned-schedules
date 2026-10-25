@@ -123,13 +123,12 @@ def output(base, ranges, annotations=None, name="Schedule-Name", hint=None, warn
         out["hint"] = hint
     week = paint_minutes(base, ranges)
     week_runs = paint(base, ranges)
-    # The effective digest covers what a consumer acts on: the base tier and the painted week.
-    effective = json.dumps({"base": base, "week": week_runs}, separators=(",", ":"), ensure_ascii=False).encode()
+    # The schedule digest covers what a consumer acts on: the base tier and the painted week.
+    schedule = json.dumps({"base": base, "week": week_runs}, separators=(",", ":"), ensure_ascii=False).encode()
     out.update({
         "base": base,
         "annotations": annotations or {},
-        # The request digest needs the input bytes; write() fills it in.
-        "digests": {"request": None, "effective": "sha256:" + hashlib.sha256(effective).hexdigest()},
+        "digests": {"schedule": "sha256:" + hashlib.sha256(schedule).hexdigest()},
         "week": week_runs,
         "transitions": transitions(week),
         # Message text is not pinned: the golden runner replaces it with "…" before comparing. Positioned warnings
@@ -180,7 +179,6 @@ def write(name, md, args=(), want=None, diag=(), preview=None):
         with open(os.path.join(d, "args"), "w") as f:
             f.write("\n".join(args) + "\n")
     if want is not None:
-        want["digests"]["request"] = "sha256:" + hashlib.sha256(md.encode()).hexdigest()
         for i, w in enumerate(want["warnings"]):
             if "at" in w:
                 line, col = (int(x) for x in pos(md, *w["at"]).split(":"))

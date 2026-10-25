@@ -165,7 +165,7 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 
 	// The output also carries the config and preview warnings, which Evaluate doesn't see.
 	out.Warnings = schedule.Warnings(src, diags)
-	if err := out.Finish(src); err != nil {
+	if err := out.Finish(); err != nil {
 		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
 			"internal error, please report it: the output fails its own schema: %v", err))
 	}

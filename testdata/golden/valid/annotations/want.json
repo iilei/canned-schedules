@@ -7,8 +7,7 @@
     "x-custom-ticket": "OPS-1234"
   },
   "digests": {
-    "request": "sha256:e9bbe8e204aa91099d8203b0899f69d0774c1b93afa5b987138988a52b5bc92f",
-    "effective": "sha256:a85f161b74a226c35cf4c66d14277475da30128b23df4ad36812b1b8648ebd36"
+    "schedule": "sha256:a85f161b74a226c35cf4c66d14277475da30128b23df4ad36812b1b8648ebd36"
   },
   "week": {
     "MON": [
