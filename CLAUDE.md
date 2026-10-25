@@ -432,6 +432,16 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   walk as in `internal/myst.Render`. No text wrapping needed (all lines are short and validated); monospace items,
   fixed card width; system fonts (embedding Ubuntu ≈ +60 KB). Channels when built: a CLI flag (only without errors)
   and a page download button. Estimated at about half a day.
+- **MyST input** (asked 2026-10-25, deferred; keep the input tight until a real need appears): only worth it when
+  MyST is the source of truth, e.g. schedules maintained inside a Sphinx handbook. Otherwise GFM stays the only
+  input. Issue templates don't render MyST, a second grammar would double the parser, positions and fixtures, and
+  `--myst-output-file` already covers docs from the GFM source. If built:
+  - **Explicit flag** `--input-format gfm|myst` (default `gfm`), never auto-detected.
+  - **A front end only:** a MyST reader that produces the same syntax as `internal/document`, so evaluation, output
+    and digests stay shared.
+  - **Accepts only the shape `internal/myst` emits** (round trip). Test it by converting every golden input to MyST
+    and back.
+  - **Digests:** the same schedule in both flavours gets different request digests and the same effective digest.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
   catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
