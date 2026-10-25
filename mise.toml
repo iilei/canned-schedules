@@ -76,6 +76,18 @@ flag "-p --port <port>" env="PORT" default="8080" help="Port to listen on (local
 # Bind to localhost: http.server listens on every interface by default, which would expose the page to the network.
 run = 'python3 -m http.server --bind 127.0.0.1 --directory dist/site "$usage_port"'
 
+[tasks."fonts:braille"]
+description = "Rebuild assets/fonts/schedule-braille-mono.woff2 (the ASCII tab's font) from the pinned Cascadia release"
+# fontTools and brotli are pinned: with them, the script reproduces the committed font byte for byte.
+run = '''
+set -eu
+venv="$(mktemp -d)"
+trap 'rm -rf "$venv"' EXIT
+python3 -m venv "$venv"
+"$venv/bin/pip" install --quiet --disable-pip-version-check 'fonttools==4.55.3' 'brotli==1.2.0'
+"$venv/bin/python" -I assets/build-schedule-braille-mono.py
+'''
+
 [tasks."test:wasm"]
 description = "Run the test suites compiled to WebAssembly under Node: the same code the browser page runs"
 run = '''
