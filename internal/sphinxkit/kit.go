@@ -26,7 +26,8 @@ const root = "canned-schedules-sphinx-kit/"
 
 // kitFonts are the fonts the stylesheet uses inside schedule admonitions, and their licence.
 var kitFonts = []string{
-	"ubuntu-400.woff2", "ubuntu-500.woff2", "ubuntu-mono-400.woff2", "ubuntu-mono-700.woff2",
+	"ubuntu-400.woff2", "ubuntu-500.woff2", "ubuntu-700.woff2",
+	"ubuntu-mono-400.woff2", "ubuntu-mono-400-italic.woff2", "ubuntu-mono-700.woff2",
 	"UFL.txt",
 }
 

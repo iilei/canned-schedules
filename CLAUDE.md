@@ -408,7 +408,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
 - `internal/sphinxkit.Kit`: deterministic zip (sorted, fixed timestamps) with README, `_ext/canned_schedules`
   (`__init__.py` loads myst_parser, appends its static dir to `html_static_path`, adds `colon_fence`, adds the CSS),
-  the Furo stylesheet, four Ubuntu fonts + UFL, `examples/<slug>.md`, VERSION (tool + config digest).
+  the Furo stylesheet, all six Ubuntu fonts the page uses + UFL, `examples/<slug>.md`, VERSION (tool + config digest).
 - Channels: `--myst-output-file`, `--sphinx-kit-output-file` (written in `writeOutputs` like the previews, only
   without errors); page: `cannedSchedules.sphinxKit(markdown, args)` returns a `Uint8Array` or an error string, built
   on click.

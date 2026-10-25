@@ -11,10 +11,12 @@
 /* canned-schedules: schedule admonitions, generated from the config's tier styles. Do not edit; regenerate. */
 
 /* Ubuntu and Ubuntu Mono (Ubuntu Font Licence), used only inside schedule admonitions. */
-@font-face { font-family: "Canned Schedules Sans"; font-weight: 400; font-display: swap; src: url("{{ .fonts }}ubuntu-400.woff2") format("woff2"); }
-@font-face { font-family: "Canned Schedules Sans"; font-weight: 500; font-display: swap; src: url("{{ .fonts }}ubuntu-500.woff2") format("woff2"); }
-@font-face { font-family: "Canned Schedules Mono"; font-weight: 400; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-400.woff2") format("woff2"); }
-@font-face { font-family: "Canned Schedules Mono"; font-weight: 700; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-700.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-400.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-500.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Sans"; font-weight: 700; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-700.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-400.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Mono"; font-weight: 400; font-style: italic; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "Canned Schedules Mono"; font-weight: 700; font-style: normal; font-display: swap; src: url("{{ .fonts }}ubuntu-mono-700.woff2") format("woff2"); }
 
 {{ .scope }}.admonition.schedule {
   --color-admonition-title: var(--tier, #8a8f98);

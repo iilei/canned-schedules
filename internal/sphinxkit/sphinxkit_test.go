@@ -43,6 +43,7 @@ func TestCSSTargets(t *testing.T) {
 
 		for _, w := range append(tc.want,
 			"--color-admonition-title: var(--tier", "--icon-admonition-default", `url("fonts/ubuntu-mono-400.woff2")`,
+			`url("fonts/ubuntu-700.woff2")`, `font-style: italic; font-display: swap; src: url("fonts/ubuntu-mono-400-italic.woff2")`,
 			`.admonition.schedule code { font-family: "Canned Schedules Mono"`) {
 			if !strings.Contains(css, w) {
 				t.Errorf("%s: missing %q", name, w)
@@ -94,6 +95,8 @@ func TestKit(t *testing.T) {
 		"_ext/canned_schedules/static/fonts/UFL.txt",
 		"_ext/canned_schedules/static/fonts/ubuntu-400.woff2",
 		"_ext/canned_schedules/static/fonts/ubuntu-500.woff2",
+		"_ext/canned_schedules/static/fonts/ubuntu-700.woff2",
+		"_ext/canned_schedules/static/fonts/ubuntu-mono-400-italic.woff2",
 		"_ext/canned_schedules/static/fonts/ubuntu-mono-400.woff2",
 		"_ext/canned_schedules/static/fonts/ubuntu-mono-700.woff2",
 		"examples/office-hours.md",
