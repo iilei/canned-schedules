@@ -64,7 +64,8 @@ A diagnostic points at the first character of the offending token:
       "time": "06:00",
       "days": ["MON", "TUE", "WED", "THU", "FRI"],
       "state": "Medium",
-      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
+      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"},
+      "sha": "401b14a3"
     }
   ]
 }
@@ -89,6 +90,9 @@ A diagnostic points at the first character of the offending token:
       1 = SUN, so names avoid off-by-one mistakes. This is not Quartz, which has a leading seconds field.
     - Both list days Sunday-first and never wrap around the week (`FRI`–`MON` becomes `0-1,5-6` /
       `SUN-MON,FRI-SAT`). All seven days become `*`.
+  - `sha` identifies the transition by meaning: the first 8 hex digits of the SHA-256 of
+    `{"time":…,"days":[…],"state":…}` as compact JSON, in that key order. The cron strings are derived and left out,
+    so a cron fix never changes it. Consumers use it for stable names (Terraform `for_each` keys, scheduled actions).
 - `base` is always present, also when `transitions` is `[]`. It is the resolved base state (document BASE, then
   `--base`, then config state 0).
 - `warnings` lists every warning (`code`, `message`, and `line`/`column`/`excerpt` when positioned). Fixtures don't pin

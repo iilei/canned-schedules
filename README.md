@@ -515,7 +515,8 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
       "time": "06:00",
       "days": ["MON", "TUE", "WED", "THU", "FRI"],
       "state": "Medium",
-      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
+      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"},
+      "sha": "401b14a3"
     }
   ],
   "warnings": []
@@ -523,7 +524,9 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 ```
 
 - `week` covers every day from `00:00` to `00:00` in half-open runs; an `end` of `00:00` means the end of the day.
-- `transitions` lists every moment the state changes, grouped by time and state. `cron.posix` is five-field Unix cron
+- `transitions` lists every moment the state changes, grouped by time and state. Each has a `sha`: the first 8 hex
+  digits of the SHA-256 of its `time`, `days` and `state` as compact JSON (the cron strings are derived and left out),
+  for stable names such as Terraform keys or scheduled action names. `cron.posix` is five-field Unix cron
   (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field format of EventBridge and Application Auto
   Scaling. Neither carries a time
   zone: set it where you schedule them.
@@ -554,14 +557,15 @@ keep next to your infrastructure, keyed by state id:
 }
 ```
 
-With Terraform, `for_each` over the transitions. Transitions are grouped by time and state, so that pair is a unique,
-stable key, and Terraform removes the actions of transitions that disappear:
+With Terraform, `for_each` over the transitions, keyed by each transition's `sha`. It changes only when the
+transition's time, days or state change, never with the tool version or the cron formatting, so Terraform replaces
+exactly the actions whose meaning changed and removes those of transitions that disappear:
 
 ```hcl
 locals {
   schedule = jsondecode(file("${path.module}/office-hours.canned-schedule.json"))
   capacity = jsondecode(file("${path.module}/capacity.json"))
-  transitions = { for t in local.schedule.transitions : "${replace(t.time, ":", "")}-${t.state}" => t }
+  transitions = { for t in local.schedule.transitions : t.sha => t }
 }
 
 resource "aws_autoscaling_schedule" "office_hours" {
@@ -589,7 +593,7 @@ schedule=office-hours.canned-schedule.json
 actions=$(jq -r --slurpfile cap capacity.json --arg prefix "$prefix" '
   .transitions[]
   | ($cap[0][.state] // error("capacity.json has no entry for state \(.state)")) as $c
-  | [$prefix + "-" + (.time | sub(":"; "")) + "-" + .state, .cron.posix, $c.min, $c.desired, $c.max]
+  | [$prefix + "-" + .sha, .cron.posix, $c.min, $c.desired, $c.max]
   | @tsv' "$schedule")
 
 # Remove this schedule's earlier actions, so a transition that was dropped from the request stops firing.

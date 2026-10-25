@@ -274,7 +274,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   because transitions alone don't give the state in effect right now.
 - Each entry: `time`, `days` (**full list**, Monday first), `state`, and `cron` with two dialects: `posix` (five
   fields, numeric weekdays, 0 = SUN; EC2 Auto Scaling) and `aws` (six-field EventBridge format, weekday names). Real
-  Quartz (with a seconds field) only if someone needs it.
+  Quartz (with a seconds field) only if someone needs it. Last, `sha` (added 2026-10-25): the first 8 hex digits of
+  the SHA-256 of `{"time","days","state"}` as compact JSON, for Terraform resource keys and action names. It hashes the
+  meaning, not the derived cron strings, so a new dialect or a cron fix never renames anything; the schedule digest
+  doesn't include it. Unique within a schedule, since (time, state) already is; 32 bits make collisions across a
+  catalog's schedules irrelevant, and Terraform would refuse a duplicate key anyway.
 - Grouped by (time of day, state); ordered by first minute in the week, then state. Cron day lists are Sunday-first and
   never wrap around the week. All seven days become `*`. No time zone in cron strings.
 - Implemented in `internal/schedule/transitions.go`, with an independent reference in `testdata/golden/gen.py`.
