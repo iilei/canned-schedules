@@ -105,16 +105,14 @@ def transitions(week):
         days = sorted({m // 1440 for m in minutes})
         sun_first = sorted(SUN_FIRST.index(DAYS[d]) for d in days)
         h, mi = divmod(tod, 60)
-        entry = {"time": hm(tod), "days": [DAYS[d] for d in days], "state": state}
-        # The short sha covers what the transition means, not the derived cron strings.
-        sha = hashlib.sha256(json.dumps(entry, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()[:8]
         out.append({
-            **entry,
+            "time": hm(tod),
+            "days": [DAYS[d] for d in days],
+            "state": state,
             "cron": {
                 "posix": f"{mi} {h} * * {compress(sun_first, str)}",
                 "aws": f"{mi} {h} ? * {compress(sun_first, lambda i: SUN_FIRST[i])} *",
             },
-            "sha": sha,
         })
     return out
 

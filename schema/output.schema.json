@@ -166,8 +166,7 @@
         "time",
         "days",
         "state",
-        "cron",
-        "sha"
+        "cron"
       ],
       "properties": {
         "time": {
@@ -204,11 +203,6 @@
               "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\? \\* (?:\\*|(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?(?:,(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?)*) \\*$"
             }
           }
-        },
-        "sha": {
-          "description": "The transition's identity: the first 8 hex digits of the SHA-256 of {\"time\", \"days\", \"state\"} as compact JSON (the cron strings are derived and left out).",
-          "type": "string",
-          "pattern": "^[0-9a-f]{8}$"
         }
       }
     },

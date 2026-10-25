@@ -99,8 +99,7 @@
       "cron": {
         "posix": "0 9 * * 1-3",
         "aws": "0 9 ? * MON-WED *"
-      },
-      "sha": "51f42d4d"
+      }
     },
     {
       "time": "17:00",
@@ -113,8 +112,7 @@
       "cron": {
         "posix": "0 17 * * 1-3",
         "aws": "0 17 ? * MON-WED *"
-      },
-      "sha": "d9d7bfa9"
+      }
     }
   ],
   "warnings": [
