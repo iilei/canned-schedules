@@ -60,8 +60,7 @@ Everything else is free text for humans, including standard alerts such as `[!NO
 | `[!SCHEDULE:BASE] tier` | no           | The tier wherever no range applies                                                                 |
 | `[!SCHEDULE:TIER] tier` | one per tier | A list of ranges                                                                                   |
 
-`CANNED-SCHEDULE`, `TO-SCHEDULE`, `CAN-SCHED` and `CONFIG-SCHED` work as aliases for `SCHEDULE`. Markers and tier
-names are case-insensitive.
+`SCHEDULE` is the only namespace. Markers and tier names are case-insensitive.
 
 **Ranges** are written `` `start` to `end` WEEKDAYS ``:
 

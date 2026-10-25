@@ -394,21 +394,6 @@ write(
 )
 
 write(
-    "valid/namespace-aliases",
-    doc(
-        "> [!CANNED-SCHEDULE:META]\n> - schema-version: `1`\n",
-        "> [!to-schedule:BASE] Minimum\n",
-        "> [!Can-Sched:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n",
-        "> [!CONFIG-SCHED:TIER] Maximum\n> - `12:00` to `14:00` WED\n",
-        "> [!SCHEDULE:TIER] Off\n> - `03:00` to `04:00` SUN\n",
-    ),
-    want=output(
-        "Minimum",
-        [("06:00", "22:00", WD, "Medium"), ("12:00", "14:00", ["WED"], "Maximum"), ("03:00", "04:00", ["SUN"], "Off")],
-    ),
-)
-
-write(
     "valid/time-single-digit-hour",
     doc(
         META,
@@ -677,6 +662,8 @@ err(
     args=["--set-config-at", "tiers[1]", "--set-config-value", '{"id": "off", "display-name": "Off again"}'],
 )
 err("error/unknown-namespace-typo", [META, BASE, "> [!SCHEDUEL:TIER] Medium\n> - `06:00` to `22:00` MON\n"], "SCHEDUEL:TIER", "unknown-namespace")
+# The former aliases (CANNED-SCHEDULE, TO-SCHEDULE, CAN-SCHED, CONFIG-SCHED) were dropped on 2026-10-25.
+err("error/unknown-namespace-former-alias", [META, BASE, "> [!CAN-SCHED:TIER] Medium\n> - `06:00` to `22:00` MON\n"], "CAN-SCHED:TIER", "unknown-namespace")
 err("error/unknown-namespace-foreign", [META, BASE, "> [!PLAN:TIER] Medium\n> - `06:00` to `22:00` MON\n"], "PLAN:TIER", "unknown-namespace")
 err("error/time-single-digit-minute", [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `6:0` to `9:30` MON\n"], "6:0`", "invalid-time")
 err("error/time-three-digit-hour", [META, BASE, "> [!SCHEDULE:TIER] Medium\n> - `006:00` to `9:30` MON\n"], "006:00", "invalid-time")

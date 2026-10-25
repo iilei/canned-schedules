@@ -9,8 +9,9 @@ import (
 	"github.com/iilei/canned-schedules/internal/diag"
 )
 
-// Namespaces lists the accepted namespace aliases. All of them mean SCHEDULE. Adding one is a spec change.
-var Namespaces = []string{"SCHEDULE", "CANNED-SCHEDULE", "TO-SCHEDULE", "CAN-SCHED", "CONFIG-SCHED"}
+// Namespaces lists the accepted namespaces, matched case-insensitively. There is one for now; it stays a list so an
+// alias can be added later. Adding one is a spec change.
+var Namespaces = []string{"SCHEDULE"}
 
 // marker matches the alert marker at the start of a blockquote's first line and captures the alert type.
 var marker = regexp.MustCompile(`^\[!([^\]\n]*)\]`)

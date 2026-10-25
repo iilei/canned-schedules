@@ -102,8 +102,7 @@ A diagnostic points at the first character of the offending token:
 ## Built-in config assumed
 
 The fixtures assume the tiers from `schema/config.json`: `Off`, `Minimum`, `Medium`, `Maximum` (index 0 = `Off`), four
-styles. Namespace aliases are fixed in code: `SCHEDULE`, `CANNED-SCHEDULE`, `TO-SCHEDULE`,
-`CAN-SCHED`, `CONFIG-SCHED`.
+styles. The namespace is fixed in code: `SCHEDULE` only.
 
 ## Notes
 
