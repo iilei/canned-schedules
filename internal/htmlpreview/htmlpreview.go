@@ -28,7 +28,7 @@ const (
 	// quote with the literal text, which is what GitHub shows for schedule directives.
 	GitHub = "github"
 	// Sphinx renders every alert as an admonition; schedule directives get custom admonitions coloured from the
-	// config's tier styles, and weekday names get <abbr> tooltips.
+	// config's tier styles.
 	Sphinx = "sphinx"
 )
 
@@ -39,15 +39,7 @@ var standardAlerts = map[string]string{
 	"NOTE": "Note", "TIP": "Tip", "IMPORTANT": "Important", "WARNING": "Warning", "CAUTION": "Caution",
 }
 
-var (
-	marker  = regexp.MustCompile(`^\[!([^\]\n]*)\][ \t]*(.*)$`)
-	weekday = regexp.MustCompile(`\b(MON|TUE|WED|THU|FRI|SAT|SUN)\b`)
-)
-
-var weekdayNames = map[string]string{
-	"MON": "Monday", "TUE": "Tuesday", "WED": "Wednesday", "THU": "Thursday", "FRI": "Friday", "SAT": "Saturday",
-	"SUN": "Sunday",
-}
+var marker = regexp.MustCompile(`^\[!([^\]\n]*)\][ \t]*(.*)$`)
 
 // kindCallout identifies Callout nodes.
 var kindCallout = ast.NewNodeKind("Callout")
@@ -62,7 +54,7 @@ type Callout struct {
 	// Body is text rendered inside before the children (the BASE explanation).
 	Body string
 	ast.BaseBlock
-	// Schedule marks schedule directives, whose content gets weekday tooltips in Sphinx mode.
+	// Schedule marks schedule directives.
 	Schedule bool
 }
 
@@ -98,10 +90,6 @@ func Render(src []byte, cfg *config.Config, mode string) (string, error) {
 	var buf bytes.Buffer
 	if err := md.Convert(src, &buf); err != nil {
 		return "", fmt.Errorf("render preview: %w", err)
-	}
-
-	if mode == Sphinx {
-		return abbrWeekdays(buf.String()), nil
 	}
 
 	return buf.String(), nil

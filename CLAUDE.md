@@ -372,9 +372,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - GitHub mode: NOTE/TIP/IMPORTANT/WARNING/CAUTION become GitHub callouts (only when the marker stands alone);
     schedule directives stay quotes with the literal marker, as GitHub really shows them.
   - Sphinx mode: all alerts become admonitions; schedule directives get `admonition schedule schedule-tier tier-N`
-    with the tier's display name, coloured by `sphinxkit.CSS(cfg, sphinxkit.Page)` (see "Sphinx kit"); weekday names
-    inside schedule admonitions get `<abbr>` tooltips. BASE gets the body `myst.BaseText`; a META block with only a
-    hint is a paragraph, like in the MyST output.
+    with the tier's display name, coloured by `sphinxkit.CSS(cfg, sphinxkit.Page)` (see "Sphinx kit"). BASE gets
+    the body `myst.BaseText`; a META block with only a hint is a paragraph, like in the MyST output.
   - `web/style.css` imitates Furo's admonitions with Furo's variable names, so the generated schedule stylesheet works
     unchanged on the page and in a real Furo build.
 - Fonts: Ubuntu + Ubuntu Mono, **self-hosted** in `assets/fonts` (embedded by `assets/embed.go` for the Sphinx kit,
@@ -406,14 +405,19 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   the tier swatch) from `--tier`; checked against furo 2025.12.19.
 - `templates.Execute` is the shared JSON-shaped template runner (render, report, CSS, kit templates).
 - `internal/myst`: a valid request → MyST (H1, META as `Schedule: hint` admonition or a hint paragraph, BASE with
-  `BaseText`, TIER items with `{abbr}` weekdays). docutils requires admonition content, hence BaseText. Text goes
+  `BaseText`, TIER items written as in the request). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
+  - **No weekday tooltips (dropped 2026-10-25):** `{abbr}` roles (and `<abbr>` in the page's Sphinx view) made items
+    hard to read, and expanding the fixed English abbreviations told readers almost nothing.
 - `internal/sphinxkit.Kit`: deterministic zip (sorted, fixed timestamps) with README, `_ext/canned_schedules`
   (`__init__.py` loads myst_parser, appends its static dir to `html_static_path`, adds `colon_fence`, adds the CSS),
   the Furo stylesheet, all six Ubuntu fonts the page uses + UFL, `examples/<slug>.md`, VERSION (tool + config digest).
 - Channels: `--myst-output-file`, `--sphinx-kit-output-file` (written in `writeOutputs` like the previews, only
-  without errors); page: `cannedSchedules.sphinxKit(markdown, args)` returns a `Uint8Array` or an error string, built
-  on click.
+  without errors); page: **Download MyST** (`myst` in the evaluate result, like the SVG) and
+  `cannedSchedules.sphinxKit(markdown, args)`, which returns a `Uint8Array` or an error string and is built on click.
+- **MyST is build output (decided 2026-10-25):** users edit and validate the GFM request; docs builds regenerate the
+  MyST from it and never edit it by hand. The README's "From request to docs page" recipe shows the CI loop, the
+  choice between `.gitignore` and a `git diff --exit-code` drift check, and toctree pages.
 - Verified end to end with sphinx 9.1.0, furo 2025.12.19, myst-parser 5.1.0: `sphinx-build -W` clean, screenshots in
   light and dark match the page.
 
@@ -457,6 +461,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     that today.
   - With `SUN`, the weekend lands in the first and last rows, so `MON` stays the default.
   - About 1–2 h of work, including new `want.preview` fixtures via `gen.py`.
+- **MyST generated during the Sphinx build** (asked 2026-10-25, deferred). The kit's extension would run the CLI
+  when the build starts (`builder-inited`), for `canned_schedules_sources = "schedules/*/source.md"` in `conf.py`,
+  and write the MyST pages before Sphinx reads them. The Go tool still parses and validates, and an invalid request
+  fails the build, so nothing drifts. That is the difference from the rejected Python transform that would have
+  rendered GFM inside Sphinx without validating it.
+  - Cost: the binary must be available where the docs are built.
+  - The extension compares the tool version with the kit's `VERSION` and warns when they differ.
+  - Until then, the README's "From request to docs page" recipe (a CI loop before `sphinx-build`) covers this.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
   catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets

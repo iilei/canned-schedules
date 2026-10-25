@@ -32,7 +32,6 @@
 {{ .scope }}.admonition.schedule ul { list-style: none; padding-left: 0; }
 {{ .scope }}.admonition.schedule li { margin: .15em 0; }
 {{ .scope }}.admonition.schedule code { font-family: "Canned Schedules Mono", monospace; }
-{{ .scope }}.admonition.schedule abbr[title] { text-decoration: underline dotted; cursor: help; }
 {{- range .tiers }}
 
 {{ $.scope }}.admonition.{{ .class }} { --tier: {{ .light }}; }

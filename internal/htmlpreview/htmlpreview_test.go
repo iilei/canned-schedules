@@ -43,10 +43,6 @@ func TestGitHub(t *testing.T) {
 			t.Errorf("missing %q in:\n%s", want, html)
 		}
 	}
-
-	if strings.Contains(html, "<abbr") {
-		t.Error("weekday tooltips are a Sphinx customisation")
-	}
 }
 
 func TestSphinx(t *testing.T) {
@@ -58,7 +54,7 @@ func TestSphinx(t *testing.T) {
 		`<div class="admonition schedule schedule-meta"><p class="admonition-title">Schedule: Office</p>`,
 		`<div class="admonition schedule schedule-base tier-1"><p class="admonition-title">Base tier: Minimum</p>`,
 		`<div class="admonition schedule schedule-tier tier-2"><p class="admonition-title">Medium</p>`,
-		`<code>06:00</code> to <code>22:00</code> <abbr title="Monday">MON</abbr>-<abbr title="Friday">FRI</abbr>`,
+		`<code>06:00</code> to <code>22:00</code> MON-FRI`,
 		`<div class="admonition note"><p class="admonition-title">Note</p>`,
 		`<div class="admonition tip"><p class="admonition-title">Tip</p>`,
 		`<div class="admonition"><p class="admonition-title">OTHER:THING x</p>`,
@@ -68,8 +64,8 @@ func TestSphinx(t *testing.T) {
 		}
 	}
 
-	if strings.Contains(html, "Mention <abbr") || strings.Contains(html, "with <abbr") {
-		t.Error("weekday tooltips only belong inside schedule admonitions")
+	if strings.Contains(html, "<abbr") {
+		t.Error("weekdays are written as in the request, without tooltips")
 	}
 
 	if strings.Contains(html, "[!SCHEDULE:") {
