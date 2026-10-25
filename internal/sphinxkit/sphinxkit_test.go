@@ -44,7 +44,8 @@ func TestCSSTargets(t *testing.T) {
 		for _, w := range append(tc.want,
 			"--color-admonition-title: var(--state", "--icon-admonition-default", `url("fonts/ubuntu-mono-400.woff2")`,
 			`url("fonts/ubuntu-700.woff2")`, `font-style: italic; font-display: swap; src: url("fonts/ubuntu-mono-400-italic.woff2")`,
-			`.admonition.schedule code { font-family: "Canned Schedules Mono"`) {
+			`.admonition.schedule code { font-family: "Canned Schedules Mono"`,
+			`.admonition.schedule-empty > :not(.admonition-title) { display: none; }`) {
 			if !strings.Contains(css, w) {
 				t.Errorf("%s: missing %q", name, w)
 			}

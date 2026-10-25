@@ -442,7 +442,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `BaseText`, STATE items written as in the request). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
   - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
-    (`&nbsp;`) as its body, because docutils rejects an admonition without content. Earlier a hint-only META became a
+    (`&nbsp;`) as its body, because docutils rejects an admonition without content, and the class `schedule-empty`.
+    The shared stylesheet collapses such a box to its title bar (body hidden, no bottom padding). A class, not a
+    `data-*` attribute: Sphinx's admonition takes only `:class:` and `:name:`, and CSS can't select a paragraph that
+    holds only `&nbsp;`. Earlier a summary-only META became a
     plain paragraph, which looked inconsistent next to META blocks with items. Authors never type the body: requiring
     a body in the input was rejected (an invisible character, and only docutils needs it).
   - **No weekday tooltips (dropped 2026-10-25):** `{abbr}` roles (and `<abbr>` in the page's Sphinx view) made items

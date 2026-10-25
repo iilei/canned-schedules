@@ -29,6 +29,10 @@
 {{ .scope }}.admonition.schedule-base {
   --icon-admonition-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='18' height='18' rx='4'/%3E%3C/svg%3E");
 }
+/* A META block without items: its body is an invisible &nbsp; (docutils needs content), so show the title bar only. */
+{{ .scope }}.admonition.schedule-empty { padding-bottom: 0; }
+{{ .scope }}.admonition.schedule-empty > .admonition-title { margin-bottom: 0; }
+{{ .scope }}.admonition.schedule-empty > :not(.admonition-title) { display: none; }
 {{ .scope }}.admonition.schedule ul { list-style: none; padding-left: 0; }
 {{ .scope }}.admonition.schedule li { margin: .15em 0; }
 {{ .scope }}.admonition.schedule code { font-family: "Canned Schedules Mono", monospace; }
