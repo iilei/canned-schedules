@@ -1,9 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/output.schema.json",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-25/output.schema.json",
   "title": "canned-schedules canonical output",
   "type": "object",
-  "additionalProperties": false,
   "required": [
     "schema-version",
     "name",
@@ -16,7 +15,7 @@
   ],
   "properties": {
     "schema-version": {
-      "const": "1"
+      "const": "2026-10-25"
     },
     "name": {
       "$ref": "#/$defs/text"
@@ -40,7 +39,6 @@
     },
     "digests": {
       "type": "object",
-      "additionalProperties": false,
       "required": [
         "schedule"
       ],
@@ -141,7 +139,6 @@
     },
     "run": {
       "type": "object",
-      "additionalProperties": false,
       "required": [
         "start",
         "end",
@@ -161,7 +158,6 @@
     },
     "transition": {
       "type": "object",
-      "additionalProperties": false,
       "required": [
         "time",
         "days",
@@ -186,7 +182,6 @@
         },
         "cron": {
           "type": "object",
-          "additionalProperties": false,
           "required": [
             "posix",
             "aws"
@@ -208,7 +203,6 @@
     },
     "warning": {
       "type": "object",
-      "additionalProperties": false,
       "required": [
         "code",
         "message"
@@ -237,7 +231,6 @@
         },
         "excerpt": {
           "type": "object",
-          "additionalProperties": false,
           "required": [
             "text",
             "marker"

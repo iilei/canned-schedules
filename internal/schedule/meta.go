@@ -14,7 +14,10 @@ import (
 	"github.com/iilei/canned-schedules/schema"
 )
 
-const customPrefix = "x-"
+const (
+	customPrefix     = "x-"
+	schemaVersionKey = "schema-version"
+)
 
 // metaKey matches the text before the code span of a META item: "key:" with optional surrounding whitespace, the
 // no-break space included (see document.IsSpace).
@@ -64,7 +67,7 @@ func decodeMeta(d *document.Directive) (meta, diag.List) {
 
 	for _, e := range entries {
 		switch {
-		case e.key == "schema-version":
+		case e.key == schemaVersionKey:
 			m.schemaVersion = e.value
 		case strings.HasPrefix(e.key, customPrefix):
 			m.annotations[e.key] = e.value
@@ -161,6 +164,10 @@ func metaDiag(leaf *jsonschema.ValidationError, byKey map[string]metaEntry, bloc
 	if len(leaf.InstanceLocation) > 0 {
 		e := byKey[leaf.InstanceLocation[0]]
 
+		if e.key == schemaVersionKey {
+			return diag.List{versionDiag(e)}
+		}
+
 		return diag.List{diag.Errorf(e.valuePos, diag.CodeMetaSchema, "META %s: %s", e.key, msg)}
 	}
 
@@ -177,6 +184,19 @@ func metaDiag(leaf *jsonschema.ValidationError, byKey map[string]metaEntry, bloc
 	}
 
 	return diag.List{diag.Errorf(blockPos, diag.CodeMetaSchema, "META: %s", msg)}
+}
+
+// versionDiag explains a schema-version this binary doesn't read. Until 0.0.1-pre.5 the version was "1"; it is now the
+// date of the last breaking change.
+func versionDiag(e metaEntry) diag.Diagnostic {
+	reason := "the date of the last breaking change"
+	if e.value == "1" {
+		reason = "versions are now the date of the last breaking change, no longer 1"
+	}
+
+	return diag.Errorf(e.valuePos, diag.CodeMetaSchema, "schema-version %q: this version of canned-schedules reads %s (%s)",
+		e.value, SchemaVersion, reason).
+		WithExample("- schema-version: `" + SchemaVersion + "`")
 }
 
 func leaves(ve *jsonschema.ValidationError) []*jsonschema.ValidationError {

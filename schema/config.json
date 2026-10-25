@@ -1,6 +1,6 @@
 {
-  "$schema": "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json",
-  "schema-version": "1",
+  "$schema": "https://iilei.github.io/canned-schedules/schema/2026-10-25/config.schema.json",
+  "schema-version": "2026-10-25",
   "states": [
     {
       "id": "Off",

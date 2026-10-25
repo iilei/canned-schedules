@@ -116,6 +116,9 @@ universal_binaries:
 
 checksum:
   name_template: 'checksums.txt'
+  # The schemas this release reads and writes: listed, so the signature and the provenance attestation cover them.
+  extra_files:
+    - glob: ./schema/*.schema.json
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
@@ -169,6 +172,7 @@ release:
   # The public release key, so a downloaded release carries what its signatures are checked against.
   extra_files:
     - glob: ./release-key.asc
+    - glob: ./schema/*.schema.json
   header: |
     ## canned-schedules {{ .Tag }} ({{ .Date }})
 

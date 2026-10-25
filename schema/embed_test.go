@@ -2,6 +2,7 @@ package schema
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -52,5 +53,48 @@ func TestEmbeddedSchemasCompile(t *testing.T) {
 		if _, err := Compile(url, raw); err != nil {
 			t.Errorf("%s: %v", url, err)
 		}
+	}
+}
+
+// TestVersionIsTheSingleSource keeps the JSON files in step with Version: every schema's $id is its URL constant,
+// every schema-version constant and the built-in config carry Version, and the config points at its schema.
+func TestVersionIsTheSingleSource(t *testing.T) {
+	t.Parallel()
+
+	for url, raw := range map[string][]byte{
+		ConfigSchemaURL: ConfigSchema,
+		MetaSchemaURL:   MetaSchema,
+		OutputSchemaURL: OutputSchema,
+		ReportSchemaURL: ReportSchema,
+	} {
+		var s struct {
+			ID         string `json:"$id"`
+			Properties struct {
+				SchemaVersion struct {
+					Const string `json:"const"`
+				} `json:"schema-version"`
+			} `json:"properties"`
+		}
+
+		if err := json.Unmarshal(raw, &s); err != nil {
+			t.Fatal(err)
+		}
+
+		if s.ID != url || s.Properties.SchemaVersion.Const != Version {
+			t.Errorf("%s: $id %q, schema-version %q; want %q", url, s.ID, s.Properties.SchemaVersion.Const, Version)
+		}
+	}
+
+	var cfg struct {
+		Schema        string `json:"$schema"`
+		SchemaVersion string `json:"schema-version"`
+	}
+
+	if err := json.Unmarshal(Config, &cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Schema != ConfigSchemaURL || cfg.SchemaVersion != Version {
+		t.Errorf("config.json: $schema %q, schema-version %q", cfg.Schema, cfg.SchemaVersion)
 	}
 }
