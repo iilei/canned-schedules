@@ -442,6 +442,18 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **Accepts only the shape `internal/myst` emits** (round trip). Test it by converting every golden input to MyST
     and back.
   - **Digests:** the same schedule in both flavours gets different request digests and the same effective digest.
+- **First day of the week in previews** (asked 2026-10-25, deferred; worth it once users in regions with Sunday- or
+  Saturday-first weeks appear). The setting is `representation.week-start` with `MON` (default, ISO 8601), `SUN` or
+  `SAT`, plus a `--preview-week-start <day>` shorthand. The shorthand is applied after `--set-config-at`, like
+  `--ascii-symbols`. On the page it is a dropdown plus `?weekstart=`.
+  - **Changes only the order of the day rows** in the SVG, ASCII and page previews.
+  - **The canonical JSON, both digests, the weekday syntax and `want.json` stay unchanged**, so the same schedule
+    never hashes differently depending on who renders it.
+  - **The SVG transition table keeps its canonical order**, so it matches the JSON.
+  - A range that crosses midnight at the week boundary wraps from the last row to the first; SUN → MON already does
+    that today.
+  - With `SUN`, the weekend lands in the first and last rows, so `MON` stays the default.
+  - About 1–2 h of work, including new `want.preview` fixtures via `gen.py`.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
   catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
