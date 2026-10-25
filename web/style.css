@@ -334,7 +334,6 @@ pre.ascii { font-family: "Schedule Braille Mono", var(--mono); font-size: 14px; 
 .rendered.sphinx h2 { font-size: 1.45em; color: var(--sx-head); font-weight: 500; margin: 1.6em 0 .6em; text-transform: none; letter-spacing: 0; }
 .rendered.sphinx code { font-family: var(--mono); font-size: .95em; padding: .1em .3em; border-radius: 4px; background: var(--sx-code-bg); }
 .rendered.sphinx a { color: var(--sx-link); }
-.rendered.sphinx abbr[title] { text-decoration: underline dotted; cursor: help; }
 .rendered.sphinx blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 3px solid var(--border); }
 /* Admonitions imitate Furo and use Furo's own variables (--color-admonition-title, -title-background, -background,
    --icon-admonition-default). The schedule stylesheet injected into #tier-styles, which the Sphinx kit ships for real

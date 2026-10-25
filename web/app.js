@@ -5,7 +5,7 @@ const $ = (id) => document.getElementById(id);
 const editor = createEditor($("editor"));
 const jsonView = createJsonView($("json"));
 const DEFAULT_PRESET = "office-hours";
-const state = { theme: document.documentElement.dataset.theme || "system", flavour: "sphinx", tab: "rendered", svg: "", preset: "" };
+const state = { theme: document.documentElement.dataset.theme || "system", flavour: "sphinx", tab: "rendered", svg: "", myst: "", preset: "" };
 const presets = []; // [{id, label, text}], from presets/index.json
 let current = null; // the selected preset
 let ready = false;
@@ -104,6 +104,8 @@ function render(res) {
   $("svg").innerHTML = state.svg || '<p class="placeholder">Fix the errors to see the week.</p>';
   $("download-svg").disabled = !state.svg;
   $("download-kit").disabled = !state.svg;
+  state.myst = res.myst || "";
+  $("download-myst").disabled = !state.myst;
   $("rendered").innerHTML = res[state.flavour + "-html"] || "";
   $("rendered").className = "rendered " + state.flavour;
   jsonView.value = res.json || "No output: the request has errors (see Diagnostics).";
@@ -288,6 +290,7 @@ function wire() {
   $("reset").addEventListener("click", () => { if (current) load(current.text); });
   $("copy-md").addEventListener("click", copyMarkdown);
   $("download-svg").addEventListener("click", () => download("schedule.svg", "image/svg+xml", state.svg));
+  $("download-myst").addEventListener("click", () => download("schedule.md", "text/markdown", state.myst));
   $("download-kit").addEventListener("click", downloadKit);
   // Re-render when the OS theme changes while following the system (the SVG uses --svg-theme auto then).
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (state.theme === "system") evaluate(); });

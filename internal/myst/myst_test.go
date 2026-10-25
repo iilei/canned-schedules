@@ -27,8 +27,8 @@ func TestRender(t *testing.T) {
 		"\n:::{admonition} Schedule: Weekdays\n:class: schedule schedule-meta\n- x-custom-owner: `ops`\n:::\n" +
 		"\n:::{admonition} Base tier: Minimum\n:class: schedule schedule-base tier-1\n" + BaseText + "\n:::\n" +
 		"\n:::{admonition} Medium\n:class: schedule schedule-tier tier-2\n" +
-		"- `06:00` to `22:00` {abbr}`MON (Monday)`-{abbr}`FRI (Friday)`\n" +
-		"- `10:00` to `18:00` {abbr}`SAT (Saturday)`\n:::\n"
+		"- `06:00` to `22:00` MON-FRI\n" +
+		"- `10:00` to `18:00` SAT\n:::\n"
 
 	if got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)

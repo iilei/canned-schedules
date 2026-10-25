@@ -183,8 +183,30 @@ writes a zip with:
   ```
 
 `--myst-output-file schedule.md` writes just the MyST for a request: the name, the hint, and the META, BASE and TIER
-blocks as `:::{admonition}` blocks with the classes the stylesheet expects, weekdays as `{abbr}` tooltips. The issue's
-free text stays out. Colours follow `--set-config-*`; regenerate the kit after changing the tier styles.
+blocks as `:::{admonition}` blocks with the classes the stylesheet expects, items written as in the request. The issue's
+free text stays out. Colours follow `--set-config-*`; regenerate the kit after changing the tier styles. On the page,
+**Download MyST** gives the same file for the document in the editor.
+
+### From request to docs page
+
+Treat the MyST as build output: people edit and review the GitHub-flavoured request, and the docs build regenerates
+the MyST from it. Nobody edits the MyST by hand. Validation then stays in one place, because the tool writes no MyST
+for an invalid request and exits with 1.
+
+In CI, run a step like this before `sphinx-build`:
+
+```sh
+for src in schedules/*/source.md; do
+  name=$(basename "$(dirname "$src")")
+  canned-schedules --myst-output-file "docs/schedules/$name.md" "$src" >/dev/null
+done
+```
+
+- **Invalid schedules fail the build.** The error report goes to stderr; use `--error-output-file` to keep it.
+- **Generated files:** either add `docs/schedules/` to `.gitignore`, or commit the files and let CI regenerate them
+  and run `git diff --exit-code docs/schedules`, so they can't drift from the requests.
+- **Each generated file is a page:** list them in a toctree, for example with `:glob:` and `schedules/*`. Put prose
+  about a schedule on a hand-written page that links to it.
 
 ## Error reports
 
