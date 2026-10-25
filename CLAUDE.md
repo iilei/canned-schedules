@@ -560,6 +560,36 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
   or an internal registry such as Artifactory); a docs handbook (see the Sphinx idea) embeds the presets list,
   summaries and previews, linking to the versioned artifacts.
+- **TOML companion as a converter** (asked 2026-10-25, deferred; worth it for a catalog or tool-generated schedules,
+  not for the issue template). A `toml-to-md` helper, **not a second input format**: Markdown stays the only contract,
+  so the parser, positions, digests and fixtures stay single.
+  - **Shape:** top-level `schema-version`, `name`, `summary`, `base`; `[x]` for `x-*` keys; states as an ordered
+    `[[state]]` array (`id`, `ranges`), because TOML tables are unordered and painting depends on source order. Each
+    range is a **triplet** `["14:00", "22:00", "MON-FRI"]` (start, end, weekday expression): the array separates the
+    parts, so the `to`/whitespace rules (`invalid-range`) don't apply, and every part has its own position. Times and
+    weekday expressions keep their grammar and error codes (`internal/expr`); weekdays stay one expression string,
+    not a list. Inline tables (`{from, to, days}`) rejected: verbose, one line only in TOML 1.0, misspellable keys.
+    Times always quoted; reject TOML local times. Unknown keys are errors. YAML rejected: YAML 1.1 reads `06:00` as
+    base-60 `360`.
+  - **JSON Schema for the TOML** (`schema/toml-request.schema.json`, draft 2020-12): one file for the Go converter
+    (decode, then validate with `santhosh-tekuri/jsonschema`) and for editors via Tombi (completion, hover, errors).
+    Shape only: `additionalProperties: false`, triplets as `prefixItems` + `minItems: 3` + `items: false`, `x-*`
+    rules as in the META schema, plus a simple time pattern for feedback while typing. Weekday expressions,
+    `--sample-interval`, state existence and duplicates stay in Go (no second grammar source).
+  - **Tombi as a dev tool** (pinned in `mise.toml`, like rumdl for Markdown; never at runtime). Key order through
+    `x-tombi-table-keys-order: "schema"` (scalars, `[x]`, `[[state]]`) is cosmetic: `tombi format` only, never a CI
+    error, since the converter's output doesn't depend on key order. **Arrays are never sorted** (`[[state]]` and
+    `ranges` order is painting order): no `x-tombi-array-values-order`, and the schema's `description` says why.
+    Verify extension names, schema association (`#:schema` or `tombi.toml`) and whether `tombi lint` reports key
+    order against Tombi's current docs before relying on them.
+  - **Exposed as a subcommand** `canned-schedules toml-to-md <file.toml>` (stdout or `--md-output-file`, atomic). The
+    converter checks only the TOML shape (schema above), writes canonical Markdown (fixed block order, `HH:MM`, items
+    as `` `14:00` to `22:00` MON-FRI ``), runs the normal pipeline on it and maps diagnostics back to TOML positions
+    via a table from Markdown item parts to TOML array elements.
+  - Optional `md-to-toml` from the `document` syntax (prose and comments are lost; document that). Test: every golden
+    input MD → TOML → MD gives the same `want.json`.
+  - Pick the Go TOML library by its position info: line numbers for keys and for **array elements**; without element
+    positions, errors fall back to the line of the `ranges` key. About half a day.
 
 ## Working conventions
 
