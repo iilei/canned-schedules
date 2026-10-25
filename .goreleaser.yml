@@ -126,7 +126,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-      - '^chore:'
+      - '^chore(\(.+\))?:'
       - Merge pull request
       - Merge branch
   groups:
@@ -138,6 +138,11 @@ changelog:
       order: 1
     - title: Others
       order: 999
+
+# An SPDX SBOM per archive (<archive>.sbom.json, made by syft, pinned in mise.toml). checksums.txt lists the SBOMs,
+# so its signature and the build provenance attestation cover them too.
+sboms:
+  - artifacts: archive
 
 # Every archive and checksums.txt get a detached GPG signature (<file>.sig). The key comes from the release workflow
 # (GPG_FINGERPRINT); mise run release:snapshot skips signing.
@@ -161,6 +166,9 @@ release:
   draft: true
   replace_existing_draft: true
   mode: replace
+  # The public release key, so a downloaded release carries what its signatures are checked against.
+  extra_files:
+    - glob: ./release-key.asc
   header: |
     ## canned-schedules {{ .Tag }} ({{ .Date }})
 
@@ -173,13 +181,27 @@ release:
 
     ### Binary Download
     Download the archive for your platform from the assets below. Each archive has a detached GPG signature
-    (`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists all of them and is signed too, with the release
-    key `B645 234C 9CB8 175E CA5D  78A5 C844 7A22 52E9 E7B6`:
+    (`.sig`), a SHA-256 sidecar (`.sha256`) and an SPDX SBOM (`.sbom.json`); `checksums.txt` lists them and is signed
+    too, with the release key `B645 234C 9CB8 175E CA5D  78A5 C844 7A22 52E9 E7B6` (`release-key.asc`, also on
+    keys.openpgp.org and keyserver.ubuntu.com):
 
     ```bash
+    gpg --import release-key.asc
     gpg --verify checksums.txt.sig checksums.txt
     sha256sum --check --ignore-missing checksums.txt
     ```
+
+    Every file in `checksums.txt` also has a GitHub build provenance attestation:
+
+    ```bash
+    gh attestation verify <archive> --repo iilei/canned-schedules
+    ```
+
+    ### Using mise
+    ```bash
+    mise use github:iilei/canned-schedules@{{ .Version }}
+    ```
+    mise checks the download against GitHub's digest and its provenance attestation.
 
     ### Using Go
     ```bash

@@ -6,6 +6,8 @@ go = "1.25.14"
 node = "22.22.2"
 # Builds, signs and publishes releases (.goreleaser.yml); CI uses the same version.
 goreleaser = "2.18.3"
+# SBOMs for the release archives (goreleaser's sboms step).
+syft = "1.54.1"
 
 [tasks.fmt]
 description = "Format Go code using the configured golangci-lint formatters"
