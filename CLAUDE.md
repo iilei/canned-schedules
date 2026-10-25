@@ -532,6 +532,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - Cost: the binary must be available where the docs are built.
   - The extension compares the tool version with the kit's `VERSION` and warns when they differ.
   - Until then, the README's "From request to docs page" recipe (a CI loop before `sphinx-build`) covers this.
+- **Offline page (service worker)** (asked 2026-10-25, deferred): after loading, the page already works offline in its
+  tab, and repeat visits reuse the HTTP cache (Pages: 10 minutes fresh, then a cheap revalidation). Offline use is
+  the CLI's job; the footer points to it. If ever built, avoid stale results, because syntax changes break documents:
+  network-first for `index.html`, `app.js` and `presets/index.json`; `app.wasm` cached under its build version so
+  an old checker never meets new page code; the status line says "offline copy from <date>" when the cache serves.
+  About half a day including offline and update testing.
 - **Schedule catalog and distribution** (from the removed `UTILIZATION.md`): the repo (or a consumer repo) as the
   catalog of approved schedules, e.g. `schedules/<name>/source.md` plus generated `schedule.json`, SVG and ASCII
   previews. CI validates and renders every schedule and publishes the bundle as a versioned artifact (release assets
