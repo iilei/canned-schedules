@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"runtime/debug"
+	"strings"
 
 	"github.com/iilei/canned-schedules/internal/cli"
 	"github.com/iilei/canned-schedules/internal/config"
@@ -46,8 +48,11 @@ func Evaluate(src []byte, args []string) Result {
 		diags = append(diags, more...)
 
 		if out != nil {
+			// The page writes no file, so --svg-embed-source can't be passed; its SVG (shown and downloaded) always
+			// carries the canonical request, so a downloaded picture stays traceable to its schedule.
+			opts.Preview.SVGEmbedSource = true
 			res.JSON = encode(out)
-			res.SVG = string(must(cli.SVG(&opts, out, src, "")))
+			res.SVG = string(must(cli.SVG(&opts, out, src, generator())))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
 		}
@@ -90,6 +95,20 @@ func encode(v any) string {
 
 // must drops the error of a rendering step that only fails on a bug; the page shows what it has.
 func must(b []byte, _ error) []byte { return b }
+
+// generator names the page and, when the build has one, the module version (WebAssembly builds from a checkout get
+// it from git), for the SVG's source element.
+func generator() string {
+	const page = "canned-schedules preflight page"
+
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if v := strings.TrimPrefix(info.Main.Version, "v"); v != "" && v != "(devel)" {
+			return page + " " + v
+		}
+	}
+
+	return page
+}
 
 // SphinxKit builds the Sphinx kit zip for src with the given flags. The page calls it on demand, not on every edit.
 func SphinxKit(src []byte, args []string) ([]byte, error) {
