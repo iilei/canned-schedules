@@ -431,20 +431,59 @@ function applyQuery() {
   if (["rendered", "diagnostics", "json", "ascii"].includes(tab)) selectTab(tab);
 }
 
+// fetchWasm downloads app.wasm and shows the progress in the loading overlay. The total is only shown when the
+// server sends the file uncompressed: with Content-Encoding, Content-Length counts compressed bytes while the
+// stream delivers decompressed ones.
+async function fetchWasm() {
+  const res = await fetch("app.wasm");
+  if (!res.ok) throw new Error("app.wasm: HTTP " + res.status);
+  const encoded = (res.headers.get("Content-Encoding") || "identity") !== "identity";
+  const total = encoded ? 0 : Number(res.headers.get("Content-Length")) || 0;
+  const mb = (n) => (n / 1e6).toFixed(1) + " MB";
+  const chunks = [];
+  let loaded = 0;
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loaded += value.length;
+    $("hud-progress").textContent = total
+      ? mb(loaded) + " of " + mb(total) + " (" + Math.floor((loaded / total) * 100) + " %)"
+      : mb(loaded) + " loaded";
+  }
+  const bytes = new Uint8Array(loaded);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.length;
+  }
+  $("hud-progress").textContent = "Starting…";
+  return bytes;
+}
+
+// The loading overlay stays until the checker runs; on failure it shows why, as the status line does.
+function hudError(message) {
+  $("hud").classList.add("error");
+  $("hud-text").textContent = message;
+  showStatus("err", message);
+}
+
 async function start() {
+  // The logo leads to the page itself, without settings or document.
+  $("home").href = location.pathname;
   wire();
   applyQuery();
   if (!("WebAssembly" in globalThis)) {
-    showStatus("err", "This browser can't run WebAssembly.");
+    hudError("This browser can't run WebAssembly.");
     return;
   }
   try {
     const go = new Go();
-    const wasm = fetch("app.wasm");
+    // Downloaded by hand (not instantiateStreaming) to show the progress; compiling afterwards costs little next to
+    // the download.
     const [instance] = await Promise.all([
-      WebAssembly.instantiateStreaming
-        ? WebAssembly.instantiateStreaming(wasm, go.importObject).then((r) => r.instance)
-        : wasm.then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b, go.importObject)).then((r) => r.instance),
+      fetchWasm().then((b) => WebAssembly.instantiate(b, go.importObject)).then((r) => r.instance),
       loadPresets(),
     ]);
     go.run(instance);
@@ -454,9 +493,10 @@ async function start() {
     editor.value = fromHash() ?? current.text;
     updateReset();
     ready = true;
+    $("hud").hidden = true;
     evaluate();
   } catch (err) {
-    showStatus("err", "Couldn't load the checker: " + err);
+    hudError("Couldn't load the checker: " + err);
   }
 }
 

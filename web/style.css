@@ -54,6 +54,7 @@
 
 /* Light palette on :root; the dark palette applies with data-theme="dark", or with "system" when the OS is dark. */
 :root {
+    --content-width: 2200px; /* Top bar, panes and footer. */
     --font: "Ubuntu", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "Ubuntu Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     --bg: #f6f7f9;
@@ -239,7 +240,7 @@ select {
 
 /* Top bar */
 .topbar {
-    max-width: 1600px;
+    max-width: var(--content-width);
     margin: 0 auto;
     padding: 20px 0 12px;
     display: flex;
@@ -259,6 +260,9 @@ select {
     gap: 14px;
     align-items: center;
     min-width: 0;
+}
+a.brand-mark {
+    text-decoration: none;
 }
 .brand-mark {
     display: grid;
@@ -317,7 +321,7 @@ h1 .muted {
 /* Editor | splitter | preview. The editor's share of the width is --editor-width, set by dragging the splitter
    (app.js); the splitter column doubles as the gap between the panes. */
 .layout {
-    max-width: 1600px;
+    max-width: var(--content-width);
     margin: 0 auto;
     display: grid;
     grid-template-columns: minmax(0, var(--editor-width, 33.3%)) 16px minmax(0, 1fr);
@@ -912,11 +916,74 @@ pre.ascii {
 }
 
 .footer {
-    max-width: 1600px;
+    max-width: var(--content-width);
     margin: 0 auto;
     padding: 24px 0 32px;
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
     font-size: 13px;
+}
+
+/* Loading overlay: shown until the WebAssembly checker is ready (app.js hides it), or showing why it failed. */
+.hud {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(3px);
+}
+.hud[hidden] {
+    display: none;
+}
+.hud-card {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 24px 28px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+.hud-text {
+    margin: 0;
+    font-weight: 500;
+}
+.hud-progress {
+    margin: 0;
+    min-height: 1.3em;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+.hud-note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+.hud-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--accent-soft);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: hud-spin 0.9s linear infinite;
+}
+.hud.error .hud-spinner,
+.hud.error .hud-progress,
+.hud.error .hud-note {
+    display: none;
+}
+@keyframes hud-spin {
+    to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hud-spinner {
+        animation-duration: 3s;
+    }
 }
