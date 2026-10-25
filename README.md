@@ -620,9 +620,13 @@ done <<< "$actions"
 - **Limits:** Auto Scaling allows 125 scheduled actions per group, which is far more than a weekly schedule needs.
 - **Names are yours to define.** The output has no id field on purpose: what makes two actions "the same" depends on
   your setup, and a field whose meaning could change would be the riskiest part of the contract. The key above,
-  `<HHMM>-<state>`, is unique (transitions are grouped by time and state), readable in the console, and stable: a
-  changed time or state gives a new action, changed days update the existing one. To replace an action whenever any
-  of its facts change, hash them yourself:
+  `<HHMM>-<state>`, is unique **within one schedule** (transitions are grouped by time and state, so two STATE blocks
+  with the same state and time become one transition), readable in the console, and stable: a changed time or state
+  gives a new action, changed days update the existing one. Across schedules it is not unique: two schedules with a
+  `Minimum` at `22:00` both give `2200-Minimum`. Action names only need to be unique per group, so one schedule per
+  group is fine; when several schedules share a group or one `for_each` map (where `merge()` would silently keep only
+  one of them), put the schedule's name into the key, e.g. `maintenance-2200-Minimum`. To replace an action whenever
+  any of its facts change, hash them yourself:
 
   ```hcl
   transitions = {
@@ -632,8 +636,8 @@ done <<< "$actions"
   ```
 
   `jsonencode` sorts object keys, so this hash only matches hashes computed the same way: let one tool assign the
-  names. In a shell script, jq can't hash; pipe each entry through `sha256sum` instead. Add your own parts (an
-  environment, the schedule's name) to the key or the name prefix as needed.
+  names. In a shell script, jq can't hash; pipe each entry through `sha256sum` instead. The same applies across
+  schedules: add the schedule's name (or an environment) to the hash input or the key.
 
 #### ECS services and other Application Auto Scaling targets
 
