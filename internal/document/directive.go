@@ -142,7 +142,7 @@ func (p *parser) unexpected(d *Directive, pos diag.Pos) {
 		p.example("- `06:00` to `22:00` MON-FRI")
 	case KindMeta:
 		p.errorf(pos, diag.CodeMetaSchema, "a META block holds a list of key: value items")
-		p.example("- x-custom-owner: `team-xyz`")
+		p.example("- x-owner: `team-xyz`")
 	case KindBase:
 		p.errorf(pos, diag.CodeUnexpectedContent, "BASE takes only a tier name on the marker line")
 	}

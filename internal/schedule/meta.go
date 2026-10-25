@@ -14,7 +14,7 @@ import (
 	"github.com/iilei/canned-schedules/schema"
 )
 
-const customPrefix = "x-custom-"
+const customPrefix = "x-"
 
 // metaKey matches the text before the code span of a META item: "key:" with optional surrounding spaces.
 var metaKey = regexp.MustCompile(`^\s*([^:\s]+)\s*:\s*$`)
@@ -84,7 +84,7 @@ func metaEntries(d *document.Directive) ([]metaEntry, diag.List) {
 		e, ok := metaItem(item)
 		if !ok {
 			diags = append(diags, diag.Errorf(item.Pos, diag.CodeMetaSchema,
-				"a META item is a key, a colon and a value in backticks").WithExample("- x-custom-owner: `team-xyz`"))
+				"a META item is a key, a colon and a value in backticks").WithExample("- x-owner: `team-xyz`"))
 
 			continue
 		}
@@ -169,7 +169,7 @@ func metaDiag(leaf *jsonschema.ValidationError, byKey map[string]metaEntry, bloc
 		for _, key := range ap.Properties {
 			diags = append(diags, diag.Errorf(byKey[key].keyPos, diag.CodeMetaSchema,
 				"META key %q is not allowed; use schema-version or a key starting with %s", key, customPrefix).
-				WithExample("- x-custom-owner: `team-xyz`"))
+				WithExample("- x-owner: `team-xyz`"))
 		}
 
 		return diags

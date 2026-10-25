@@ -8,7 +8,7 @@ import (
 )
 
 const doc = "# Plan\n\n" +
-	"> [!SCHEDULE:META] Office\n> - x-custom-owner: `ops`\n\n" +
+	"> [!SCHEDULE:META] Office\n> - x-owner: `ops`\n\n" +
 	"> [!SCHEDULE:BASE] Minimum\n\n" +
 	"> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
 	"> [!NOTE]\n> Mention MON here.\n\n" +

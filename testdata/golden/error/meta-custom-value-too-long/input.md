@@ -2,6 +2,6 @@
 
 > [!SCHEDULE:META]
 > - schema-version: `1`
-> - x-custom-note: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+> - x-note: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 
 > [!SCHEDULE:BASE] Minimum

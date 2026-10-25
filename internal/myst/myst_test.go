@@ -13,7 +13,7 @@ func TestRender(t *testing.T) {
 
 	cfg, _ := config.Load(nil)
 	src := "# Office Hours\n\nSome prose that stays in the issue.\n\n" +
-		"> [!SCHEDULE:META] Weekdays\n> - x-custom-owner: `ops`\n\n" +
+		"> [!SCHEDULE:META] Weekdays\n> - x-owner: `ops`\n\n" +
 		"> [!SCHEDULE:BASE] Minimum\n\n" +
 		"> [!SCHEDULE:TIER] Medium\n> - `06:00` to `22:00` MON-FRI\n> - `10:00` to `18:00` SAT\n\n" +
 		"> [!NOTE]\n> Also left out.\n"
@@ -24,7 +24,7 @@ func TestRender(t *testing.T) {
 	}
 
 	want := "# Office Hours\n" +
-		"\n:::{admonition} Schedule: Weekdays\n:class: schedule schedule-meta\n- x-custom-owner: `ops`\n:::\n" +
+		"\n:::{admonition} Schedule: Weekdays\n:class: schedule schedule-meta\n- x-owner: `ops`\n:::\n" +
 		"\n:::{admonition} Base tier: Minimum\n:class: schedule schedule-base tier-1\n" + BaseText + "\n:::\n" +
 		"\n:::{admonition} Medium\n:class: schedule schedule-tier tier-2\n" +
 		"- `06:00` to `22:00` MON-FRI\n" +
