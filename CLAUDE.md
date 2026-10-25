@@ -619,9 +619,23 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 In priority order (agreed 2026-10-25):
 
-1. **AWS recipe in the README:** from `transitions` to ASG scheduled actions (a CLI loop with
-   `aws autoscaling put-scheduled-update-group-action`, or Terraform `aws_autoscaling_schedule` with `for_each`), with
-   state ids mapped to min/desired/max outside the tool. AWS ASG is the first target, and nothing shows it yet.
+1. **Verify the README's AWS recipes against AWS** (EC2 Auto Scaling via Terraform and via the CLI, ECS via
+   Application Auto Scaling). They carry an "Unverified against AWS" warning: so far only `terraform validate` and a
+   stubbed `aws` CLI checked them. Remove the warning once a live test passes. Planned as `mise run aws:test` and
+   `mise run aws:sweep`, never in regular CI, borrowing from `../convergenci-cli` (`testdata/aws-live/run.sh`):
+   - **No cost even if teardown fails:** an ASG pinned to 0 and an ECS service at 0 tasks, with every capacity in
+     the test's `capacity.json` at 0 (scheduled actions fire at their cron times). Groups, launch templates,
+     services and scheduled actions are free.
+   - **Guards:** opt-in `ALLOW_CANNED_SCHEDULES_AWS_TEST=true`, a fixed region, a sandbox profile from the normal
+     credential chain, a unique `canned-schedules-test-id` tag per run, teardown in `trap … EXIT INT TERM`.
+   - **Beyond the trap** (which misses `kill -9`, hard CI cancels, expired sessions and lost state): `aws:sweep`
+     deletes everything tagged for tests and older than an hour, by tag rather than Terraform state, and every run
+     starts with it; the run refuses to start with less than 15 minutes of credentials left (`aws configure
+     export-credentials`); after teardown it looks the tag up again and fails if anything remains.
+   - **Asserts:** `describe-scheduled-actions` (and the Application Auto Scaling equivalent) returns exactly the
+     expected names, recurrences and time zone.
+   - Needs from the user: a sandbox profile allowed to manage Auto Scaling groups, launch templates, ECS services and
+     scheduled actions.
 2. **Schema `$id`s pinned to a version:** the four `$id`s point at `master`, and they appear in consumers' output
    and validation. Either rewrite them per release (tag URLs) or attach the schemas as release assets. Decide before
    1.0.
