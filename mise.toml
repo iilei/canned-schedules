@@ -57,6 +57,8 @@ cp -R assets/fonts "$out/fonts"
 # The editor (CodeMirror 6) is bundled from editor/ with the versions locked in editor/package-lock.json.
 npm ci --prefix editor --silent
 node editor/build.mjs "$out"
+# web/style.css stays readable in the repo; the page gets it minified by the same esbuild.
+editor/node_modules/.bin/esbuild web/style.css --minify --log-level=warning --outfile="$out/style.css" --allow-overwrite
 GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o "$out/app.wasm" ./cmd/canned-schedules-wasm
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" "$out/"
 # The "office hours" preset is the issue template itself, so the two never drift apart.
