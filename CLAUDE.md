@@ -370,9 +370,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
-  - The example pins `0.0.1-pre.6`, the first with the date as `schema-version` (`0.0.1-pre.4` was the first with
-    provenance attestations, which mise verifies on install; `0.0.1-pre.2` the first with the new flags). Bump it
-    deliberately, with releases that have attestations.
+  - The example pins `0.1.0`, the first regular release (`0.0.1-pre.6` was the first with the date as
+    `schema-version`, `0.0.1-pre.4` the first with provenance attestations, which mise verifies on install). Bump it
+    in the same PR that prepares a release, then tag right after the merge, so the release's own README and example
+    reference it; `example:test` builds from source, so CI passes before the tag exists. If the release run fails,
+    the draft and tag can be deleted and the same version tagged again, since nothing was published.
   - `.pre-commit-hooks.yaml` in this repo (`language: golang`, `entry: sh -c` looping over the files, since the CLI
     takes one file per call) for teams without mise; checked with `pre-commit try-repo`.
 - **Tasks in this repo:** `golden:check`, `release:smoke <archive> [--dir]` (`shell = "bash -c"` for the Windows
@@ -634,8 +636,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   "latest"). mise's `github:` backend verifies the attestations on install. Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, in the
   `release` environment (deployments limited to `v*` tags; the `build` job uses it), so branch workflows can't read
   the key. Release key: a dedicated ed25519 key, `B645234C9CB8175ECA5D78A5C8447A2252E9E7B6` (README and release
-  notes print it). Tags: semver pre-releases like `v0.0.1-pre.1`, **no build metadata** (`+…`): Go modules reject it
-  and semver ignores it for ordering.
+  notes print it). Tags: semver, **no build metadata** (`+…`): Go modules reject it and semver ignores it for
+  ordering.
+- **Versions (decided 2026-10-25):** `v0.0.1-pre.1` … `pre.6` were pre-releases (never "latest", skipped by
+  `go install …@latest` and mise's `latest`). From `v0.1.0` on, regular releases. Until 1.0, a **breaking change**
+  (new `schema-version` date) raises the **minor** (`0.1.x` → `0.2.0`), a compatible change the **patch** (`0.1.0` →
+  `0.1.1`), as Cargo and npm read 0.x semver, so `^0.1` never picks up a break. The date and the tool version move
+  together; neither replaces the other. Pre-release tags (`-rc.1`) stay available for trying a release.
 - **`--version`** (`cmd/canned-schedules/version.go`): goreleaser's `-ldflags -X` values pass through verbatim. Without
   them (`go install`, `go build`), the module version from `debug.ReadBuildInfo` is used when it matches the official
   semver.org regex after its `v` (`(devel)` stays `dev`), and `vcs.revision`/`vcs.time` fill in commit and date.
@@ -653,7 +660,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-In priority order (agreed 2026-10-25):
+In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1.0**.
 
 1. **Verify the README's AWS recipes against AWS** (EC2 Auto Scaling via Terraform and via the CLI, ECS via
    Application Auto Scaling). They carry an "Unverified against AWS" warning: so far only `terraform validate` and a
@@ -672,6 +679,10 @@ In priority order (agreed 2026-10-25):
      expected names, recurrences and time zone.
    - Needs from the user: a sandbox profile allowed to manage Auto Scaling groups, launch templates, ECS services and
      scheduled actions.
+2. **A real catalog in use:** a catalog repo has run the full path (issue → catalog → publish → Terraform) for a few
+   weeks, and what it needed has been folded back in.
+3. **A quiet contract:** no breaking change (no new `schema-version` date) for about a month. Then freeze the date
+   with 1.0; after that, breaking changes mean 2.0.
 
 ## Future ideas (not scheduled — don't build unasked)
 
