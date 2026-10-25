@@ -248,6 +248,12 @@ select {
     justify-content: space-between;
     flex-wrap: wrap;
 }
+.topbar-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
 .brand {
     display: flex;
     gap: 14px;
@@ -308,17 +314,51 @@ h1 .muted {
 }
 
 /* Layout */
+/* Editor | splitter | preview. The editor's share of the width is --editor-width, set by dragging the splitter
+   (app.js); the splitter column doubles as the gap between the panes. */
 .layout {
     max-width: 1600px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-    gap: 16px;
+    grid-template-columns: minmax(0, var(--editor-width, 33.3%)) 16px minmax(0, 1fr);
     align-items: start;
+}
+.layout.resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+.splitter {
+    align-self: stretch;
+    cursor: col-resize;
+    touch-action: none;
+    border-radius: 8px;
+    outline: none;
+}
+/* The grip stays in view while the page scrolls. */
+.splitter::before {
+    content: "";
+    position: sticky;
+    top: 40vh;
+    display: block;
+    width: 4px;
+    height: 48px;
+    margin: 40vh auto 0;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 0.15s;
+}
+.splitter:hover::before,
+.splitter:focus-visible::before,
+.layout.resizing .splitter::before {
+    background: var(--accent);
 }
 @media (max-width: 1100px) {
     .layout {
         grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+    .splitter {
+        display: none;
     }
 }
 .pane {

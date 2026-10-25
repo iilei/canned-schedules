@@ -26,15 +26,18 @@
       <p class="tagline">Weekly capacity schedules from plain Markdown. Validated and rendered in your browser; nothing is uploaded.</p>
     </div>
   </div>
-  <div class="segmented" role="group" aria-label="Theme" id="theme">
-    <button type="button" data-value="system" aria-pressed="false">System</button>
-    <button type="button" data-value="light" aria-pressed="false">Light</button>
-    <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+  <div class="topbar-actions">
+    <button type="button" class="ghost" id="copy-link" title="Copy a link to this document with these settings and views">Copy link</button>
+    <div class="segmented" role="group" aria-label="Theme" id="theme">
+      <button type="button" data-value="system" aria-pressed="false">System</button>
+      <button type="button" data-value="light" aria-pressed="false">Light</button>
+      <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+    </div>
   </div>
 </header>
 
 <main class="layout">
-  <section class="pane editor-pane" aria-label="Schedule request">
+  <section class="pane editor-pane" id="editor-pane" aria-label="Schedule request">
     <div class="pane-head">
       <h2>Request</h2>
       <div class="actions">
@@ -73,6 +76,10 @@
     </div>
     <div class="status" id="status" role="status" aria-live="polite">Loading…</div>
   </section>
+
+  <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Editor width"
+       aria-controls="editor-pane" aria-valuemin="20" aria-valuemax="70" tabindex="0"
+       title="Drag to resize the editor; arrow keys work too; double-click resets"></div>
 
   <section class="pane preview-pane" aria-label="Preview">
     <div class="card showcase">
@@ -113,7 +120,6 @@
 
 <footer class="footer">
   <a href="https://github.com/iilei/canned-schedules">github.com/iilei/canned-schedules</a>
-  <span class="muted" id="version"></span>
 </footer>
 
 <script src="editor.js"></script>
