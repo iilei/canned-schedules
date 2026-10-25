@@ -120,7 +120,7 @@ exe=$bin/canned-schedules
 if [ -f "$bin/canned-schedules.exe" ]; then exe=$bin/canned-schedules.exe; fi
 "$exe" --version
 "$exe" --help > /dev/null
-"$exe" "$root/.gitlab/issue_templates/canned_schedule_request.md" | grep -q '"schema-version": "1"'
+"$exe" "$root/.gitlab/issue_templates/canned_schedule_request.md" | grep -qE '"schema-version": "[0-9]{4}-[0-9]{2}-[0-9]{2}"'
 echo "smoke test passed: $file"
 '''
 
@@ -194,6 +194,12 @@ cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" "$out/"
 # The "office hours" preset is the issue template itself, so the two never drift apart.
 cp .gitlab/issue_templates/canned_schedule_request.md "$out/presets/office-hours.md"
 git describe --always --dirty > "$out/version.txt" 2>/dev/null || true
+# The schemas at their $id URLs: schema/<date>/ for this version, plus frozen copies of earlier dates kept in
+# schema/archive/<date>/ (a breaking change moves the old files there), so published $ids never disappear.
+version=$(node -p "require('./schema/config.json')['schema-version']")
+mkdir -p "$out/schema/$version"
+cp schema/*.schema.json "$out/schema/$version/"
+if [ -d schema/archive ]; then cp -R schema/archive/. "$out/schema/"; fi
 echo "built $out ($(du -sh "$out" | cut -f1))"
 '''
 

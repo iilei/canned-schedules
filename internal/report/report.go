@@ -8,11 +8,12 @@ import (
 	"io"
 
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/schema"
 	"github.com/iilei/canned-schedules/templates"
 )
 
 // SchemaVersion is the version of the JSON report shape (schema/report.schema.json).
-const SchemaVersion = "1"
+const SchemaVersion = schema.Version
 
 // Formats and templates accepted by --error-output-format and --error-report-template.
 const (

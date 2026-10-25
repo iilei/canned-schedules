@@ -17,7 +17,7 @@ func TestRender(t *testing.T) {
 
 	cfg, _ := config.Load(nil)
 	src := "#  Office Hours \n\nProse that is dropped, with a [link](https://example.com).\n\n" +
-		"> [!schedule-meta]  Weekdays only \n> - x-owner :  `ops`\n> - schema-version: `1`\n\n" +
+		"> [!schedule-meta]  Weekdays only \n> - x-owner :  `ops`\n> - schema-version: `2026-10-25`\n\n" +
 		"> [!NOTE]\n> Dropped as well.\n\n" +
 		"> [!Schedule-Base] minimum\n\n" +
 		"> [!SCHEDULE-STATE] MEDIUM\n> - `6:00` to `22:00` MON - FRI\n> - `10:00` to `0:00`  SAT, SUN\n\n" +
@@ -29,7 +29,7 @@ func TestRender(t *testing.T) {
 	}
 
 	want := "# Office Hours\n" +
-		"\n> [!SCHEDULE-META] Weekdays only\n> - x-owner: `ops`\n> - schema-version: `1`\n" +
+		"\n> [!SCHEDULE-META] Weekdays only\n> - x-owner: `ops`\n> - schema-version: `2026-10-25`\n" +
 		"\n> [!SCHEDULE-BASE] Minimum\n" +
 		"\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n> - `10:00` to `00:00` SAT,SUN\n" +
 		"\n> [!SCHEDULE-STATE] Maximum\n> - `22:00` to `02:00` MON-WED,TUE\n"

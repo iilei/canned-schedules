@@ -23,6 +23,8 @@ import sys
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.abspath(__file__))
 for group in ("valid", "warn", "error"):
     shutil.rmtree(os.path.join(OUT, group), ignore_errors=True)
+# The schema version: the date of the last breaking change to any contract (README "Stability").
+VERSION = "2026-10-25"
 DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 STATES = ["Off", "Minimum", "Medium", "Maximum"]
 WEEK = 7 * 1440
@@ -118,7 +120,7 @@ def transitions(week):
 
 
 def output(base, ranges, annotations=None, name="Schedule-Name", summary=None, warnings=()):
-    out = {"schema-version": "1", "name": name}
+    out = {"schema-version": VERSION, "name": name}
     if summary is not None:
         out["summary"] = summary
     week = paint_minutes(base, ranges)
@@ -199,7 +201,7 @@ def write(name, md, args=(), want=None, diag=(), preview=None):
             f.write("\n".join(lines) + "\n")
 
 
-META = "> [!SCHEDULE-META]\n> - schema-version: `1`\n"
+META = "> [!SCHEDULE-META]\n> - schema-version: `" + VERSION + "`\n"
 WD = ["MON", "TUE", "WED", "THU", "FRI"]
 WE = ["SAT", "SUN"]
 
@@ -343,7 +345,7 @@ write(
 write(
     "valid/case-insensitive-names",
     doc(
-        "> [!schedule-meta]\n> - schema-version: `1`\n",
+        "> [!schedule-meta]\n> - schema-version: `" + VERSION + "`\n",
         "> [!Schedule-Base] MINIMUM\n",
         "> [!SCHEDULE-state] medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
@@ -368,7 +370,7 @@ write(
 write(
     "valid/annotations",
     doc(
-        "> [!SCHEDULE-META]\n> - schema-version: `1`\n> - x-owner: `team-xyz`\n"
+        "> [!SCHEDULE-META]\n> - schema-version: `" + VERSION + "`\n> - x-owner: `team-xyz`\n"
         "> - x-ticket: `OPS-1234`\n",
         "> [!SCHEDULE-BASE] Minimum\n",
         "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
@@ -456,7 +458,7 @@ write(
 write(
     "valid/meta-summary",
     doc(
-        "> [!SCHEDULE-META]   Office hours plus late Friday 2   \n> - schema-version: `1`\n",
+        "> [!SCHEDULE-META]   Office hours plus late Friday 2   \n> - schema-version: `" + VERSION + "`\n",
         "> [!SCHEDULE-BASE] Minimum\n",
         "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n",
     ),
@@ -632,16 +634,18 @@ err("error/unknown-state", [META, BASE, "> [!SCHEDULE-STATE] Turbo\n> - `06:00` 
 err("error/unknown-base-state", [META, "> [!SCHEDULE-BASE] Nope\n", "> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n"], "Nope", "unknown-state")
 err("error/state-title-missing", [META, BASE, "> [!SCHEDULE-STATE]\n> - `06:00` to `22:00` MON\n"], "SCHEDULE-STATE", "missing-title")
 err("error/meta-wrong-schema-version", ["> [!SCHEDULE-META]\n> - schema-version: `2`\n", BASE], "2`", "meta-schema")
-err("error/meta-unknown-key", ["> [!SCHEDULE-META]\n> - schema-version: `1`\n> - owner: `team-xyz`\n", BASE], "owner", "meta-schema")
+# The version before it became a date (until 0.0.1-pre.5).
+err("error/meta-old-schema-version", ["> [!SCHEDULE-META]\n> - schema-version: `1`\n", BASE], "1`", "meta-schema")
+err("error/meta-unknown-key", ["> [!SCHEDULE-META]\n> - schema-version: `" + VERSION + "`\n> - owner: `team-xyz`\n", BASE], "owner", "meta-schema")
 err(
     "error/meta-custom-value-too-long",
-    ["> [!SCHEDULE-META]\n> - schema-version: `1`\n> - x-note: `" + "x" * 49 + "`\n", BASE],
+    ["> [!SCHEDULE-META]\n> - schema-version: `" + VERSION + "`\n> - x-note: `" + "x" * 49 + "`\n", BASE],
     "x" * 49,
     "meta-schema",
 )
 err(
     "error/meta-custom-key-uppercase",
-    ["> [!SCHEDULE-META]\n> - schema-version: `1`\n> - x-Owner: `team-xyz`\n", BASE],
+    ["> [!SCHEDULE-META]\n> - schema-version: `" + VERSION + "`\n> - x-Owner: `team-xyz`\n", BASE],
     "x-Owner",
     "meta-schema",
 )

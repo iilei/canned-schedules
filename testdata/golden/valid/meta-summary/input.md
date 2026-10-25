@@ -1,7 +1,7 @@
 # Schedule-Name
 
 > [!SCHEDULE-META]   Office hours plus late Friday 2   
-> - schema-version: `1`
+> - schema-version: `2026-10-25`
 
 > [!SCHEDULE-BASE] Minimum
 

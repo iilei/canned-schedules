@@ -9,17 +9,21 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
-// ConfigSchemaURL is the $id of the config schema.
-const ConfigSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json"
+// Version is the schema version: the date of the last breaking change to any of the contracts (document META,
+// config, output, error report). Compatible additions keep the date; see "Stability" in the README.
+const Version = "2026-10-25"
 
-// OutputSchemaURL is the $id of the canonical output schema.
-const OutputSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/output.schema.json"
+// BaseURL is where the schemas of this version are published (GitHub Pages), and the prefix of their $ids. The tool
+// never fetches it: the schemas are embedded.
+const BaseURL = "https://iilei.github.io/canned-schedules/schema/" + Version + "/"
 
-// ReportSchemaURL is the $id of the error report schema.
-const ReportSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/report.schema.json"
-
-// MetaSchemaURL is the $id of the document META schema.
-const MetaSchemaURL = "https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/meta.schema.json"
+// The $ids of the embedded schemas.
+const (
+	ConfigSchemaURL = BaseURL + "config.schema.json"
+	OutputSchemaURL = BaseURL + "output.schema.json"
+	ReportSchemaURL = BaseURL + "report.schema.json"
+	MetaSchemaURL   = BaseURL + "meta.schema.json"
+)
 
 var (
 	// Config is the built-in configuration.

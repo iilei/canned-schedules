@@ -1,7 +1,7 @@
 # Schedule-Name
 
 > [!SCHEDULE-META]
-> - schema-version: `1`
+> - schema-version: `2026-10-25`
 > - owner: `team-xyz`
 
 > [!SCHEDULE-BASE] Minimum

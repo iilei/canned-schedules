@@ -12,10 +12,12 @@ import (
 	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/internal/document"
 	"github.com/iilei/canned-schedules/internal/expr"
+	"github.com/iilei/canned-schedules/schema"
 )
 
-// SchemaVersion is the schema version built into the binary. It applies when a document doesn't declare one.
-const SchemaVersion = "1"
+// SchemaVersion is the schema version built into the binary (schema.Version). It applies when a document doesn't
+// declare one.
+const SchemaVersion = schema.Version
 
 // Options are the command-line settings that affect evaluation.
 type Options struct {

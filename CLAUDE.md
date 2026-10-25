@@ -66,7 +66,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
 # Schedule-Name
 
 > [!SCHEDULE-META]
-> - schema-version: `1`
+> - schema-version: `2026-10-25`
 > - x-owner: `team-xyz`
 
 > [!SCHEDULE-BASE] Minimum
@@ -110,7 +110,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
     keys are user bookkeeping and never become standard. Keys without `x-` stay reserved for the spec. Old
     `x-custom-*` keys still validate as `x-` keys named `custom-*`.
   - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
-    block is absent or just lacks the key, the version built into the binary (currently `"1"`) applies.
+    block is absent or just lacks the key, the version built into the binary (currently `"2026-10-25"`) applies.
   - **Text after the META marker is the schedule's summary** (`[!SCHEDULE-META] Office hours only`). It is trimmed, then
     validated with the same rule as the name (see below), and output as `summary`. A META block with a summary and no items is
     allowed.
@@ -213,7 +213,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Shape:** domain and representation are kept separate.
 
   ```text
-  schema-version            const "1"
+  schema-version            const "2026-10-25" (the stability date, see "Stability")
   states[]                   {id, display-name}: ordered, index 0 = default base
   representation.theme      {light, dark} × {background, label}: page-level colours
   representation.ascii      {symbols}: ascii | braille | styles
@@ -237,7 +237,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **State id pattern:** `^[A-Za-z](?:-?[A-Za-z0-9])*$`, max 32 chars. It's the same rule as before, written in the same
   style as the namespace rule.
 - **Document META** (`schema/meta.schema.json`):
-  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"1"`, because every META
+  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"2026-10-25"`, because every META
     value comes from a code span.
   - Otherwise only `x-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
   - At most 40 custom keys (`maxProperties: 41`). Each value is a string of at most 48 chars, so 40 × 48 = 1920 chars,
@@ -262,11 +262,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Out of scope:** capacity numbers and any other provider-specific settings (for example ASG `min`/`desired`/`max`).
   **State ids are the integration edge:** downstream tooling attaches provider config to state ids. Never add such fields
   to the config or the output.
-- **`schema-version` is a string** (`"1"`) everywhere: config, META and output.
-- **Schema `$id`s** point to the raw files on GitHub, for example
-  `https://raw.githubusercontent.com/iilei/canned-schedules/master/schema/config.schema.json`. `config.json` references
-  it through `$schema`. These are placeholders, possibly moving to GitHub Pages later. A branch URL can change under
-  you, so consider tag-pinned URLs once there are releases.
+- **`schema-version` is a string date** (`"2026-10-25"`) everywhere: config, META, output and report. See "Stability".
+- **Schema `$id`s** are `https://iilei.github.io/canned-schedules/schema/<date>/<name>.schema.json`, built from
+  `schema.Version` and `schema.BaseURL`; `config.json` references its schema through `$schema`.
+  `TestVersionIsTheSingleSource` keeps the JSON files in step with the constant.
 
 ### Transitions in the output (decided 2026-10-24)
 
@@ -389,6 +388,31 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   release`, `gh release edit`, posting issue comments) stay in workflows: **tasks never talk to GitHub**, so a local
   run can't post anything. Issue bodies reach tasks only as files (written from an env var, never interpolated with
   `${{ }}`); task scripts are POSIX `sh`.
+
+## Stability (decided and implemented 2026-10-25)
+
+- **Until 1.0 anything may break,** as semver allows for 0.x, but every breaking change gets a new `schema-version`.
+- **`schema-version` is the date of the last breaking change** to any contract (document syntax and META, config,
+  output, report): one date for all, `schema.Version` the single source. It replaced `"1"`; a document declaring
+  another version gets `meta-schema` at the value with the version this binary reads (and, for `1`, why it changed),
+  plus the line to copy. Chosen over semver-like numbers because a date can't be confused with the tool's release
+  version and says nothing about "how much" changed.
+- **Compatible (same date):** new output or report fields, new warning codes, new flags, accepting more input,
+  description fixes. The output and report schemas therefore **allow additional properties** (except the data-keyed
+  maps `annotations` and `week`), and additions go into the schema as optional even when the tool always writes them.
+  Consumers must read tolerantly (ignore unknown fields and codes); the README says so. The tool's self-check against
+  its schema no longer catches a misspelled extra key; the golden fixtures (exact text) still do.
+- **Breaking (new date):** removing, renaming, retyping, newly requiring, tightening a pattern, rejecting input that
+  was accepted, changing digest inputs, and **changing a field's meaning** (the worst kind: no validator notices).
+  Meaning changes come as a new field; the old one goes at the next breaking date. Semver-wise: description fix =
+  patch, addition = minor, both same date; everything breaking = major = new date.
+- **Not contract:** diagnostic messages (codes are), preview layout, JSON key order (stable in practice).
+- **Publishing:** Pages serves `schema/<date>/` (`web:build` copies `schema/*.schema.json` there, plus
+  `schema/archive/<date>/`, where a breaking change moves the previous files so published `$id`s never disappear);
+  every release attaches the schemas and lists them in `checksums.txt` (signed, attested).
+- **On the next breaking change:** move the current `schema/*.schema.json` to `schema/archive/<old date>/`, set
+  `schema.Version`, the four `$id`s, the `const`s and `config.json` (the test fails until they agree), `VERSION` in
+  `gen.py`, regenerate the fixtures, and note what broke in the release notes.
 
 ## Error reporting (decided and implemented 2026-10-24)
 
@@ -647,11 +671,6 @@ In priority order (agreed 2026-10-25):
      expected names, recurrences and time zone.
    - Needs from the user: a sandbox profile allowed to manage Auto Scaling groups, launch templates, ECS services and
      scheduled actions.
-2. **Schema `$id`s pinned to a version:** the four `$id`s point at `master`, and they appear in consumers' output
-   and validation. Either rewrite them per release (tag URLs) or attach the schemas as release assets. Decide before
-   1.0.
-3. **Stability policy before 1.0:** what counts as breaking (syntax, JSON keys and their order, digest inputs, error
-   codes) and when `schema-version` changes. The README warns that the syntax may change, but not what stays.
 
 ## Future ideas (not scheduled — don't build unasked)
 

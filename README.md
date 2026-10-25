@@ -496,7 +496,7 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 
 ```json
 {
-  "schema-version": "1",
+  "schema-version": "2026-10-25",
   "name": "Office Hours",
   "summary": "Weekdays with a late Friday",
   "base": "Minimum",
@@ -718,6 +718,28 @@ Replace the whole `states` list to schedule something other than capacity. For e
 - To share a configuration, keep it in a file and pass `--set-config-value "$(cat states.json)"`.
 - The week repeats unchanged. Rotations that alternate between weeks ("Alice this week, Bob next week") can't be
   expressed, and overlapping roles such as primary and secondary on-call need one document each.
+
+## Stability
+
+Until 1.0, any release may break things; a breaking change always comes with a new `schema-version`.
+
+- **`schema-version` is a date:** the date of the last breaking change to any of the contracts, which are the document
+  syntax with its META, the configuration, the JSON output and the error report. This version reads and writes
+  `2026-10-25`. Documents don't have to declare it; one that declares another version is rejected with a hint.
+- **The schemas** of each version are published at
+  `https://iilei.github.io/canned-schedules/schema/<date>/` (`output`, `report`, `config` and `meta`, each
+  `.schema.json`) and attached to every release, listed in its signed `checksums.txt`. The tool never fetches them;
+  they're built in.
+- **Not breaking (the date stays):** new fields in the output or the report, new warning codes, new flags, accepting
+  input that used to be rejected, clearer descriptions. The output and report schemas allow additional properties,
+  so newer output still validates against the schema of its date. Read the output tolerantly: ignore fields and
+  warning codes you don't know.
+- **Breaking (a new date):** removing or renaming a field, changing its type, making a field required, tightening a
+  pattern, rejecting input that used to be accepted, changing how the digest is computed, and changing what a field
+  means, which no schema can detect. A change of meaning comes as a new field instead; the old one goes at the next
+  breaking change.
+- **Not part of the contract:** diagnostic messages (their codes are), the layout of the previews, and the JSON's key
+  order (stable, but parse the JSON rather than matching its text).
 
 ## Development
 
