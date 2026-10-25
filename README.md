@@ -1,5 +1,6 @@
 # Canned Schedules
 
+[![preflight page](https://img.shields.io/badge/preflight-try_it_in_the_browser-0969da)](https://iilei.github.io/canned-schedules/)
 [![codecov](https://codecov.io/gh/iilei/canned-schedules/graph/badge.svg)](https://codecov.io/gh/iilei/canned-schedules)
 
 Weekly schedules that humans and machines agree on.
