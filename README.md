@@ -491,6 +491,84 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 
 Provider settings such as capacity numbers are out of scope: attach them to the state ids downstream.
 
+### AWS Auto Scaling scheduled actions
+
+Each transition becomes one scheduled action: `cron.posix` is its recurrence, and the capacity comes from a map you
+keep next to your infrastructure, keyed by state id:
+
+```json
+{
+  "Off":     {"min": 0, "desired": 0, "max": 0},
+  "Minimum": {"min": 1, "desired": 1, "max": 2},
+  "Medium":  {"min": 2, "desired": 4, "max": 6},
+  "Maximum": {"min": 4, "desired": 8, "max": 12}
+}
+```
+
+With Terraform, `for_each` over the transitions. Transitions are grouped by time and state, so that pair is a unique,
+stable key, and Terraform removes the actions of transitions that disappear:
+
+```hcl
+locals {
+  schedule = jsondecode(file("${path.module}/office-hours.canned-schedule.json"))
+  capacity = jsondecode(file("${path.module}/capacity.json"))
+  transitions = { for t in local.schedule.transitions : "${replace(t.time, ":", "")}-${t.state}" => t }
+}
+
+resource "aws_autoscaling_schedule" "office_hours" {
+  for_each = local.transitions
+
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  scheduled_action_name  = "office-hours-${each.key}"
+  recurrence             = each.value.cron.posix
+  time_zone              = "Etc/UTC"
+  min_size               = local.capacity[each.value.state].min
+  desired_capacity       = local.capacity[each.value.state].desired
+  max_size               = local.capacity[each.value.state].max
+}
+```
+
+With the AWS CLI (bash and jq), replace the schedule's actions in one go:
+
+```bash
+asg=my-asg
+prefix=office-hours
+schedule=office-hours.canned-schedule.json
+
+# One action per transition: its cron as the recurrence, the state's capacity from capacity.json. Computed before
+# anything changes, so a state without a capacity stops the run while the group still has its old schedule.
+actions=$(jq -r --slurpfile cap capacity.json --arg prefix "$prefix" '
+  .transitions[]
+  | ($cap[0][.state] // error("capacity.json has no entry for state \(.state)")) as $c
+  | [$prefix + "-" + (.time | sub(":"; "")) + "-" + .state, .cron.posix, $c.min, $c.desired, $c.max]
+  | @tsv' "$schedule")
+
+# Remove this schedule's earlier actions, so a transition that was dropped from the request stops firing.
+aws autoscaling describe-scheduled-actions --auto-scaling-group-name "$asg" --output json \
+  --query "ScheduledUpdateGroupActions[?starts_with(ScheduledActionName, '$prefix-')].ScheduledActionName" |
+  jq -r '.[]' |
+  while read -r name; do
+    aws autoscaling delete-scheduled-action --auto-scaling-group-name "$asg" --scheduled-action-name "$name"
+  done
+
+while IFS=$'\t' read -r name cron min desired max; do
+  [ -n "$name" ] || continue
+  aws autoscaling put-scheduled-update-group-action --auto-scaling-group-name "$asg" \
+    --scheduled-action-name "$name" --recurrence "$cron" --time-zone Etc/UTC \
+    --min-size "$min" --desired-capacity "$desired" --max-size "$max"
+done <<< "$actions"
+```
+
+- **The time zone is yours to choose.** The tool writes wall-clock times without a zone. `Etc/UTC` matches the
+  recommended convention; with a zone such as `Europe/Berlin`, Auto Scaling follows its daylight saving changes.
+- **Capacity until the next transition:** scheduled actions only fire at their times. After the first deployment the
+  group keeps its current capacity until the next transition, so set it to the state in effect now (from `week`).
+  With Terraform, also add `lifecycle { ignore_changes = [min_size, max_size, desired_capacity] }` to the group, or
+  every apply resets what the actions set.
+- **No transitions** (one state all week): there are no actions to create. Give the group the base state's capacity
+  directly.
+- **Limits:** Auto Scaling allows 125 scheduled actions per group, which is far more than a weekly schedule needs.
+
 ## Configuration
 
 The built-in configuration ([`schema/config.json`](schema/config.json), validated by
