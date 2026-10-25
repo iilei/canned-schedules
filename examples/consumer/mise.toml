@@ -4,7 +4,7 @@
 [tools]
 # The release binary from GitHub. mise checks the download against the SHA-256 digest GitHub records for the asset;
 # the GPG signatures can be checked with the canned-schedules repo's release:verify task.
-"github:iilei/canned-schedules" = "0.0.1-pre.2"
+"github:iilei/canned-schedules" = "0.0.1-pre.4"
 
 [tasks."schedule:render"]
 description = "Render *.canned-schedule.md files into .json, .svg and .txt next to them, and print the text form"
