@@ -5,8 +5,7 @@
   "base": "Off",
   "annotations": {},
   "digests": {
-    "request": "sha256:ab34f30eed309cf158ce83c447bb19e2dbf03f1e02e73f64e27361c073ed9696",
-    "effective": "sha256:57a6253fcc7f9cd8ed728f9b6d45b39d77058ef61ac213edd4c7829e71093b8f"
+    "schedule": "sha256:57a6253fcc7f9cd8ed728f9b6d45b39d77058ef61ac213edd4c7829e71093b8f"
   },
   "week": {
     "MON": [

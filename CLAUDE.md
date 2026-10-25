@@ -40,10 +40,12 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
     spec. Remove the old mise tasks when the Go tool replaces them.
   - YAML isn't needed any more. If it comes back: `go.yaml.in/yaml/v3` parses YAML only, not frontmatter, so split it
     off yourself and use `yaml.Node` for line numbers.
-- **Digests (decided, implemented).** The output carries `digests.request` (SHA-256 of the exact input bytes) and
-  `digests.effective` (SHA-256 of compact `{"base", "week"}` JSON). Prose-only edits change only the request digest.
-  `base` is part of the effective digest because consumers use it as the fallback, for example when `transitions` is
-  `[]`. Both are written `sha256:<hex>`.
+- **Digests (decided, implemented).** The output carries `digests.schedule`: SHA-256 of compact `{"base", "week"}`
+  JSON, written `sha256:<hex>`. Name, hint, annotations, prose and range wording that paints the same minutes don't
+  change it. `base` is part of it because consumers use it as the fallback, for example when `transitions` is `[]`.
+  - **No request digest (dropped 2026-10-25):** a hash of the input bytes earned little. Provenance belongs in git
+    SHAs or in an `x-custom-*` META key (an issue link, a commit), and a bot that must pin an issue revision hashes
+    the body itself. The `digests` object stays, so a digest can be added later without reshaping the output.
   - Still proposed: storing the raw input next to the output (`schedules/<name>/source.md` + `schedule.json`).
     Consumers read only the output; the raw Markdown is never part of the contract.
 - **Linting (proposed).** rumdl has no custom rules, and a markdownlint-cli2 JS rule would be a second parser.
@@ -153,7 +155,7 @@ No frontmatter. Everything uses one grammar: an alert in the `SCHEDULE:` namespa
   - Anyone who needs exact previews sets `--sample-interval` to a multiple of the bucket size (e.g. 15).
 - **Warnings in the canonical JSON (decided 2026-10-24):** `warnings` lists every warning (`code`, `message`, and
   `line`/`column`/`excerpt` when positioned), sorted by position. No file names, so the output doesn't depend on where
-  the file lives. Not part of the effective digest. Golden fixtures don't pin warning messages (`"…"`).
+  the file lives. Not part of the schedule digest. Golden fixtures don't pin warning messages (`"…"`).
 
 ### Tier names (decided)
 
@@ -417,7 +419,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-- Nothing open at the moment.
+- **Permissible kinds (next step, to explore):** which directive kinds exist besides META, BASE and TIER. Today every
+  coloured block is a tier; explore whether other kinds are needed and what they would mean.
 
 ## Future ideas (not scheduled — don't build unasked)
 
@@ -441,13 +444,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     and digests stay shared.
   - **Accepts only the shape `internal/myst` emits** (round trip). Test it by converting every golden input to MyST
     and back.
-  - **Digests:** the same schedule in both flavours gets different request digests and the same effective digest.
+  - **Digests:** the same schedule in both flavours gets the same schedule digest.
 - **First day of the week in previews** (asked 2026-10-25, deferred; worth it once users in regions with Sunday- or
   Saturday-first weeks appear). The setting is `representation.week-start` with `MON` (default, ISO 8601), `SUN` or
   `SAT`, plus a `--preview-week-start <day>` shorthand. The shorthand is applied after `--set-config-at`, like
   `--ascii-symbols`. On the page it is a dropdown plus `?weekstart=`.
   - **Changes only the order of the day rows** in the SVG, ASCII and page previews.
-  - **The canonical JSON, both digests, the weekday syntax and `want.json` stay unchanged**, so the same schedule
+  - **The canonical JSON, the digest, the weekday syntax and `want.json` stay unchanged**, so the same schedule
     never hashes differently depending on who renders it.
   - **The SVG transition table keeps its canonical order**, so it matches the JSON.
   - A range that crosses midnight at the week boundary wraps from the last row to the first; SUN → MON already does

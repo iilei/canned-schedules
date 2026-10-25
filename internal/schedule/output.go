@@ -21,16 +21,16 @@ var outputSchema = sync.OnceValues(func() (*jsonschema.Schema, error) {
 
 // Finish computes the digests and validates the output against the embedded output schema. Call it again after
 // adding warnings. A validation failure is a bug in this tool, not in the input.
-func (o *Output) Finish(src []byte) error {
-	effective, err := json.Marshal(struct {
+func (o *Output) Finish() error {
+	schedule, err := json.Marshal(struct {
 		Base string `json:"base"`
 		Week Week   `json:"week"`
 	}{Base: o.Base, Week: o.Week})
 	if err != nil {
-		return fmt.Errorf("encode effective schedule: %w", err)
+		return fmt.Errorf("encode schedule digest input: %w", err)
 	}
 
-	o.Digests = Digests{Request: digest(src), Effective: digest(effective)}
+	o.Digests = Digests{Schedule: digest(schedule)}
 
 	raw, err := json.Marshal(o)
 	if err != nil {
