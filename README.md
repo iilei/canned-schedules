@@ -103,7 +103,8 @@ as well.
   `mise run release:verify <dir>` checks a downloaded release (`gh release download <tag> --dir <dir>`) against that
   key alone, plus the checksums and sidecars.
 - **Build provenance:** every file in `checksums.txt` has a GitHub attestation that it was built by this repo's
-  release workflow: `gh attestation verify <archive> --repo iilei/canned-schedules`.
+  release workflow: `gh attestation verify <archive> --repo iilei/canned-schedules` (gh 2.49 or newer; Ubuntu's
+  packaged gh may be older).
 - **With [mise](https://mise.jdx.dev),** `mise use github:iilei/canned-schedules@<version>` installs a release binary
   and checks it against the SHA-256 digest GitHub records for the download and against its provenance attestation
   (not the GPG signature).
@@ -291,7 +292,7 @@ Without mise, the hooks also work with [pre-commit](https://pre-commit.com), whi
 ```yaml
 repos:
   - repo: https://github.com/iilei/canned-schedules
-    rev: v0.0.1-pre.2
+    rev: v0.0.1-pre.4
     hooks:
       - id: canned-schedules
 ```
