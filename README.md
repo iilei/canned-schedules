@@ -89,7 +89,11 @@ holds for a stretch of the week, such as a capacity level, a support team or a m
 
 ## Usage
 
-Build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
+Prebuilt binaries for Linux (x86_64, arm64, armv7), macOS (universal) and Windows (amd64, arm64) are attached to
+each [GitHub release](https://github.com/iilei/canned-schedules/releases). Every archive comes with a GPG signature
+(`.sig`) and a SHA-256 sidecar (`.sha256`); `checksums.txt` lists them all and is signed as well.
+
+Or build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
 
 ```sh
 mise install
@@ -458,3 +462,14 @@ independent reference implementation; review the diff like any other change. Nev
 The page's editor is [CodeMirror 6](https://codemirror.net/), bundled from [`editor/`](editor) by `web:build` with the
 versions locked in `editor/package-lock.json` (`npm ci`, install scripts off). The licences of the bundled packages
 are published next to it as `editor-licenses.txt`. Without `editor.js` the page falls back to a plain textarea.
+
+## License
+
+canned-schedules is licensed under the [Functional Source License, Version 1.1, ALv2 Future License](LICENSE.md)
+(FSL-1.1-ALv2). You may use it for any purpose, internal company use included, except offering a competing commercial
+product or service. Each release becomes available under the Apache License 2.0 two years after it is published. The
+licence grants no rights to the name or the logo.
+
+Bundled third-party components keep their own licences: the Go modules compiled into the binary (listed in
+`THIRD_PARTY_LICENSES.md` in the release archives), the fonts in [`assets/fonts`](assets/fonts) (Ubuntu Font
+Licence, SIL Open Font License) and the page's editor bundle (`editor-licenses.txt`).

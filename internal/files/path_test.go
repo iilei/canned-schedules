@@ -10,7 +10,10 @@ import (
 func TestDisplayPath(t *testing.T) {
 	t.Parallel()
 
-	home := filepath.FromSlash("/home/ann")
+	// Absolute paths need a volume on Windows ("C:"); elsewhere the volume is empty.
+	vol := filepath.VolumeName(t.TempDir())
+	abs := func(p string) string { return vol + filepath.FromSlash(p) }
+	home := abs("/home/ann")
 	sep := string(filepath.Separator)
 
 	tests := []struct {
@@ -19,11 +22,11 @@ func TestDisplayPath(t *testing.T) {
 	}{
 		{path: "requests/office.md", want: "requests/office.md"},
 		{path: "../up/office.md", want: "../up/office.md"},
-		{path: filepath.FromSlash("/home/ann/code/office.md"), want: "~" + sep + filepath.FromSlash("code/office.md")},
+		{path: abs("/home/ann/code/office.md"), want: "~" + sep + filepath.FromSlash("code/office.md")},
 		{path: home, want: "~"},
-		{path: filepath.FromSlash("/home/anna/office.md"), want: filepath.FromSlash("/home/anna/office.md")},
-		{path: filepath.FromSlash("/srv/office.md"), want: filepath.FromSlash("/srv/office.md")},
-		{path: filepath.FromSlash("/home/office.md"), want: filepath.FromSlash("/home/office.md")},
+		{path: abs("/home/anna/office.md"), want: abs("/home/anna/office.md")},
+		{path: abs("/srv/office.md"), want: abs("/srv/office.md")},
+		{path: abs("/home/office.md"), want: abs("/home/office.md")},
 	}
 
 	for _, tt := range tests {
@@ -32,7 +35,7 @@ func TestDisplayPath(t *testing.T) {
 		}
 	}
 
-	if got := DisplayPath(filepath.FromSlash("/home/ann/x.md"), ""); got != filepath.FromSlash("/home/ann/x.md") {
+	if got := DisplayPath(abs("/home/ann/x.md"), ""); got != abs("/home/ann/x.md") {
 		t.Errorf("without a home directory the path must stay as given, got %q", got)
 	}
 }

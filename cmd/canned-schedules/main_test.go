@@ -22,7 +22,8 @@ func TestRun(t *testing.T) {
 		{name: "valid file", args: []string{basic}, wantCode: exitOK},
 		{name: "flags then file", args: []string{"--sample-interval", "60", basic}, wantCode: exitOK},
 		{name: "no file", args: nil, wantCode: exitUsage, wantStderr: "missing input file"},
-		{name: "stdin dash is not a file", args: []string{"-"}, wantCode: exitUsage, wantStderr: "no such file"},
+		// The code, not the OS's wording: "no such file" on Unix, "cannot find the file" on Windows.
+		{name: "stdin dash is not a file", args: []string{"-"}, wantCode: exitUsage, wantStderr: "error[input-file]"},
 		{name: "two files", args: []string{basic, basic}, wantCode: exitUsage, wantStderr: "expected one input file"},
 		{
 			name:       "flag after file",

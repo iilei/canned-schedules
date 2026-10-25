@@ -3,6 +3,7 @@ package files
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -25,7 +26,8 @@ func TestWriteFile(t *testing.T) {
 		t.Errorf("content = %q", b)
 	}
 
-	if fi, _ := os.Stat(target); fi.Mode().Perm() != fileMode {
+	// Windows has no Unix permission bits: files report 0666 or 0444.
+	if fi, _ := os.Stat(target); runtime.GOOS != "windows" && fi.Mode().Perm() != fileMode {
 		t.Errorf("mode = %v, want %v", fi.Mode().Perm(), os.FileMode(fileMode))
 	}
 

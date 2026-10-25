@@ -1,0 +1,6 @@
+# Line endings are part of the spec: golden fixtures pin columns, excerpts and digests, so every checkout uses LF, also
+# on Windows, whose CI runners default to core.autocrlf=true.
+* text=auto eol=lf
+
+# Fonts and their licence texts stay byte-identical to their upstream releases.
+assets/fonts/** -text
