@@ -529,8 +529,17 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   and is the single source for the checker, the Sphinx kit and the **Equivalent CLI flags** box (shell command with
   POSIX quoting, or one argument per line for `canned-schedules.args`); `args()` adds only `--svg-theme`. Permalink:
   repeated `?states=<id>` or `?states=<id>:<display name>` (split at the first colon; ids can't contain one), written
-  only for custom states; a link with them opens the panel. Still open: palettes (#40), an add-phase form (#41),
-  "why is this minute in this state" (#42), presets with their own states.
+  only for custom states; a link with them opens the panel. Still open: an add-phase form (#41), "why is this minute
+  in this state" (#42), presets with their own states.
+- **Colour palettes (decided 2026-10-26, #40):** page only, no `--palette` CLI flag (no new contract; the CLI flags
+  box shows the override). `web/palettes/index.json` lists them (`id`, `label`, `kind` sequential|categorical,
+  `description`, `styles`); the dropdown groups them by kind, the choice goes out as `--set-config-at
+  representation.styles.states`, and `?palette=<id>` links it. The first, `built-in`, has no styles (the config's
+  own). Sequential ones use four of Grafana's named shades (super-light, light, base, dark; reversed with a dim first
+  state in dark mode, so later states get brighter there) plus Grafana's green–yellow–red; categorical ones
+  (Grafana's classic palette, Okabe–Ito for colour-blind readers) start with a neutral grey for the base.
+  `TestPalettes` applies each to the issue template and requires no diagnostics (schema valid, a style per built-in
+  state).
 - **Loading overlay:** `#hud` covers the page until the WebAssembly checker runs (`start()` hides it), and stays with
   the reason when loading fails (no WebAssembly, `app.wasm` not loadable). `fetchWasm()` streams the download to show
   the megabytes loaded, with a total and percentage only when the response isn't content-encoded (Content-Length

@@ -86,6 +86,8 @@ function cliArgs() {
   else if (ds !== "15") a.push("--preview-downsample=" + ds);
   const states = statesOverride();
   if (states) a.push("--set-config-at", "states", "--set-config-value", states);
+  const styles = paletteStyles();
+  if (styles) a.push("--set-config-at", "representation.styles.states", "--set-config-value", styles);
   return a;
 }
 
@@ -452,6 +454,39 @@ function structureChanged() {
   evaluate();
 }
 
+// ---- palettes ----------------------------------------------------------------------------------------------------
+
+// Colour palettes (palettes/index.json; TestPalettes keeps them valid) replace representation.styles.states, the same
+// override the CLI takes. The first, "built-in", has no styles: the config's own. Sequential palettes suit ordered
+// states, categorical ones unordered states such as rotations.
+const palettes = [];
+let queryPalette = null; // ?palette=…, applied once the palettes are loaded
+
+async function loadPalettes() {
+  palettes.push(...(await fetch("palettes/index.json").then((r) => r.json())));
+  const groups = { sequential: "Sequential (ordered states)", categorical: "Categorical (unordered states)" };
+  for (const [kind, label] of Object.entries(groups)) {
+    const group = Object.assign(document.createElement("optgroup"), { label });
+    for (const p of palettes.filter((x) => x.kind === kind)) {
+      group.append(Object.assign(document.createElement("option"), { value: p.id, textContent: p.label, title: p.description }));
+    }
+    $("palette").append(group);
+  }
+  if (queryPalette && palettes.some((p) => p.id === queryPalette)) $("palette").value = queryPalette;
+  else $("palette").value = palettes[0].id;
+  describePalette();
+}
+
+function paletteStyles() {
+  const p = palettes.find((x) => x.id === $("palette").value);
+  return p && p.styles ? JSON.stringify(p.styles) : null;
+}
+
+function describePalette() {
+  const p = palettes.find((x) => x.id === $("palette").value);
+  $("palette").title = p ? p.description : "";
+}
+
 // ---- CLI flags ---------------------------------------------------------------------------------------------------
 
 let flagsFormat = "shell";
@@ -506,6 +541,7 @@ function permalink() {
   q.set("view", state.flavour);
   q.set("tab", state.tab);
   for (const id of CONTROLS) q.set(id, $(id).value);
+  if ($("palette").value !== palettes[0]?.id) q.set("palette", $("palette").value);
   if (statesOverride()) for (const r of stateRows) q.append("states", r.name && r.name !== r.id ? r.id + ":" + r.name : r.id);
   const url = new URL(location.pathname, location.origin);
   url.search = q.toString();
@@ -547,6 +583,7 @@ function wire() {
   }
   for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => selectTab(b.dataset.tab));
   for (const id of ["downsample", "sample-interval", "symbols"]) $(id).addEventListener("change", evaluate);
+  $("palette").addEventListener("change", () => { describePalette(); evaluate(); });
   $("add-state").addEventListener("click", addState);
   $("reset-states").addEventListener("click", () => { setStates(defaultStates); evaluate(); });
   for (const b of $("flags-format").querySelectorAll("button")) {
@@ -588,7 +625,7 @@ function fromHash() {
 }
 
 // Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
-// &states=Primary&states=Off (see permalink). Unknown values are ignored.
+// &palette=okabe-ito&states=Primary&states=Off (see permalink). Unknown values are ignored.
 function applyQuery() {
   const q = new URLSearchParams(location.search);
   const theme = q.get("theme");
@@ -606,6 +643,7 @@ function applyQuery() {
     const v = q.get(id);
     if (v !== null && Array.from($(id).options).some((o) => o.value === v)) $(id).value = v;
   }
+  queryPalette = q.get("palette");
   if (q.has("states")) queryStates = parseStates(q.getAll("states"));
   const tab = q.get("tab");
   if (["rendered", "diagnostics", "json", "ascii"].includes(tab)) selectTab(tab);
@@ -665,6 +703,7 @@ async function start() {
     const [instance] = await Promise.all([
       fetchWasm().then((b) => WebAssembly.instantiate(b, go.importObject)).then((r) => r.instance),
       loadPresets(),
+      loadPalettes(),
     ]);
     go.run(instance);
     loadDefaultStates();

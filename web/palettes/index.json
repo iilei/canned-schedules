@@ -1,0 +1,294 @@
+[
+  {
+    "id": "built-in",
+    "label": "Built-in (teal / violet)",
+    "kind": "sequential",
+    "description": "The default: the config's own state styles."
+  },
+  {
+    "id": "greens",
+    "label": "Greens",
+    "kind": "sequential",
+    "description": "Grafana's green shades in four clear steps: darker for later states, brighter in dark mode.",
+    "styles": [
+      {
+        "symbol": ".",
+        "color": {
+          "light": "#C8F2C2",
+          "dark": "#37872D4D"
+        }
+      },
+      {
+        "symbol": ":",
+        "color": {
+          "light": "#96D98D",
+          "dark": "#37872D"
+        }
+      },
+      {
+        "symbol": "=",
+        "color": {
+          "light": "#73BF69",
+          "dark": "#73BF69"
+        }
+      },
+      {
+        "symbol": "#",
+        "color": {
+          "light": "#37872D",
+          "dark": "#C8F2C2"
+        }
+      }
+    ]
+  },
+  {
+    "id": "blues",
+    "label": "Blues",
+    "kind": "sequential",
+    "description": "Grafana's blue shades in four clear steps: darker for later states, brighter in dark mode.",
+    "styles": [
+      {
+        "symbol": ".",
+        "color": {
+          "light": "#C0D8FF",
+          "dark": "#1F60C44D"
+        }
+      },
+      {
+        "symbol": ":",
+        "color": {
+          "light": "#8AB8FF",
+          "dark": "#1F60C4"
+        }
+      },
+      {
+        "symbol": "=",
+        "color": {
+          "light": "#5794F2",
+          "dark": "#5794F2"
+        }
+      },
+      {
+        "symbol": "#",
+        "color": {
+          "light": "#1F60C4",
+          "dark": "#C0D8FF"
+        }
+      }
+    ]
+  },
+  {
+    "id": "purples",
+    "label": "Purples",
+    "kind": "sequential",
+    "description": "Grafana's purple shades in four clear steps: darker for later states, brighter in dark mode.",
+    "styles": [
+      {
+        "symbol": ".",
+        "color": {
+          "light": "#DEB6F2",
+          "dark": "#8F3BB84D"
+        }
+      },
+      {
+        "symbol": ":",
+        "color": {
+          "light": "#CA95E5",
+          "dark": "#8F3BB8"
+        }
+      },
+      {
+        "symbol": "=",
+        "color": {
+          "light": "#B877D9",
+          "dark": "#B877D9"
+        }
+      },
+      {
+        "symbol": "#",
+        "color": {
+          "light": "#8F3BB8",
+          "dark": "#DEB6F2"
+        }
+      }
+    ]
+  },
+  {
+    "id": "green-yellow-red",
+    "label": "Green–yellow–red",
+    "kind": "sequential",
+    "description": "Grafana's traffic-light scheme for load or severity. Not colour-blind safe.",
+    "styles": [
+      {
+        "symbol": ".",
+        "color": {
+          "light": "#73BF69",
+          "dark": "#56A64B"
+        }
+      },
+      {
+        "symbol": ":",
+        "color": {
+          "light": "#FADE2A",
+          "dark": "#F2CC0C"
+        }
+      },
+      {
+        "symbol": "=",
+        "color": {
+          "light": "#FF9830",
+          "dark": "#FF780A"
+        }
+      },
+      {
+        "symbol": "#",
+        "color": {
+          "light": "#F2495C",
+          "dark": "#E02F44"
+        }
+      },
+      {
+        "symbol": "+",
+        "color": {
+          "light": "#C4162A",
+          "dark": "#C4162A"
+        }
+      }
+    ]
+  },
+  {
+    "id": "classic",
+    "label": "Classic (categorical)",
+    "kind": "categorical",
+    "description": "Grafana's classic palette for unordered states such as rotations; the first state is neutral.",
+    "styles": [
+      {
+        "symbol": ".",
+        "color": {
+          "light": "#E4E7EC",
+          "dark": "#343A46"
+        }
+      },
+      {
+        "symbol": ":",
+        "color": {
+          "light": "#7EB26D",
+          "dark": "#7EB26D"
+        }
+      },
+      {
+        "symbol": "=",
+        "color": {
+          "light": "#EAB839",
+          "dark": "#EAB839"
+        }
+      },
+      {
+        "symbol": "#",
+        "color": {
+          "light": "#6ED0E0",
+          "dark": "#6ED0E0"
+        }
+      },
+      {
+        "symbol": "+",
+        "color": {
+          "light": "#EF843C",
+          "dark": "#EF843C"
+        }
+      },
+      {
+        "symbol": "*",
+        "color": {
+          "light": "#E24D42",
+          "dark": "#E24D42"
+        }
+      },
+      {
+        "symbol": "%",
+        "color": {
+          "light": "#1F78C1",
+          "dark": "#1F78C1"
+        }
+      },
+      {
+        "symbol": "@",
+        "color": {
+          "light": "#BA43A9",
+          "dark": "#BA43A9"
+        }
+      },
+      {
+        "symbol": "~",
+        "color": {
+          "light": "#705DA0",
+          "dark": "#705DA0"
+        }
+      }
+    ]
+  },
+  {
+    "id": "okabe-ito",
+    "label": "Okabe–Ito (colour-blind safe)",
+    "kind": "categorical",
+    "description": "Okabe and Ito's palette, distinguishable with common colour vision deficiencies; the first state is neutral.",
+    "styles": [
+      {
+        "symbol": ".",
+        "color": {
+          "light": "#E4E7EC",
+          "dark": "#343A46"
+        }
+      },
+      {
+        "symbol": ":",
+        "color": {
+          "light": "#E69F00",
+          "dark": "#E69F00"
+        }
+      },
+      {
+        "symbol": "=",
+        "color": {
+          "light": "#56B4E9",
+          "dark": "#56B4E9"
+        }
+      },
+      {
+        "symbol": "#",
+        "color": {
+          "light": "#009E73",
+          "dark": "#009E73"
+        }
+      },
+      {
+        "symbol": "+",
+        "color": {
+          "light": "#F0E442",
+          "dark": "#F0E442"
+        }
+      },
+      {
+        "symbol": "*",
+        "color": {
+          "light": "#0072B2",
+          "dark": "#0072B2"
+        }
+      },
+      {
+        "symbol": "%",
+        "color": {
+          "light": "#D55E00",
+          "dark": "#D55E00"
+        }
+      },
+      {
+        "symbol": "@",
+        "color": {
+          "light": "#CC79A7",
+          "dark": "#CC79A7"
+        }
+      }
+    ]
+  }
+]
