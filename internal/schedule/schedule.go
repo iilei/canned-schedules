@@ -38,7 +38,6 @@ type Output struct {
 	Summary       string            `json:"summary,omitempty"`
 	Base          string            `json:"base"`
 	Annotations   map[string]string `json:"annotations"`
-	Digests       Digests           `json:"digests"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
 	Warnings      []Warning         `json:"warnings"`
@@ -53,13 +52,6 @@ type Warning struct { //nolint:govet // fieldalignment: field order is the JSON 
 	Message string        `json:"message"`
 	Example string        `json:"example,omitempty"`
 	Excerpt *diag.Excerpt `json:"excerpt,omitempty"`
-}
-
-// Digests identify the schedule a consumer acts on.
-type Digests struct {
-	// Schedule is the SHA-256 of the base state and the painted week: it changes only when what a consumer acts on
-	// changes, never for name, summary, annotations or cron rendering.
-	Schedule string `json:"schedule"`
 }
 
 // Week lists the runs of each day, Monday first. Field order defines the JSON key order.

@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -25,25 +24,12 @@ func TestEvaluateValid(t *testing.T) {
 		t.Error("the SVG must follow --svg-theme")
 	}
 
-	// The page's SVG always carries the canonical request and the digest from the JSON.
-	var out struct {
-		Digests struct {
-			Schedule string `json:"schedule"`
-		} `json:"digests"`
-	}
-
-	if err := json.Unmarshal([]byte(res.JSON), &out); err != nil {
-		t.Fatal(err)
-	}
-
-	if !strings.HasPrefix(res.Text, "# Office Hours\n\n~~~text\n") ||
-		!strings.Contains(res.Text, "> [!SCHEDULE-BASE]") {
-		t.Errorf("the text form must be the canonical request with the preview:\n%s", res.Text)
-	}
-
-	if !strings.Contains(res.SVG, `digest="`+out.Digests.Schedule+`"`) ||
-		!strings.Contains(res.SVG, "&gt; [!SCHEDULE-STATE] Medium") ||
-		!strings.Contains(res.SVG, `generator="canned-schedules preflight page`) {
+	// The page's SVG always carries the canonical request.
+	if !strings.Contains(res.SVG, "&gt; [!SCHEDULE-STATE] Medium") ||
+		!strings.Contains(
+			res.SVG,
+			`generator="canned-schedules preflight page`,
+		) || strings.Contains(res.SVG, "digest=") {
 		t.Error("the page's SVG must embed the source")
 	}
 

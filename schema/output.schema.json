@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-25/output.schema.json",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-26/output.schema.json",
   "title": "canned-schedules canonical output",
   "type": "object",
   "required": [
@@ -8,14 +8,13 @@
     "name",
     "base",
     "annotations",
-    "digests",
     "week",
     "transitions",
     "warnings"
   ],
   "properties": {
     "schema-version": {
-      "const": "2026-10-25"
+      "const": "2026-10-26"
     },
     "name": {
       "$ref": "#/$defs/text"
@@ -34,18 +33,6 @@
         "^x-[a-z0-9](?:-?[a-z0-9]){0,39}$": {
           "type": "string",
           "maxLength": 48
-        }
-      }
-    },
-    "digests": {
-      "type": "object",
-      "required": [
-        "schedule"
-      ],
-      "properties": {
-        "schedule": {
-          "description": "SHA-256 of {\"base\": …, \"week\": …} as compact JSON in the key order defined here. Ignores name, summary, annotations and cron rendering.",
-          "$ref": "#/$defs/digest"
         }
       }
     },
@@ -125,10 +112,6 @@
     "hhmm": {
       "type": "string",
       "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
-    },
-    "digest": {
-      "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
     },
     "day": {
       "type": "array",

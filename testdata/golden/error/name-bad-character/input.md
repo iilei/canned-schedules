@@ -1,7 +1,7 @@
 # Plan: Q1
 
 > [!SCHEDULE-META]
-> - schema-version: `2026-10-25`
+> - schema-version: `2026-10-26`
 
 > [!SCHEDULE-BASE] Minimum
 

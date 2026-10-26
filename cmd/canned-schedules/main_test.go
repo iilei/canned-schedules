@@ -275,20 +275,15 @@ func TestCatalogOutputs(t *testing.T) {
 		t.Errorf("text form: file %q, stdout %q", text, stdout.String())
 	}
 
-	// The text form and the source embedded in the SVG are requests with the same schedule digest.
-	want := digest(t, stdoutJSON.Bytes())
+	// The text form and the source embedded in the SVG are requests for the same schedule: the same base and week.
+	want := scheduleOf(t, stdoutJSON.Bytes())
 
-	if got := digest(t, evaluateFile(t, dir, "text.md", text)); got != want {
-		t.Errorf("text form digest %s, want %s", got, want)
+	if got := scheduleOf(t, evaluateFile(t, dir, "text.md", text)); got != want {
+		t.Errorf("text form schedule %s, want %s", got, want)
 	}
 
-	src, attrDigest := embedded(t, svgFile)
-	if attrDigest != want {
-		t.Errorf("SVG digest attribute %s, want %s", attrDigest, want)
-	}
-
-	if got := digest(t, evaluateFile(t, dir, "embedded.md", []byte(src))); got != want {
-		t.Errorf("embedded source digest %s, want %s", got, want)
+	if got := scheduleOf(t, evaluateFile(t, dir, "embedded.md", []byte(embedded(t, svgFile)))); got != want {
+		t.Errorf("embedded source schedule %s, want %s", got, want)
 	}
 
 	if code := run([]string{"--svg-embed-source", basic}, &stdout, &stderr); code != exitInvalid ||
@@ -328,24 +323,29 @@ func evaluateFile(t *testing.T, dir, name string, content []byte) []byte {
 	return stdout.Bytes()
 }
 
-func digest(t *testing.T, out []byte) string {
+// scheduleOf returns what a consumer acts on, the base and the week, as compact JSON.
+func scheduleOf(t *testing.T, out []byte) string {
 	t.Helper()
 
 	var o struct {
-		Digests struct {
-			Schedule string `json:"schedule"`
-		} `json:"digests"`
+		Base string          `json:"base"`
+		Week json.RawMessage `json:"week"`
 	}
 
-	if err := json.Unmarshal(out, &o); err != nil || o.Digests.Schedule == "" {
-		t.Fatalf("no digest in %s (%v)", out, err)
+	if err := json.Unmarshal(out, &o); err != nil || o.Base == "" {
+		t.Fatalf("no schedule in %s (%v)", out, err)
 	}
 
-	return o.Digests.Schedule
+	var week bytes.Buffer
+	if err := json.Compact(&week, o.Week); err != nil {
+		t.Fatal(err)
+	}
+
+	return o.Base + " " + week.String()
 }
 
 // embedded reads the source element from an SVG's metadata with a plain XML parser.
-func embedded(t *testing.T, path string) (string, string) {
+func embedded(t *testing.T, path string) string {
 	t.Helper()
 
 	b, err := os.ReadFile(path)
@@ -356,8 +356,7 @@ func embedded(t *testing.T, path string) (string, string) {
 	var svg struct {
 		Metadata struct {
 			Source struct {
-				Digest string `xml:"digest,attr"`
-				Text   string `xml:",chardata"`
+				Text string `xml:",chardata"`
 			} `xml:"https://github.com/iilei/canned-schedules#svg-source source"`
 		} `xml:"metadata"`
 	}
@@ -370,5 +369,5 @@ func embedded(t *testing.T, path string) (string, string) {
 		t.Fatalf("no embedded source in %s", b)
 	}
 
-	return svg.Metadata.Source.Text, svg.Metadata.Source.Digest
+	return svg.Metadata.Source.Text
 }

@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-25/config.schema.json",
+  "title": "canned-schedules config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema-version",
+    "states",
+    "representation"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema-version": {
+      "const": "2026-10-25"
+    },
+    "states": {
+      "description": "Ordered. Index 0 is the default base. Ids must be unique case-insensitively (checked in Go).",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/state"
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theme",
+        "ascii",
+        "styles"
+      ],
+      "properties": {
+        "theme": {
+          "description": "Page-level colours, independent of states.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "light",
+            "dark"
+          ],
+          "properties": {
+            "light": {
+              "$ref": "#/$defs/surface"
+            },
+            "dark": {
+              "$ref": "#/$defs/surface"
+            }
+          }
+        },
+        "ascii": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "symbols"
+          ],
+          "properties": {
+            "symbols": {
+              "description": "Symbols for the ASCII preview, by state order: ascii = . : = # (pure ASCII, default), braille = ⠀ ⣀ ⣤ ⣶ ⣿ (Unicode, neutral width), styles = each style's own symbol.",
+              "enum": [
+                "ascii",
+                "braille",
+                "styles"
+              ]
+            }
+          }
+        },
+        "styles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "states"
+          ],
+          "properties": {
+            "states": {
+              "description": "Assigned to states round robin: state i gets styles.states[i mod len].",
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/state-style"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "state-id": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^[A-Za-z](?:-?[A-Za-z0-9])*$"
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display-name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/state-id"
+        },
+        "display-name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "hex-color": {
+      "description": "#RRGGBB or #RRGGBBAA",
+      "type": "string",
+      "pattern": "^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+    },
+    "color-pair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "light",
+        "dark"
+      ],
+      "properties": {
+        "light": {
+          "$ref": "#/$defs/hex-color"
+        },
+        "dark": {
+          "$ref": "#/$defs/hex-color"
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "label"
+      ],
+      "properties": {
+        "background": {
+          "$ref": "#/$defs/hex-color"
+        },
+        "label": {
+          "$ref": "#/$defs/hex-color"
+        }
+      }
+    },
+    "state-style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol",
+        "color"
+      ],
+      "properties": {
+        "symbol": {
+          "description": "One character, used by the ASCII preview when representation.ascii.symbols is styles. Repeats only warn.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1
+        },
+        "color": {
+          "$ref": "#/$defs/color-pair"
+        }
+      }
+    }
+  }
+}

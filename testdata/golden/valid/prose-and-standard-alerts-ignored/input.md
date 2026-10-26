@@ -6,7 +6,7 @@ Some introduction for humans.
 > `08:00` to `09:00` MON
 
 > [!SCHEDULE-META]
-> - schema-version: `2026-10-25`
+> - schema-version: `2026-10-26`
 
 ## States
 

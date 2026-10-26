@@ -1,11 +1,8 @@
 {
-  "schema-version": "2026-10-25",
+  "schema-version": "2026-10-26",
   "name": "Schedule-Name",
   "base": "Minimum",
   "annotations": {},
-  "digests": {
-    "schedule": "sha256:e6143d57c5a7b940fda6ce370f8ef37596eba286fe10a3627b69ec16b5ad1837"
-  },
   "week": {
     "MON": [
       {

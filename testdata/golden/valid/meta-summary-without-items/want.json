@@ -1,12 +1,9 @@
 {
-  "schema-version": "2026-10-25",
+  "schema-version": "2026-10-26",
   "name": "Weekend-Shop 2026",
   "summary": "Weekend shop",
   "base": "Off",
   "annotations": {},
-  "digests": {
-    "schedule": "sha256:8deebb578662aa780d93157000376df67f928835a4377095b3d3ba26314dce9f"
-  },
   "week": {
     "MON": [
       {
