@@ -85,6 +85,28 @@
         </select>
       </label>
     </div>
+    <details class="config" id="states-panel">
+      <summary>States <span class="muted" id="states-summary"></span></summary>
+      <p class="config-note">The states your request may name, in order: the first is the default base, and colours
+        go round robin. Sent as <code>--set-config-at states</code>, like on the CLI.</p>
+      <ol class="state-rows" id="state-rows"></ol>
+      <div class="actions">
+        <button type="button" class="ghost" id="add-state">Add state</button>
+        <button type="button" class="ghost" id="reset-states" disabled>Reset to defaults</button>
+      </div>
+    </details>
+    <details class="config" id="flags-panel">
+      <summary>Equivalent CLI flags <span class="muted" id="flags-summary"></span></summary>
+      <p class="config-note">The CLI gives the same result with these flags.</p>
+      <div class="flags-head">
+        <div class="segmented small" role="group" aria-label="Flags format" id="flags-format">
+          <button type="button" data-value="shell" aria-pressed="true">Shell</button>
+          <button type="button" data-value="args" aria-pressed="false" title="One argument per line, as canned-schedules.args in the consumer example reads them">Args file</button>
+        </div>
+        <button type="button" class="ghost" id="copy-flags">Copy</button>
+      </div>
+      <pre class="code flags" id="flags"></pre>
+    </details>
     <div class="status" id="status" role="status" aria-live="polite">Loading…</div>
   </section>
 

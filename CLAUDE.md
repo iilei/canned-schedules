@@ -520,6 +520,17 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   never reaches the server). **Copy link** builds that URL from the current state (`permalink()` in `app.js`: every
   control explicitly, the theme only when not "system", `#doc=` only when the editor differs from the preset), copies
   it and puts it in the address bar.
+- **States editor and CLI flags (decided 2026-10-26, #39):** the options hold a "States" panel (rows of id and
+  display name; add, remove, reorder, reset). The rows go to the checker as `--set-config-at states
+  --set-config-value '[…]'`, only while they differ from the built-in states, so the checker validates them as the CLI
+  does (`config-*` diagnostics; the panel's summary turns red on a config error). The defaults come from `states` in
+  the evaluate result (the effective states after overrides; the page asks once with an empty document), so they
+  live in `schema/config.json` only. `cliArgs()` in `app.js` lists only the flags that differ from the CLI defaults
+  and is the single source for the checker, the Sphinx kit and the **Equivalent CLI flags** box (shell command with
+  POSIX quoting, or one argument per line for `canned-schedules.args`); `args()` adds only `--svg-theme`. Permalink:
+  repeated `?states=<id>` or `?states=<id>:<display name>` (split at the first colon; ids can't contain one), written
+  only for custom states; a link with them opens the panel. Still open: palettes (#40), an add-phase form (#41),
+  "why is this minute in this state" (#42), presets with their own states.
 - **Loading overlay:** `#hud` covers the page until the WebAssembly checker runs (`start()` hides it), and stays with
   the reason when loading fails (no WebAssembly, `app.wasm` not loadable). `fetchWasm()` streams the download to show
   the megabytes loaded, with a total and percentage only when the response isn't content-encoded (Content-Length

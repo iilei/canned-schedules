@@ -88,3 +88,25 @@ func TestSphinxKit(t *testing.T) {
 		t.Error("an invalid request must not produce a kit")
 	}
 }
+
+func TestEvaluateStates(t *testing.T) {
+	t.Parallel()
+
+	src := []byte("# Rota\n\n> [!SCHEDULE-STATE] Primary\n> - `08:00` to `16:00` MON-FRI\n")
+
+	if got := Evaluate(src, nil).States; len(got) != 4 || got[0].ID != "Off" {
+		t.Errorf("without overrides, States = %v, want the built-in states", got)
+	}
+
+	set := func(value string) []string { return []string{"--set-config-at", "states", "--set-config-value", value} }
+
+	res := Evaluate(src, set(`[{"id":"Off","display-name":"Off"},{"id":"Primary","display-name":"Primary on-call"}]`))
+	if res.Errors != 0 || len(res.States) != 2 || res.States[1].DisplayName != "Primary on-call" {
+		t.Errorf("with a states override: errors %d, States = %v", res.Errors, res.States)
+	}
+
+	res = Evaluate(src, set(`[{"id":"Off","display-name":"Off"},{"id":"OFF","display-name":"Off again"}]`))
+	if res.States != nil || !strings.Contains(res.Report, `"code": "config-duplicate-state"`) {
+		t.Errorf("an invalid override: States = %v, report %s", res.States, res.Report)
+	}
+}
