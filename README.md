@@ -91,7 +91,8 @@ warnings on their lines, and see the week as SVG, the issue as GitHub renders it
 styles (downloadable as a [Sphinx kit](#sphinx)), diagnostics that jump to the offending line, the JSON and the ASCII preview
 (downloadable as the [text form](#text-form)). **States** lets you check against your own states (on-call
 rotations, support levels) instead of the built-in capacity ones, and **Equivalent CLI flags** shows the flags that
-give the CLI the same result, as a shell command or as lines for an args file. Light and dark themes included;
+give the CLI the same result, as a shell command or as lines for an args file. **Colours** offers palettes inspired
+by Grafana's (sequential for ordered states, categorical for rotations, and the colour-blind safe Okabe–Ito). Light and dark themes included;
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
 the URL fragment, which browsers never send to the server. The page's SVG, shown and downloaded, always embeds the
 canonical request (like `--svg-embed-source`), so a downloaded picture stays traceable to its schedule. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
