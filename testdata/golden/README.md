@@ -49,12 +49,11 @@ A diagnostic points at the first character of the offending token:
 
 ```json
 {
-  "schema-version": "2026-10-25",
+  "schema-version": "2026-10-26",
   "name": "Schedule-Name",
   "summary": "Office hours only",
   "base": "Minimum",
   "annotations": {"x-owner": "team-xyz"},
-  "digests": {"schedule": "sha256:10ab…"},
   "week": {
     "MON": [{"start": "00:00", "end": "06:00", "state": "Minimum"}, …],
     "TUE": […], "WED": […], "THU": […], "FRI": […], "SAT": […], "SUN": […]
@@ -93,9 +92,6 @@ A diagnostic points at the first character of the offending token:
   `--base`, then config state 0).
 - `warnings` lists every warning (`code`, `message`, and `line`/`column`/`excerpt` when positioned). Fixtures don't pin
   message text: they hold `"…"`, and the golden runner replaces actual messages with it before comparing.
-- `digests`, written `sha256:<64 lowercase hex>`:
-  - `schedule`: SHA-256 of `{"base": …, "week": …}` as compact JSON (no whitespace, keys in the order shown here).
-    It changes only when what a consumer acts on changes, never for name, summary, annotations or cron rendering.
 - The whole output is described by `schema/output.schema.json`. The tool validates its own output against it, and a
   test validates every `want.json` here against it.
 

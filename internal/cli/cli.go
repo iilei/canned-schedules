@@ -207,7 +207,7 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 }
 
 // SVG renders the SVG preview of a successfully evaluated document with the same config overrides. With
-// --svg-embed-source it carries the canonical form of src, the schedule digest and generator (the tool and version).
+// --svg-embed-source it carries the canonical form of src and the generator (the tool and version).
 func SVG(opts *Options, out *schedule.Output, src []byte, generator string) ([]byte, error) {
 	cfg, err := previewConfig(opts)
 	if err != nil {
@@ -222,7 +222,7 @@ func SVG(opts *Options, out *schedule.Output, src []byte, generator string) ([]b
 			return nil, err
 		}
 
-		source = &render.Source{Text: c, Digest: out.Digests.Schedule, Generator: generator}
+		source = &render.Source{Text: c, Generator: generator}
 	}
 
 	return render.SVG(out, cfg, opts.Preview.Downsample, opts.Preview.SVGTheme, source)

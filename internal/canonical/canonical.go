@@ -1,6 +1,6 @@
 // Package canonical writes the canonical form of a valid request: only what the contract defines (the name, META,
 // BASE and the STATE blocks with their ranges), in source order and with normalised spelling. Prose, other alerts and
-// links are dropped. The result is itself a valid request that evaluates to the same output, digest included.
+// links are dropped. The result is itself a valid request that evaluates to the same output.
 //
 // The text form (Text) adds the ASCII preview in a fenced code block after the name. A top-level code block is prose
 // to the parser, so the text form is a valid request as well.

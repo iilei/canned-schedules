@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-25/config.schema.json",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-26/config.schema.json",
   "title": "canned-schedules config",
   "type": "object",
   "additionalProperties": false,
@@ -14,7 +14,7 @@
       "type": "string"
     },
     "schema-version": {
-      "const": "2026-10-25"
+      "const": "2026-10-26"
     },
     "states": {
       "description": "Ordered. Index 0 is the default base. Ids must be unique case-insensitively (checked in Go).",

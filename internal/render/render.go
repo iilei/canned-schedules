@@ -93,12 +93,11 @@ type Model struct {
 	Bucket      int         `json:"bucket"`
 }
 
-// Source is the canonical request an SVG carries in its metadata, so the picture can regenerate everything. The digest
-// ties it to its JSON without regenerating anything.
+// Source is the canonical request an SVG carries in its metadata: evaluating it regenerates the JSON, so the picture
+// stays traceable to its schedule.
 type Source struct {
 	Namespace string `json:"namespace"`
 	MediaType string `json:"mediaType"`
-	Digest    string `json:"digest"`
 	Generator string `json:"generator"`
 	Text      string `json:"text"`
 }

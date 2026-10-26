@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-25/report.schema.json",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-26/report.schema.json",
   "title": "canned-schedules error report",
   "description": "Written by --error-output-format json; the built-in markdown-gfm template operates on this shape. Strings are sanitized: control and bidi characters appear as \\uXXXX escapes.",
   "type": "object",
@@ -11,7 +11,7 @@
   ],
   "properties": {
     "schema-version": {
-      "const": "2026-10-25"
+      "const": "2026-10-26"
     },
     "file": {
       "type": "string",

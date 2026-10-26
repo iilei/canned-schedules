@@ -1,11 +1,8 @@
 {
-  "schema-version": "2026-10-25",
+  "schema-version": "2026-10-26",
   "name": "Schedule-Name",
   "base": "Off",
   "annotations": {},
-  "digests": {
-    "schedule": "sha256:f646afb7af93b6f7b7972f6166bbfb4ef4b2ee6ed1f3393e5c86f80f7fde5609"
-  },
   "week": {
     "MON": [
       {

@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-25/output.schema.json",
+  "title": "canned-schedules canonical output",
+  "type": "object",
+  "required": [
+    "schema-version",
+    "name",
+    "base",
+    "annotations",
+    "digests",
+    "week",
+    "transitions",
+    "warnings"
+  ],
+  "properties": {
+    "schema-version": {
+      "const": "2026-10-25"
+    },
+    "name": {
+      "$ref": "#/$defs/text"
+    },
+    "summary": {
+      "$ref": "#/$defs/text"
+    },
+    "base": {
+      "$ref": "#/$defs/state-id"
+    },
+    "annotations": {
+      "type": "object",
+      "maxProperties": 40,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-[a-z0-9](?:-?[a-z0-9]){0,39}$": {
+          "type": "string",
+          "maxLength": 48
+        }
+      }
+    },
+    "digests": {
+      "type": "object",
+      "required": [
+        "schedule"
+      ],
+      "properties": {
+        "schedule": {
+          "description": "SHA-256 of {\"base\": …, \"week\": …} as compact JSON in the key order defined here. Ignores name, summary, annotations and cron rendering.",
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "week": {
+      "description": "Per-day half-open runs covering 00:00-00:00; end 00:00 means the end of the day.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "properties": {
+        "MON": {
+          "$ref": "#/$defs/day"
+        },
+        "TUE": {
+          "$ref": "#/$defs/day"
+        },
+        "WED": {
+          "$ref": "#/$defs/day"
+        },
+        "THU": {
+          "$ref": "#/$defs/day"
+        },
+        "FRI": {
+          "$ref": "#/$defs/day"
+        },
+        "SAT": {
+          "$ref": "#/$defs/day"
+        },
+        "SUN": {
+          "$ref": "#/$defs/day"
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/transition"
+      }
+    },
+    "warnings": {
+      "description": "Non-fatal diagnostics. No file names: the output depends only on the document and the flags.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "maxLength": 80,
+      "pattern": "^[A-Za-z](?:[A-Za-z0-9 -]*[A-Za-z0-9])?$"
+    },
+    "state-id": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^[A-Za-z](?:-?[A-Za-z0-9])*$"
+    },
+    "weekday": {
+      "enum": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ]
+    },
+    "hhmm": {
+      "type": "string",
+      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "day": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/run"
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "start",
+        "end",
+        "state"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/hhmm"
+        },
+        "end": {
+          "$ref": "#/$defs/hhmm"
+        },
+        "state": {
+          "$ref": "#/$defs/state-id"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "required": [
+        "time",
+        "days",
+        "state",
+        "cron"
+      ],
+      "properties": {
+        "time": {
+          "$ref": "#/$defs/hhmm"
+        },
+        "days": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/weekday"
+          }
+        },
+        "state": {
+          "$ref": "#/$defs/state-id"
+        },
+        "cron": {
+          "type": "object",
+          "required": [
+            "posix",
+            "aws"
+          ],
+          "properties": {
+            "posix": {
+              "description": "Five-field Unix cron, numeric weekdays (0 = SUN).",
+              "type": "string",
+              "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\* \\* (?:\\*|[0-6](?:-[0-6])?(?:,[0-6](?:-[0-6])?)*)$"
+            },
+            "aws": {
+              "description": "Six-field EventBridge cron, weekday names.",
+              "type": "string",
+              "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\? \\* (?:\\*|(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?(?:,(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?)*) \\*$"
+            }
+          }
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z]+(?:-[a-z]+)*$"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "example": {
+          "description": "Optional: the exact text to type instead (Markdown, backticks included).",
+          "type": "string",
+          "minLength": 1
+        },
+        "excerpt": {
+          "type": "object",
+          "required": [
+            "text",
+            "marker"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "marker": {
+              "type": "string",
+              "pattern": "^[ \\t]*\\^$"
+            }
+          }
+        }
+      },
+      "dependentRequired": {
+        "line": [
+          "column"
+        ],
+        "column": [
+          "line"
+        ],
+        "excerpt": [
+          "line"
+        ]
+      }
+    }
+  }
+}

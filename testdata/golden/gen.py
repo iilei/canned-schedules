@@ -14,7 +14,6 @@ Rules:
 - The script deletes and rewrites valid/, warn/ and error/, so cases that only exist on disk are removed.
 """
 
-import hashlib
 import json
 import os
 import shutil
@@ -24,7 +23,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.abspath(__fi
 for group in ("valid", "warn", "error"):
     shutil.rmtree(os.path.join(OUT, group), ignore_errors=True)
 # The schema version: the date of the last breaking change to any contract (README "Stability").
-VERSION = "2026-10-25"
+VERSION = "2026-10-26"
 DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 STATES = ["Off", "Minimum", "Medium", "Maximum"]
 WEEK = 7 * 1440
@@ -125,12 +124,9 @@ def output(base, ranges, annotations=None, name="Schedule-Name", summary=None, w
         out["summary"] = summary
     week = paint_minutes(base, ranges)
     week_runs = paint(base, ranges)
-    # The schedule digest covers what a consumer acts on: the base state and the painted week.
-    schedule = json.dumps({"base": base, "week": week_runs}, separators=(",", ":"), ensure_ascii=False).encode()
     out.update({
         "base": base,
         "annotations": annotations or {},
-        "digests": {"schedule": "sha256:" + hashlib.sha256(schedule).hexdigest()},
         "week": week_runs,
         "transitions": transitions(week),
         # Message text is not pinned: the golden runner replaces it with "…" before comparing. Positioned warnings

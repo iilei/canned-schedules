@@ -12,7 +12,7 @@ import (
 )
 
 // TestCanonicalRoundTrip writes every golden fixture with output in its canonical form and in its text form,
-// evaluates both again with the fixture's args, and requires the same output: digest, week, transitions, annotations
+// evaluates both again with the fixture's args, and requires the same output: base, week, transitions, annotations
 // and the warning codes (positions move, because prose is gone).
 func TestCanonicalRoundTrip(t *testing.T) {
 	t.Parallel()

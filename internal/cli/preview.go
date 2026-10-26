@@ -90,8 +90,8 @@ func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 	fs.StringVar(&p.SVGFile, "svg-output-file", "", "Write an SVG preview (only when the document has no errors)")
 	fs.StringVar(&p.SVGTheme, "svg-theme", render.ThemeAuto, "SVG colours: `auto` (follow the viewer), `light` or "+
 		"`dark`")
-	fs.BoolVar(&p.SVGEmbedSource, "svg-embed-source", false, "Embed the canonical request in the SVG's metadata, "+
-		"with the schedule digest; needs `--svg-output-file`")
+	fs.BoolVar(&p.SVGEmbedSource, "svg-embed-source", false, "Embed the canonical request in the SVG's metadata; "+
+		"needs `--svg-output-file`")
 	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "Write an ASCII preview (only when the document has no errors)")
 	fs.StringVar(&p.TextFile, "text-output-file", "", "Write the text form: the canonical request with the ASCII "+
 		"preview, itself a valid request (only when the document has no errors)")

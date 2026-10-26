@@ -1,13 +1,10 @@
 {
-  "schema-version": "2026-10-25",
+  "schema-version": "2026-10-26",
   "name": "Schedule-Name",
   "base": "Minimum",
   "annotations": {
     "x-owner": "team-xyz",
     "x-ticket": "OPS-1234"
-  },
-  "digests": {
-    "schedule": "sha256:e00bced1bec8592bc1162599ad5ade3a5af945fec0f866f73e9f62faf41d1560"
   },
   "week": {
     "MON": [

@@ -41,12 +41,14 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
     spec. Remove the old mise tasks when the Go tool replaces them.
   - YAML isn't needed any more. If it comes back: `go.yaml.in/yaml/v3` parses YAML only, not frontmatter, so split it
     off yourself and use `yaml.Node` for line numbers.
-- **Digests (decided, implemented).** The output carries `digests.schedule`: SHA-256 of compact `{"base", "week"}`
-  JSON, written `sha256:<hex>`. Name, summary, annotations, prose and range wording that paints the same minutes don't
-  change it. `base` is part of it because consumers use it as the fallback, for example when `transitions` is `[]`.
-  - **No request digest (dropped 2026-10-25):** a hash of the input bytes earned little. Provenance belongs in git
-    SHAs or in an `x-*` META key (an issue link, a commit), and a bot that must pin an issue revision hashes
-    the body itself. The `digests` object stays, so a digest can be added later without reshaping the output.
+- **No digests (removed 2026-10-26, `v0.2.0`).** The output carried `digests.schedule` (SHA-256 of compact
+  `{"base", "week"}`) until `schema-version` `2026-10-25`. Removed for the same reasons as the transitions' `sha`:
+  `base` and `week` are canonical, so consumers compare or hash them themselves (`jq -c '{base, week}' | sha256sum`),
+  a field with a definition is contract surface (its inputs could change silently), and in a catalog `git diff` and
+  the signed `checksums.txt` cover change detection. Any id, hash, nonce or provenance a user needs goes into an `x-*`
+  META key (`x-id`, an issue link, a commit), which passes through to `annotations` with the user's meaning. The SVG
+  embed lost its `digest` attribute; the embedded canonical source is the tie to the JSON. A request digest (a hash
+  of the input bytes) had already been dropped on 2026-10-25.
   - Storing the source next to its outputs is decided as the `*.canned-schedule.md` convention (see "Schedule files
     and generated outputs"). Consumers read only the output; the raw Markdown is never part of the contract.
 - **Linting (decided 2026-10-25).** rumdl has no custom rules, and a markdownlint-cli2 JS rule would be a second
@@ -66,7 +68,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
 # Schedule-Name
 
 > [!SCHEDULE-META]
-> - schema-version: `2026-10-25`
+> - schema-version: `2026-10-26`
 > - x-owner: `team-xyz`
 
 > [!SCHEDULE-BASE] Minimum
@@ -110,7 +112,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
     keys are user bookkeeping and never become standard. Keys without `x-` stay reserved for the spec. Old
     `x-custom-*` keys still validate as `x-` keys named `custom-*`.
   - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
-    block is absent or just lacks the key, the version built into the binary (currently `"2026-10-25"`) applies.
+    block is absent or just lacks the key, the version built into the binary (currently `"2026-10-26"`) applies.
   - **Text after the META marker is the schedule's summary** (`[!SCHEDULE-META] Office hours only`). It is trimmed, then
     validated with the same rule as the name (see below), and output as `summary`. A META block with a summary and no items is
     allowed.
@@ -178,13 +180,13 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
   and ASCII) show buckets of N minutes. (none) or `--preview-downsample` → 15 (96 columns, `MON` + 96 = 100
   characters); `--preview-downsample=N` → N (must divide 60; the value must be attached with `=`);
   `--no-preview-downsample` → 1 (1440 columns). Combining the last two is `invalid-flag`.
-  - **Never applied to the canonical JSON** (week, transitions, digests stay exact) and never to input reading.
+  - **Never applied to the canonical JSON** (week and transitions stay exact) and never to input reading.
   - A bucket shows the state covering most of its minutes; ties go to the state that comes later in the config. When
     buckets mix states, a `preview-approximate` warning says how many; it appears only when a preview is requested.
   - Anyone who needs exact previews sets `--sample-interval` to a multiple of the bucket size (e.g. 15).
 - **Warnings in the canonical JSON (decided 2026-10-24):** `warnings` lists every warning (`code`, `message`, and
   `line`/`column`/`excerpt` when positioned), sorted by position. No file names, so the output doesn't depend on where
-  the file lives. Not part of the schedule digest. Golden fixtures don't pin warning messages (`"…"`).
+  the file lives. Golden fixtures don't pin warning messages (`"…"`).
 
 ### State names (decided)
 
@@ -213,7 +215,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Shape:** domain and representation are kept separate.
 
   ```text
-  schema-version            const "2026-10-25" (the stability date, see "Stability")
+  schema-version            const "2026-10-26" (the stability date, see "Stability")
   states[]                   {id, display-name}: ordered, index 0 = default base
   representation.theme      {light, dark} × {background, label}: page-level colours
   representation.ascii      {symbols}: ascii | braille | styles
@@ -237,7 +239,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **State id pattern:** `^[A-Za-z](?:-?[A-Za-z0-9])*$`, max 32 chars. It's the same rule as before, written in the same
   style as the namespace rule.
 - **Document META** (`schema/meta.schema.json`):
-  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"2026-10-25"`, because every META
+  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"2026-10-26"`, because every META
     value comes from a code span.
   - Otherwise only `x-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
   - At most 40 custom keys (`maxProperties: 41`). Each value is a string of at most 48 chars, so 40 × 48 = 1920 chars,
@@ -262,7 +264,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Out of scope:** capacity numbers and any other provider-specific settings (for example ASG `min`/`desired`/`max`).
   **State ids are the integration edge:** downstream tooling attaches provider config to state ids. Never add such fields
   to the config or the output.
-- **`schema-version` is a string date** (`"2026-10-25"`) everywhere: config, META, output and report. See "Stability".
+- **`schema-version` is a string date** (`"2026-10-26"`) everywhere: config, META, output and report. See "Stability".
 - **Schema `$id`s** are `https://iilei.github.io/canned-schedules/schema/<date>/<name>.schema.json`, built from
   `schema.Version` and `schema.BaseURL`; `config.json` references its schema through `$schema`.
   `TestVersionIsTheSingleSource` keeps the JSON files in step with the constant.
@@ -320,14 +322,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   prose, other alerts and links. Normalises spelling only: `HH:MM` times, no whitespace inside weekday expressions
   (`SAT, SUN` → `SAT,SUN`), one blank line between blocks. The author's grouping stays (`MON-WED,TUE` keeps its
   `repeated-weekday` warning), and ranges never change order. Text goes through `diag.Sanitize`. Test: every valid
-  golden fixture, written canonically and evaluated again, gives the same `want.json` (digest included). The same
+  golden fixture, written canonically and evaluated again, gives the same `want.json`. The same
   writer serves the SVG embed, a later `canned-schedules fmt`, and the TOML converter's target.
 - **SVG source embed:** `--svg-embed-source` (opt-in, because `x-*` values such as owners or issue links would travel
   with every shared picture) puts the canonical Markdown into SVG `<metadata>` as a namespaced element with the
-  schedule digest and the generator version as attributes (e.g. `<cs:source media-type="text/markdown"
-  digest="sha256:…" generator="canned-schedules 0.0.1">`). XML-escaped text via the template's `html` builtin, not
+  generator version as an attribute (e.g. `<cs:source media-type="text/markdown"
+  generator="canned-schedules 0.2.0">`; until `0.1.0` also a `digest` attribute). XML-escaped text via the template's `html` builtin, not
   CDATA: user text could contain `]]>`. The canonical form rather than the raw source, so prose doesn't travel. The
-  Markdown, not the JSON: the source regenerates everything, and the digest ties the picture to its JSON. Reading
+  Markdown, not the JSON: the source regenerates everything, which ties the picture to its JSON. Reading
   it back works with any XML tool; an `extract-source` helper only if asked. Markdown stays the only input format.
 - **New CLI outputs**, following the rules of the others (atomic, only without errors): `--json-output-file <path>`
   (before, JSON could only go to stdout, so one run couldn't print a preview and save the JSON), `--text-output-file
@@ -341,7 +343,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   warn fixture, canonical and text form, same output with warnings reduced to codes, canonical form a fixed point),
   `internal/canonical` unit tests (exact spelling, code spans parsed back by goldmark, fences), and
   `TestCatalogOutputs` (the render task's call; the text form and the source read back from the SVG with
-  `encoding/xml` give the same digest). The SVG template with a source is byte-identical under gomplate 5.2.0, and
+  `encoding/xml` give the same `base` and `week`). The SVG template with a source is byte-identical under gomplate 5.2.0, and
   librsvg renders it. `xmllint --xpath 'string(//*[local-name()="source"])'` reads the source back.
 - **Consumer example** (`examples/consumer/`): `mise.toml` (the pinned release via the `github:` backend and three
   tasks), `scripts/canned-schedule` (the tasks in POSIX `sh`, also runnable without mise), `canned-schedules.args`
@@ -370,8 +372,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
-  - The example pins `0.1.0`, the first regular release (`0.0.1-pre.6` was the first with the date as
-    `schema-version`, `0.0.1-pre.4` the first with provenance attestations, which mise verifies on install). Bump it
+  - The example pins `0.2.0`, the first without `digests` (`0.1.0` was the first regular release, `0.0.1-pre.6` the
+    first with the date as `schema-version`, `0.0.1-pre.4` the first with provenance attestations, which mise
+    verifies on install). Bump it
     in the same PR that prepares a release, then tag right after the merge, so the release's own README and example
     reference it; `example:test` builds from source, so CI passes before the tag exists. If the release run fails,
     the draft and tag can be deleted and the same version tagged again, since nothing was published.
@@ -406,13 +409,16 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   Consumers must read tolerantly (ignore unknown fields and codes); the README says so. The tool's self-check against
   its schema no longer catches a misspelled extra key; the golden fixtures (exact text) still do.
 - **Breaking (new date):** removing, renaming, retyping, newly requiring, tightening a pattern, rejecting input that
-  was accepted, changing digest inputs, and **changing a field's meaning** (the worst kind: no validator notices).
+  was accepted, and **changing a field's meaning** (the worst kind: no validator notices).
   Meaning changes come as a new field; the old one goes at the next breaking date. Semver-wise: description fix =
   patch, addition = minor, both same date; everything breaking = major = new date.
 - **Not contract:** diagnostic messages (codes are), preview layout, JSON key order (stable in practice).
 - **Publishing:** Pages serves `schema/<date>/` (`web:build` copies `schema/*.schema.json` there, plus
   `schema/archive/<date>/`, where a breaking change moves the previous files so published `$id`s never disappear);
   every release attaches the schemas and lists them in `checksums.txt` (signed, attested).
+- **History:** `2026-10-25` (`v0.0.1-pre.6`, replaced `"1"`), `2026-10-26` (`v0.2.0`, `digests` removed; the
+  first use of the archive: `schema/archive/2026-10-25/` keeps that date's schemas published). The README's
+  "Stability" lists the dates for users.
 - **On the next breaking change:** move the current `schema/*.schema.json` to `schema/archive/<old date>/`, set
   `schema.Version`, the four `$id`s, the `const`s and `config.json` (the test fails until they agree), `VERSION` in
   `gen.py`, regenerate the fixtures, and note what broke in the release notes.
@@ -702,18 +708,18 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
   input. Issue templates don't render MyST, a second grammar would double the parser, positions and fixtures, and
   `--myst-output-file` already covers docs from the GFM source. If built:
   - **Explicit flag** `--input-format gfm|myst` (default `gfm`), never auto-detected.
-  - **A front end only:** a MyST reader that produces the same syntax as `internal/document`, so evaluation, output
-    and digests stay shared.
+  - **A front end only:** a MyST reader that produces the same syntax as `internal/document`, so evaluation and
+    output stay shared.
   - **Accepts only the shape `internal/myst` emits** (round trip). Test it by converting every golden input to MyST
     and back.
-  - **Digests:** the same schedule in both flavours gets the same schedule digest.
+  - **Same output:** the same schedule in both flavours gives the same `base` and `week`.
 - **First day of the week in previews** (asked 2026-10-25, deferred; worth it once users in regions with Sunday- or
   Saturday-first weeks appear). The setting is `representation.week-start` with `MON` (default, ISO 8601), `SUN` or
   `SAT`, plus a `--preview-week-start <day>` shorthand. The shorthand is applied after `--set-config-at`, like
   `--ascii-symbols`. On the page it is a dropdown plus `?weekstart=`.
   - **Changes only the order of the day rows** in the SVG, ASCII and page previews.
-  - **The canonical JSON, the digest, the weekday syntax and `want.json` stay unchanged**, so the same schedule
-    never hashes differently depending on who renders it.
+  - **The canonical JSON, the weekday syntax and `want.json` stay unchanged**, so the same schedule
+    never comes out differently depending on who renders it.
   - **The SVG transition table keeps its canonical order**, so it matches the JSON.
   - A range that crosses midnight at the week boundary wraps from the last row to the first; SUN → MON already does
     that today.
@@ -740,7 +746,7 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
   summaries and previews, linking to the versioned artifacts.
 - **TOML companion as a converter** (asked 2026-10-25, deferred; worth it for a catalog or tool-generated schedules,
   not for the issue template). A `toml-to-md` helper, **not a second input format**: Markdown stays the only contract,
-  so the parser, positions, digests and fixtures stay single.
+  so the parser, positions and fixtures stay single.
   - **Shape:** top-level `schema-version`, `name`, `summary`, `base`; `[x]` for `x-*` keys; states as an ordered
     `[[state]]` array (`id`, `ranges`), because TOML tables are unordered and painting depends on source order. Each
     range is a **triplet** `["14:00", "22:00", "MON-FRI"]` (start, end, weekday expression): the array separates the
@@ -814,7 +820,7 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
   - `internal/schedule`: META validation against the embedded schema (schema errors mapped to the key or value
     position), state and base resolution, range parsing via `expr`, and painting (`paint.go`: every minute of the week
     starts as base, ranges are painted in source order, then split into per-day runs), transitions with cron
-    (`transitions.go`), digests and the self-check against the output schema (`output.go`; a failure is reported as
+    (`transitions.go`) and the self-check against the output schema (`output.go`; a failure is reported as
     `output-schema`, an internal error). `Evaluate` returns the canonical output or diagnostics.
   - `internal/cli/golden_test.go` runs every fixture (101 at the time of the ASCII preview), including `want.preview`
     (the bucketed day rows of the ASCII preview). There is no skip logic any more; a failing fixture fails the build.

@@ -77,8 +77,8 @@ flowchart TB
    the pre-commit hook check it; `schedule:render` writes the outputs. [`examples/consumer`](examples/consumer) has
    both steps ready to copy.
 3. **Publish:** your pipeline's part. The outputs are plain files, so a git tag with release assets, an Artifactory
-   generic repository, or both work. Publish the JSON at least; the digest in it tells consumers whether the
-   schedule itself changed.
+   generic repository, or both work. Publish the JSON at least; diffing its `base` and `week` against the previous
+   version tells consumers whether the schedule itself changed.
 4. **Consume:** infrastructure code pins a catalog version, reads the schedule's JSON and maps its state ids to
    capacities that stay with the infrastructure (the AWS recipes are under [Output](#output)). Docs
    use the SVG previews or the [Sphinx kit](#sphinx).
@@ -199,7 +199,7 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--json-output-file <path>`       |         | Write the canonical JSON (only when the document has no errors)                                                                  |
 | `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                      |
 | `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                       |
-| `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata, with the schedule digest; needs `--svg-output-file`                           |
+| `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata; needs `--svg-output-file`                                                     |
 | `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                    |
 | `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors) |
 | `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                           |
@@ -269,8 +269,8 @@ The SVG comes from the built-in [`templates/schedule-svg.tmpl`](templates/schedu
 coordinates, colours and labels, so the template is plain markup that also runs with gomplate.
 
 With `--svg-embed-source`, the SVG also carries the request in its `<metadata>`: the canonical form (see below) as a
-`cs:source` element with the schedule digest and the generating version as attributes. The picture can then
-regenerate everything, and the digest ties it to its JSON. It is opt-in, because `x-*` values such as owners or issue
+`cs:source` element with the generating version as an attribute. Evaluating it regenerates the JSON, so the picture
+stays traceable to its schedule. It is opt-in, because `x-*` values such as owners or issue
 links then travel with every copy of the picture. Any XML tool reads it back, for example:
 
 ```sh
@@ -305,7 +305,7 @@ MON ::::::::::::::::::::::::====================================================
 The canonical form keeps only what the syntax defines: the name, META, BASE and the STATE blocks with their ranges, in
 source order. Prose, other alerts and links are dropped. Times are written `HH:MM`, weekday expressions without spaces
 (`SAT, SUN` becomes `SAT,SUN`) and state names as the configuration spells them; grouping and order stay as written.
-The text form is itself a valid request that evaluates to the same output and digest, because the parser reads a
+The text form is itself a valid request that evaluates to the same output, because the parser reads a
 code block as prose.
 
 ## Schedules in a repo
@@ -337,7 +337,7 @@ Without mise, the hooks also work with [pre-commit](https://pre-commit.com), whi
 ```yaml
 repos:
   - repo: https://github.com/iilei/canned-schedules
-    rev: v0.1.0
+    rev: v0.2.0
     hooks:
       - id: canned-schedules
 ```
@@ -497,12 +497,11 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 
 ```json
 {
-  "schema-version": "2026-10-25",
+  "schema-version": "2026-10-26",
   "name": "Office Hours",
   "summary": "Weekdays with a late Friday",
   "base": "Minimum",
   "annotations": {"x-owner": "team-xyz"},
-  "digests": {"schedule": "sha256:…"},
   "week": {
     "MON": [
       {"start": "00:00", "end": "06:00", "state": "Minimum"},
@@ -531,8 +530,11 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
   zone: set it where you schedule them.
 - `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
   line, column and excerpt. No file names: the output depends only on the document and the flags.
-- `digests.schedule` changes only when the base or the week changes, never for the name, summary, annotations or
-  prose. To trace a schedule back to its source, carry a git SHA or an issue link in an `x-*` META key.
+- **No id, hash or digest:** `base` and `week` are what a consumer acts on, and they are canonical (fixed day order,
+  merged runs, `HH:MM`), so name, summary, annotations and prose never change them. To detect a change, compare
+  them, or hash them yourself, e.g. `jq -c '{base, week}' schedule.json | sha256sum`. Any identifier you need (an id,
+  a hash, a git SHA, an issue link, a nonce) belongs in an `x-*` META key such as `x-id`; it passes through to
+  `annotations` unchanged, and its meaning is yours.
 - The schema is [`schema/output.schema.json`](schema/output.schema.json); details in
   [`testdata/golden/README.md`](testdata/golden/README.md).
 
@@ -728,7 +730,7 @@ so a range such as `^0.1` or `~0.1` never picks up a breaking change.
 
 - **`schema-version` is a date:** the date of the last breaking change to any of the contracts, which are the document
   syntax with its META, the configuration, the JSON output and the error report. This version reads and writes
-  `2026-10-25`. Documents don't have to declare it; one that declares another version is rejected with a hint.
+  `2026-10-26`. Documents don't have to declare it; one that declares another version is rejected with a hint.
 - **The schemas** of each version are published at
   `https://iilei.github.io/canned-schedules/schema/<date>/` (`output`, `report`, `config` and `meta`, each
   `.schema.json`) and attached to every release, listed in its signed `checksums.txt`. The tool never fetches them;
@@ -738,9 +740,13 @@ so a range such as `^0.1` or `~0.1` never picks up a breaking change.
   so newer output still validates against the schema of its date. Read the output tolerantly: ignore fields and
   warning codes you don't know.
 - **Breaking (a new date):** removing or renaming a field, changing its type, making a field required, tightening a
-  pattern, rejecting input that used to be accepted, changing how the digest is computed, and changing what a field
+  pattern, rejecting input that used to be accepted, and changing what a field
   means, which no schema can detect. A change of meaning comes as a new field instead; the old one goes at the next
   breaking change.
+- **History** (each date, what broke, the first release with it):
+  - `2026-10-26` (`v0.2.0`): `digests` removed from the output; compare or hash `base` and `week` yourself.
+  - `2026-10-25` (`v0.0.1-pre.6`): the first date, replacing `schema-version` `1`; the output and report schemas
+    allow additional properties.
 - **Not part of the contract:** diagnostic messages (their codes are), the layout of the previews, and the JSON's key
   order (stable, but parse the JSON rather than matching its text).
 
