@@ -23,20 +23,23 @@ const fileName = "request.md"
 var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid request")
 
 // Result is what the page shows. Previews of the Markdown are rendered even when the document has errors; the
-// canonical JSON, the schedule previews, the MyST and the text form only when it has none.
+// canonical JSON, the schedule previews, the MyST and the text form only when it has none. States are the
+// effective states after the config overrides (the page's states editor starts from them), absent when the config
+// doesn't load.
 type Result struct {
-	JSON           string `json:"json"`
-	SVG            string `json:"svg"`
-	ASCII          string `json:"ascii"`
-	MyST           string `json:"myst"`
-	Text           string `json:"text"`
-	Report         string `json:"report"`
-	ReportMarkdown string `json:"report-markdown"`
-	GitHubHTML     string `json:"github-html"`
-	SphinxHTML     string `json:"sphinx-html"`
-	SphinxCSS      string `json:"sphinx-css"`
-	Errors         int    `json:"errors"`
-	Warnings       int    `json:"warnings"`
+	JSON           string         `json:"json"`
+	SVG            string         `json:"svg"`
+	ASCII          string         `json:"ascii"`
+	MyST           string         `json:"myst"`
+	Text           string         `json:"text"`
+	Report         string         `json:"report"`
+	ReportMarkdown string         `json:"report-markdown"`
+	GitHubHTML     string         `json:"github-html"`
+	SphinxHTML     string         `json:"sphinx-html"`
+	SphinxCSS      string         `json:"sphinx-css"`
+	States         []config.State `json:"states,omitempty"`
+	Errors         int            `json:"errors"`
+	Warnings       int            `json:"warnings"`
 }
 
 // Evaluate runs the CLI pipeline on src with the given command-line flags (no file argument).
@@ -64,6 +67,7 @@ func Evaluate(src []byte, args []string) Result {
 		res.GitHubHTML, _ = htmlpreview.Render(src, cfg, htmlpreview.GitHub)
 		res.SphinxHTML, _ = htmlpreview.Render(src, cfg, htmlpreview.Sphinx)
 		res.SphinxCSS, _ = sphinxkit.CSS(cfg, sphinxkit.Page)
+		res.States = cfg.States
 	}
 
 	r := report.Build(fileName, src, diags)

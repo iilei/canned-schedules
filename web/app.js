@@ -73,16 +73,30 @@ function pressed(group, value) {
 
 // ---- evaluation ----------------------------------------------------------------------------------------------------
 
-function args() {
-  const svgTheme = state.theme === "system" ? "auto" : state.theme;
-  const a = ["--svg-theme", svgTheme, "--sample-interval", $("sample-interval").value, "--ascii-symbols", $("symbols").value];
+// The flags that shape the result, only where they differ from the CLI's defaults: the checker, the Sphinx kit and
+// the "Equivalent CLI flags" box all use this one list, so the box always shows what the page checked.
+function cliArgs() {
+  const a = [];
+  const interval = $("sample-interval").value;
+  if (interval !== "1") a.push("--sample-interval", interval);
+  const symbols = $("symbols").value;
+  if (symbols !== "ascii") a.push("--ascii-symbols", symbols);
   const ds = $("downsample").value;
-  a.push(ds === "1" ? "--no-preview-downsample" : "--preview-downsample=" + ds);
+  if (ds === "1") a.push("--no-preview-downsample");
+  else if (ds !== "15") a.push("--preview-downsample=" + ds);
+  const states = statesOverride();
+  if (states) a.push("--set-config-at", "states", "--set-config-value", states);
   return a;
+}
+
+// cliArgs plus what only the page needs: the SVG follows the page's theme.
+function args() {
+  return ["--svg-theme", state.theme === "system" ? "auto" : state.theme, ...cliArgs()];
 }
 
 function evaluate() {
   if (!ready) return;
+  renderFlags();
   let res;
   try {
     res = JSON.parse(globalThis.cannedSchedules.evaluate(editor.value, args()));
@@ -116,6 +130,8 @@ function render(res) {
 
   const report = JSON.parse(res.report);
   renderDiagnostics(report.diagnostics);
+  $("states-panel").classList.toggle("invalid",
+    report.diagnostics.some((d) => d.severity === "error" && d.code.startsWith("config-")));
   editor.setDiagnostics(report.diagnostics);
 
   const badge = $("badge");
@@ -328,6 +344,155 @@ function wireSplitter() {
   handle.addEventListener("dblclick", () => setSplit(SPLIT.initial, true));
 }
 
+// ---- states ------------------------------------------------------------------------------------------------------
+
+// The states editor: rows of {id, name} sent as --set-config-at states, only while they differ from the built-in
+// states. An empty name means the id. The checker validates the rows like the CLI does (config-* diagnostics).
+let defaultStates = []; // [{id, name}], from the embedded config
+let stateRows = [];
+let queryStates = null; // ?states=… entries, applied once the defaults are known
+
+// Asks the checker for the built-in states: an empty document still loads the config, so the result names them, and
+// the defaults stay in schema/config.json only.
+function loadDefaultStates() {
+  const res = JSON.parse(globalThis.cannedSchedules.evaluate("", []));
+  defaultStates = (res.states || []).map((s) => ({ id: s.id, name: s["display-name"] }));
+}
+
+const displayName = (row) => row.name || row.id;
+
+function sameStates(a, b) {
+  return a.length === b.length && a.every((r, i) => r.id === b[i].id && displayName(r) === displayName(b[i]));
+}
+
+function statesOverride() {
+  if (sameStates(stateRows, defaultStates)) return null;
+  return JSON.stringify(stateRows.map((r) => ({ id: r.id, "display-name": displayName(r) })));
+}
+
+// ?states=Primary&states=Secondary:Backup%20on-call: the id, or the id and the display name split at the first colon
+// (ids can't contain one). Entries that don't validate are passed on; the checker reports them.
+function parseStates(entries) {
+  return entries.map((e) => {
+    const at = e.indexOf(":");
+    return at < 0 ? { id: e, name: "" } : { id: e.slice(0, at), name: e.slice(at + 1) };
+  });
+}
+
+function setStates(rows) {
+  stateRows = rows.map((r) => ({ ...r }));
+  renderStates();
+}
+
+// Rebuilt only when rows are added, removed or moved; typing updates the row in place, so the focus stays.
+function renderStates() {
+  const ol = $("state-rows");
+  ol.replaceChildren();
+  stateRows.forEach((row, i) => {
+    const li = document.createElement("li");
+    const div = Object.assign(document.createElement("div"), { className: "state-row" });
+    const id = Object.assign(document.createElement("input"), {
+      className: "state-id", value: row.id, spellcheck: false, autocomplete: "off",
+    });
+    id.setAttribute("aria-label", "State " + (i + 1) + " id");
+    const name = Object.assign(document.createElement("input"), {
+      className: "state-name", value: row.name, placeholder: row.id, autocomplete: "off",
+    });
+    name.setAttribute("aria-label", "State " + (i + 1) + " display name");
+    id.addEventListener("input", () => { row.id = id.value; name.placeholder = id.value; statesChanged(); });
+    name.addEventListener("input", () => { row.name = name.value; statesChanged(); });
+    div.append(id, name,
+      rowButton("↑", "Move state " + (i + 1) + " up", i === 0, () => moveState(i, -1)),
+      rowButton("↓", "Move state " + (i + 1) + " down", i === stateRows.length - 1, () => moveState(i, 1)),
+      rowButton("✕", "Remove state " + (i + 1), stateRows.length === 1, () => { stateRows.splice(i, 1); structureChanged(); }));
+    li.append(div);
+    ol.append(li);
+  });
+  updateStatesSummary();
+}
+
+function rowButton(label, title, disabled, onClick) {
+  const b = text("button", "ghost", label);
+  Object.assign(b, { type: "button", title, disabled });
+  b.setAttribute("aria-label", title);
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function moveState(i, by) {
+  [stateRows[i], stateRows[i + by]] = [stateRows[i + by], stateRows[i]];
+  structureChanged();
+}
+
+function addState() {
+  const taken = new Set(stateRows.map((r) => r.id.toUpperCase()));
+  let n = stateRows.length + 1;
+  while (taken.has("STATE" + n)) n++;
+  stateRows.push({ id: "State" + n, name: "" });
+  structureChanged();
+  const inputs = $("state-rows").querySelectorAll("input.state-id");
+  inputs[inputs.length - 1].select();
+}
+
+function updateStatesSummary() {
+  const custom = !sameStates(stateRows, defaultStates);
+  $("states-summary").textContent = "· " + stateRows.length + (custom ? ", custom" : ", built-in");
+  $("reset-states").disabled = !custom;
+}
+
+const evaluateSoon = debounce(evaluate, 120);
+
+function statesChanged() {
+  updateStatesSummary();
+  evaluateSoon();
+}
+
+function structureChanged() {
+  renderStates();
+  evaluate();
+}
+
+// ---- CLI flags ---------------------------------------------------------------------------------------------------
+
+let flagsFormat = "shell";
+
+// Quotes an argument for POSIX shells when it needs it: single quotes, with ' written as '\''.
+function shellQuote(arg) {
+  return /^[A-Za-z0-9_.\/=:,@%+-]+$/.test(arg) ? arg : "'" + arg.replace(/'/g, "'\\''") + "'";
+}
+
+// One line per flag with its value: as a shell command, or one argument per line as canned-schedules.args reads them.
+function flagsText(list) {
+  if (flagsFormat === "args") return list.join("\n") + "\n";
+  const lines = [];
+  for (const arg of list) {
+    if (arg.startsWith("--") || lines.length === 0) lines.push(shellQuote(arg));
+    else lines[lines.length - 1] += " " + shellQuote(arg);
+  }
+  return ["canned-schedules", ...lines, "request.md"].join(" \\\n  ") + "\n";
+}
+
+function renderFlags() {
+  const list = cliArgs();
+  const none = list.length === 0;
+  $("flags").textContent = none ? "Defaults only: no flags needed." : flagsText(list);
+  $("flags").classList.toggle("muted", none);
+  $("copy-flags").disabled = none;
+  const n = list.filter((a) => a.startsWith("--")).length;
+  $("flags-summary").textContent = "· " + (none ? "none" : plural(n, "flag"));
+}
+
+async function copyFlags() {
+  const b = $("copy-flags");
+  try {
+    await navigator.clipboard.writeText($("flags").textContent);
+    b.textContent = "Copied";
+  } catch (_) {
+    b.textContent = "Copy failed";
+  }
+  setTimeout(() => { b.textContent = "Copy"; }, 1500);
+}
+
 // ---- permalink -----------------------------------------------------------------------------------------------------
 
 // The page state as a URL: the preset, the form controls and the views as query parameters, and the document in the
@@ -341,6 +506,7 @@ function permalink() {
   q.set("view", state.flavour);
   q.set("tab", state.tab);
   for (const id of CONTROLS) q.set(id, $(id).value);
+  if (statesOverride()) for (const r of stateRows) q.append("states", r.name && r.name !== r.id ? r.id + ":" + r.name : r.id);
   const url = new URL(location.pathname, location.origin);
   url.search = q.toString();
   if (dirty()) url.hash = "doc=" + toBase64url(editor.value);
@@ -381,6 +547,16 @@ function wire() {
   }
   for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => selectTab(b.dataset.tab));
   for (const id of ["downsample", "sample-interval", "symbols"]) $(id).addEventListener("change", evaluate);
+  $("add-state").addEventListener("click", addState);
+  $("reset-states").addEventListener("click", () => { setStates(defaultStates); evaluate(); });
+  for (const b of $("flags-format").querySelectorAll("button")) {
+    b.addEventListener("click", () => {
+      flagsFormat = b.dataset.value;
+      pressed($("flags-format"), flagsFormat);
+      renderFlags();
+    });
+  }
+  $("copy-flags").addEventListener("click", copyFlags);
   editor.onChange(debounce(evaluate, 120));
   editor.onChange(updateReset);
   $("preset").addEventListener("change", () => choosePreset($("preset").value));
@@ -412,7 +588,7 @@ function fromHash() {
 }
 
 // Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
-// (see permalink). Unknown values are ignored.
+// &states=Primary&states=Off (see permalink). Unknown values are ignored.
 function applyQuery() {
   const q = new URLSearchParams(location.search);
   const theme = q.get("theme");
@@ -430,6 +606,7 @@ function applyQuery() {
     const v = q.get(id);
     if (v !== null && Array.from($(id).options).some((o) => o.value === v)) $(id).value = v;
   }
+  if (q.has("states")) queryStates = parseStates(q.getAll("states"));
   const tab = q.get("tab");
   if (["rendered", "diagnostics", "json", "ascii"].includes(tab)) selectTab(tab);
 }
@@ -490,6 +667,10 @@ async function start() {
       loadPresets(),
     ]);
     go.run(instance);
+    loadDefaultStates();
+    setStates(queryStates || defaultStates);
+    // A link with custom states opens the editor, so the reader sees why the request checks against them.
+    if (queryStates) $("states-panel").open = true;
     current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
     if (current.hidden) addPresetOption(current);
     $("preset").value = current.id;
