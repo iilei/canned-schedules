@@ -24,7 +24,7 @@ jobs:
 
       # Installs the tools pinned in mise.toml (Go, golangci-lint, Node) and caches them. Every step below is a mise
       # task, so each failure reproduces locally with the same command.
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
 
       # The golden fixtures are the spec and come from testdata/golden/gen.py (standard library only), so they can't
       # drift from their generator.
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
 
       # Only Go: linting and the WebAssembly suites run in the check job above.
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
           install_args: go
 
