@@ -756,6 +756,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Dependabot** (`.github/dependabot.yml`): `github-actions` (the repo and `examples/consumer`), `gomod` and `npm`
   (`editor/`), weekly, one grouped PR per ecosystem, `cooldown: default-days: 14` (the two-week rule), commit prefix
   `chore(deps)`. The tools in `mise.toml` aren't covered (Dependabot doesn't read mise): bump those by hand.
+  - **mise itself is pinned in every `jdx/mise-action` step** (`version:`, decided 2026-11-08), also bumped by hand
+    under the two-week rule. Without it the action looks up the newest release on every run; on 2026-11-08 that
+    request hung for 8 minutes during a GitHub outage, although all tools came from the cache in 4 seconds. With a
+    pinned version the cached binary is used (the version is part of the cache key, so a bump costs one full
+    download). No `sha256` input: one checksum can't cover all runner platforms, and the action checks mise's
+    signed checksums anyway.
 - **Coverage (Codecov):** the `check` job runs `mise run coverage` and uploads `coverage/coverage.out` with
   `codecov/codecov-action` (secret `CODECOV_TOKEN`, a repo secret so pull requests get it; forks upload tokenless).
   `codecov.yml` makes the statuses informational and turns PR comments off: Codecov serves the README badge, it
