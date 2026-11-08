@@ -856,11 +856,22 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 
 ## Open
 
-In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1.0**.
+In priority order (agreed 2026-10-25, reordered 2026-11-08: companion tooling first, the AWS test last). Items 2–4
+are also the **criteria for 1.0**.
 
-1. **Verify the README's AWS recipes against AWS** (EC2 Auto Scaling via Terraform and via the CLI, ECS via
-   Application Auto Scaling). They carry an "Unverified against AWS" warning: so far only `terraform validate` and a
-   stubbed `aws` CLI checked them. Remove the warning once a live test passes. Planned as `mise run aws:test` and
+1. **Companion tooling, step 1 of #38** (see "Companion tooling"): release `v0.2.1` with the library (a compatible
+   addition, so a patch; bump the example's pin in the same PR), so the companion can pin it and `api:diff` gets a
+   base with the library; then the companion repo (a Go binary on the library: run it, `actions/upload-artifact`,
+   run it again to post the comment with the links, since a binary can't upload workflow artifacts itself), the
+   public demo repo `canned-schedules-demo` for the recording, and the GitLab component last. It is the vehicle for
+   item 2.
+2. **A real catalog in use:** a catalog repo has run the full path (issue → catalog → publish → Terraform) for a few
+   weeks, and what it needed has been folded back in.
+3. **A quiet contract:** no breaking change (no new `schema-version` date) for about a month. Then freeze the date
+   with 1.0; after that, breaking changes mean 2.0.
+4. **Verify the README's AWS recipes against AWS**, last (decided 2026-11-08): EC2 Auto Scaling via Terraform and
+   via the CLI, ECS via Application Auto Scaling. They carry an "Unverified against AWS" warning: so far only
+   `terraform validate` and a stubbed `aws` CLI checked them. Remove the warning once a live test passes. Planned as `mise run aws:test` and
    `mise run aws:sweep`, never in regular CI, borrowing from `../convergenci-cli` (`testdata/aws-live/run.sh`):
    - **No cost even if teardown fails:** an ASG pinned to 0 and an ECS service at 0 tasks, with every capacity in
      the test's `capacity.json` at 0 (scheduled actions fire at their cron times). Groups, launch templates,
@@ -875,10 +886,6 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
      expected names, recurrences and time zone.
    - Needs from the user: a sandbox profile allowed to manage Auto Scaling groups, launch templates, ECS services and
      scheduled actions.
-2. **A real catalog in use:** a catalog repo has run the full path (issue → catalog → publish → Terraform) for a few
-   weeks, and what it needed has been folded back in.
-3. **A quiet contract:** no breaking change (no new `schema-version` date) for about a month. Then freeze the date
-   with 1.0; after that, breaking changes mean 2.0.
 
 ## Future ideas (not scheduled — don't build unasked)
 
