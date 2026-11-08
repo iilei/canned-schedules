@@ -553,8 +553,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   state).
 - **Source highlight (decided 2026-11-08):** with the editor cursor in a STATE item, its block (marker to last item)
   or the BASE line, the SVG week gets dots where that entry paints: dense where its state shows, sparse where a
-  later range paints over it (a block shows all its items). A status line under the SVG gives the
-  trace line in exact minutes. Page only and DOM only: `state.svg` (Download SVG) never carries the overlay, and the
+  later range paints over it (a block shows all its items). A status bar under the editor gives
+  the trace summary in exact minutes (`Trace.Summary`: state, days, times, how much is effective, or "no effect" when
+  nothing shows; no list of the lines that paint over it, kept short on purpose; `--verbose` has the details). It is always two lines tall (one
+  entry per line, cut off with "…", full text on hover, "+N more" from the third entry; a hint when nothing is
+  under the cursor), so the page never shifts while the cursor moves; it used to sit under the SVG and made the
+  page jump. Ranges without effect get no warning on purpose (decided 2026-11-08): while drafting they are
+  usually unfinished copies, and nothing of it reaches the JSON. Page only and DOM only: `state.svg` (Download SVG) never carries the overlay, and the
   canonical JSON is untouched. **Resolution follows `--preview-downsample`** (decided with the user): rects sit on
   the preview's buckets. A bucket is an entry's when it shows the entry's state and the entry paints the most of
   that state's minutes there (ties to the later range); shadowed when the range covers at least half of it but

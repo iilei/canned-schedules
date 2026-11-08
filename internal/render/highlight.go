@@ -73,7 +73,6 @@ type Rect struct {
 func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []Highlight {
 	out := headerHighlights(tr, m)
 	winners := bucketWinners(tr, p)
-	lines := tr.Lines()
 
 	for o := -1; o < len(tr.Ranges); o++ {
 		i, _ := stateInfo(cfg, tr.State(o))
@@ -107,13 +106,13 @@ func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []H
 			h.Shadowed = append(h.Shadowed, bucketRects(shadowed, d, p.Size)...)
 		}
 
-		h.Label = lines[o+1].Message
+		h.Label = tr.Summary(o)
 		if h.Line > 0 {
 			h.Label = fmt.Sprintf("line %d: %s", h.Line, h.Label)
 		}
 
 		if partial && p.Size > 1 {
-			h.Label += fmt.Sprintf(" (stripes in %d-minute buckets)", p.Size)
+			h.Label += fmt.Sprintf(" · dots in %d-min buckets", p.Size)
 		}
 
 		out = append(out, h)
