@@ -1,6 +1,7 @@
 package document
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/iilei/canned-schedules/internal/diag"
@@ -141,15 +142,16 @@ func equalTokens(a, b []Token) bool {
 }
 
 // TestGluedBlockMessages checks the wording for a marker glued to the block above, which golden fixtures don't pin:
-// a plain question about the line that glued them, or about the missing blank line.
+// the stray line that glued them, which needs blank lines around it, or the missing blank line.
 func TestGluedBlockMessages(t *testing.T) {
 	t.Parallel()
 
-	const (
-		directlyAbove = `Did you mean to put a blank line above, or a line starting with "> " to continue the ` +
-			"previous block?"
-		noBlankLine = "Did you mean to put a blank line above? Without it, this block continues the previous one."
-	)
+	const noBlankLine = "Did you mean to put a blank line above? Without it, this block continues the previous one."
+
+	stray := func(line int) string {
+		return "line " + strconv.Itoa(line) + " seems to be a stray line between two blocks; put a blank line above " +
+			"and below it (or delete it), so this block starts on its own"
+	}
 
 	tests := []struct {
 		name, src, want string
@@ -157,18 +159,17 @@ func TestGluedBlockMessages(t *testing.T) {
 		{
 			name: "stray line after BASE",
 			src:  "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n.\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n",
-			want: directlyAbove,
+			want: stray(4),
 		},
 		{
 			name: "glued to a plain alert",
 			src:  "# Plan\n\n> [!NOTE] Read me\nmore\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n",
-			want: directlyAbove,
+			want: stray(4),
 		},
 		{
 			name: "stray line further up",
 			src:  "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n.\n> quoted\n> [!SCHEDULE-STATE] Medium\n",
-			want: `Did you mean a blank line at line 4, or a line starting with "> " there to continue the ` +
-				"previous block?",
+			want: stray(4),
 		},
 		{
 			name: "no empty line",

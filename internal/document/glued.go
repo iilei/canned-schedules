@@ -73,8 +73,8 @@ func (p *parser) gluedMarkers(bq ast.Node) []int {
 	return out
 }
 
-// gluedMessage asks about a marker on line n inside the top-level blockquote bq, in plain words: did the author mean
-// a blank line (new block) or a quoted line (same block) at the line that glued them? It returns "" when the marker
+// gluedMessage explains a marker on line n inside the top-level blockquote bq in plain words: the stray line that
+// glued it to the block above needs blank lines around it, or a blank line is missing. It returns "" when the marker
 // isn't glued that way (a nested list, a bold marker, …).
 func (p *parser) gluedMessage(bq ast.Node, n int) string {
 	glued := false
@@ -89,15 +89,13 @@ func (p *parser) gluedMessage(bq ast.Node, n int) string {
 
 	c := p.culprit(bq, n)
 
-	switch {
-	case c == n-1:
-		return `Did you mean to put a blank line above, or a line starting with "> " to continue the previous block?`
-	case c > 0:
-		return fmt.Sprintf(`Did you mean a blank line at line %d, or a line starting with "> " there to continue `+
-			"the previous block?", c)
-	default:
-		return "Did you mean to put a blank line above? Without it, this block continues the previous one."
+	if c > 0 {
+		// Quoting the stray line wouldn't help: the block above would still swallow this marker.
+		return fmt.Sprintf("line %d seems to be a stray line between two blocks; put a blank line above and below it "+
+			"(or delete it), so this block starts on its own", c)
 	}
+
+	return "Did you mean to put a blank line above? Without it, this block continues the previous one."
 }
 
 // culprit returns the line that glued the marker on line n to the start of bq: the last line before it without ">"
