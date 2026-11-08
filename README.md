@@ -372,7 +372,7 @@ Without mise, the hooks also work with [pre-commit](https://pre-commit.com), whi
 ```yaml
 repos:
   - repo: https://github.com/iilei/canned-schedules
-    rev: v0.2.0
+    rev: v0.2.1
     hooks:
       - id: canned-schedules
 ```
