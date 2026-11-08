@@ -31,7 +31,7 @@ const (
 // whether a preview-approximate warning is added.
 type PreviewOptions struct {
 	// Output is --output: json (default) prints the canonical JSON to stdout, ascii the ASCII preview, text the text
-	// form (the canonical request with the ASCII preview).
+	// form (the schedule in canonical form with the ASCII preview).
 	Output string
 	// JSONFile is --json-output-file; empty means none.
 	JSONFile string
@@ -49,7 +49,7 @@ type PreviewOptions struct {
 	downsampleRaw string
 	// Downsample is the bucket size in minutes (--preview-downsample[=N], --no-preview-downsample means 1).
 	Downsample int
-	// SVGEmbedSource is --svg-embed-source: the SVG carries the canonical request in its metadata.
+	// SVGEmbedSource is --svg-embed-source: the SVG carries the schedule in canonical form in its metadata.
 	SVGEmbedSource bool
 	// SVGAnnotations is --svg-annotations: the SVG shows a META section (summary, annotations) above the transitions.
 	SVGAnnotations bool
@@ -86,19 +86,24 @@ func (f downsampleFlag) Set(s string) error {
 func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 	p.Downsample = DefaultDownsample
 	fs.StringVar(&p.Output, "output", OutputJSON, "What stdout carries: the canonical JSON, the ASCII preview or the "+
-		"text form (the canonical request with the ASCII preview)")
+		"text form (the schedule in canonical form with the ASCII preview)")
 	fs.StringVar(&p.JSONFile, "json-output-file", "",
 		"Write the canonical JSON (only when the document has no errors)")
 	fs.StringVar(&p.SVGFile, "svg-output-file", "", "Write an SVG preview (only when the document has no errors)")
 	fs.StringVar(&p.SVGTheme, "svg-theme", render.ThemeAuto, "SVG colours: `auto` (follow the viewer), `light` or "+
 		"`dark`")
-	fs.BoolVar(&p.SVGEmbedSource, "svg-embed-source", false, "Embed the canonical request in the SVG's metadata; "+
-		"needs `--svg-output-file`")
+	fs.BoolVar(
+		&p.SVGEmbedSource,
+		"svg-embed-source",
+		false,
+		"Embed the schedule in canonical form in the SVG's metadata; "+
+			"needs `--svg-output-file`",
+	)
 	fs.BoolVar(&p.SVGAnnotations, "svg-annotations", false, "Show a META section above the transition table: the "+
 		"summary and the annotations (`x-*` keys); needs `--svg-output-file`")
 	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "Write an ASCII preview (only when the document has no errors)")
-	fs.StringVar(&p.TextFile, "text-output-file", "", "Write the text form: the canonical request with the ASCII "+
-		"preview, itself a valid request (only when the document has no errors)")
+	fs.StringVar(&p.TextFile, "text-output-file", "", "Write the text form: the schedule in canonical form with "+
+		"the ASCII preview, itself a valid schedule (only when the document has no errors)")
 	fs.StringVar(&p.Color, "color", ColorAuto, "Colours in the ASCII preview; `auto` means on a terminal only, and "+
 		"not with `NO_COLOR`")
 	fs.Var(downsampleFlag{p}, "preview-downsample", "Preview buckets in minutes (must divide 60); `=N` needs the `=`")

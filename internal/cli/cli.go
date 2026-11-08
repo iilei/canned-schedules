@@ -48,7 +48,7 @@ type pending struct {
 
 // SphinxOptions configure the Sphinx outputs.
 type SphinxOptions struct {
-	// MySTFile is --myst-output-file: the request's schedule as MyST.
+	// MySTFile is --myst-output-file: the schedule as MyST.
 	MySTFile string
 	// KitFile is --sphinx-kit-output-file: the Sphinx kit zip.
 	KitFile string
@@ -259,7 +259,7 @@ func Canonical(opts *Options, src []byte) ([]byte, error) {
 	return []byte(c), err
 }
 
-// Text writes the text form: the canonical request with the ASCII preview (ANSI colours when color is true).
+// Text writes the text form: the schedule in canonical form with the ASCII preview (ANSI colours when color is true).
 func Text(opts *Options, out *schedule.Output, src []byte, color bool) ([]byte, error) {
 	c, err := Canonical(opts, src)
 	if err != nil {

@@ -44,8 +44,8 @@ var (
 	modified = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
 
-// Kit builds the Sphinx kit for the request src: the local extension, the stylesheet for Furo, the fonts and the
-// request as MyST. version names the generating tool. src must be a valid request.
+// Kit builds the Sphinx kit for the schedule src: the local extension, the stylesheet for Furo, the fonts and the
+// schedule as MyST. version names the generating tool. src must be a valid schedule.
 func Kit(src []byte, cfg *config.Config, version string) ([]byte, error) {
 	example, err := myst.Render(src, cfg)
 	if err != nil {

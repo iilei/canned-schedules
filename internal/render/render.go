@@ -77,7 +77,7 @@ var days = []string{"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"}
 type Model struct {
 	// Dark is the palette for prefers-color-scheme: dark; only set in auto mode.
 	Dark *Palette `json:"dark"`
-	// Source is the request embedded in the metadata (--svg-embed-source); nil means none.
+	// Source is the schedule embedded in the metadata (--svg-embed-source); nil means none.
 	Source *Source `json:"source"`
 	// Annotations is the META section above the transition table (--svg-annotations); nil means none.
 	Annotations *Annotations `json:"annotations"`
@@ -98,7 +98,7 @@ type Model struct {
 	Bucket      int          `json:"bucket"`
 }
 
-// Source is the canonical request an SVG carries in its metadata: evaluating it regenerates the JSON, so the picture
+// Source is the schedule in canonical form an SVG carries in its metadata: evaluating it regenerates the JSON, so the picture
 // stays traceable to its schedule.
 type Source struct {
 	Namespace string `json:"namespace"`

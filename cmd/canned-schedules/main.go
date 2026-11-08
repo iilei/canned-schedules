@@ -1,8 +1,8 @@
-// Command canned-schedules checks a weekly schedule request written in Markdown and prints its canonical JSON.
+// Command canned-schedules checks a weekly schedule written in Markdown and prints its canonical JSON.
 //
 // Usage:
 //
-//	canned-schedules [flags] request.md
+//	canned-schedules [flags] schedule.md
 //
 // The input is exactly one regular file of at most 256 KiB, given after the flags. On success, stdout carries the
 // canonical JSON (or the ASCII preview with --output ascii), and further outputs (SVG and ASCII previews, MyST, the
@@ -45,7 +45,7 @@ const kib = 1 << 10
 const maxInputBytes = 256 * kib
 
 // usageExample is the example attached to command-line usage errors.
-const usageExample = "canned-schedules [flags] request.md"
+const usageExample = "canned-schedules [flags] schedule.md"
 
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))

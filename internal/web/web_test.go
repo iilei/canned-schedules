@@ -24,7 +24,7 @@ func TestEvaluateValid(t *testing.T) {
 		t.Error("the SVG must follow --svg-theme")
 	}
 
-	// The page's SVG always carries the canonical request.
+	// The page's SVG always carries the schedule in canonical form.
 	if !strings.Contains(res.SVG, "&gt; [!SCHEDULE-STATE] Medium") ||
 		!strings.Contains(
 			res.SVG,
@@ -67,7 +67,7 @@ func TestEvaluateInvalid(t *testing.T) {
 		t.Fatalf("an invalid document has no output, got %+v", res)
 	}
 
-	if res.GitHubHTML == "" || !strings.Contains(res.Report, `"location": "request.md:4:17"`) {
+	if res.GitHubHTML == "" || !strings.Contains(res.Report, `"location": "schedule.md:4:17"`) {
 		t.Errorf("previews and the report still render: %+v", res)
 	}
 
@@ -102,7 +102,7 @@ func TestSphinxKit(t *testing.T) {
 		[]byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"),
 		nil,
 	); err == nil {
-		t.Error("an invalid request must not produce a kit")
+		t.Error("an invalid schedule must not produce a kit")
 	}
 }
 

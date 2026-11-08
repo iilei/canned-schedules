@@ -1,9 +1,9 @@
-// Package canonical writes the canonical form of a valid request: only what the contract defines (the name, META,
+// Package canonical writes the canonical form of a valid schedule: only what the contract defines (the name, META,
 // BASE and the STATE blocks with their ranges), in source order and with normalised spelling. Prose, other alerts and
-// links are dropped. The result is itself a valid request that evaluates to the same output.
+// links are dropped. The result is itself a valid schedule that evaluates to the same output.
 //
 // The text form (Text) adds the ASCII preview in a fenced code block after the name. A top-level code block is prose
-// to the parser, so the text form is a valid request as well.
+// to the parser, so the text form is a valid schedule as well.
 package canonical
 
 import (
@@ -19,8 +19,8 @@ import (
 
 const minutesPerHour = 60
 
-// ErrInvalid is returned for a request with errors; only valid requests have a canonical form.
-var ErrInvalid = errors.New("the request has errors")
+// ErrInvalid is returned for a schedule with errors; only valid schedules have a canonical form.
+var ErrInvalid = errors.New("the schedule has errors")
 
 // Render parses src and writes its canonical form. State names are written as the config spells them, times as
 // HH:MM, weekday expressions without whitespace (SAT, SUN becomes SAT,SUN); the grouping as written stays, so a
@@ -136,7 +136,7 @@ func rangeItem(item document.Item) (string, error) {
 	return fmt.Sprintf("%#q to %#q %s", clock(r.Start), clock(r.End), days), nil
 }
 
-// stateID returns the state id as the config spells it; the request is valid, so the state exists.
+// stateID returns the state id as the config spells it; the schedule is valid, so the state exists.
 func stateID(cfg *config.Config, name string) string {
 	if s, ok := cfg.State(name); ok {
 		return s.ID

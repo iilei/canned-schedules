@@ -95,9 +95,9 @@ func TestHelpAndVersion(t *testing.T) {
 		want string
 		args []string
 	}{
-		{"Usage: canned-schedules [flags] request.md", []string{"--help"}},
-		{"Usage: canned-schedules [flags] request.md", []string{"-h"}},
-		{"Usage: canned-schedules [flags] request.md", []string{"--help", basic}},
+		{"Usage: canned-schedules [flags] schedule.md", []string{"--help"}},
+		{"Usage: canned-schedules [flags] schedule.md", []string{"-h"}},
+		{"Usage: canned-schedules [flags] schedule.md", []string{"--help", basic}},
 		{"canned-schedules dev", []string{"--version"}},
 	} {
 		var stdout, stderr bytes.Buffer
@@ -275,7 +275,7 @@ func TestCatalogOutputs(t *testing.T) {
 		t.Errorf("text form: file %q, stdout %q", text, stdout.String())
 	}
 
-	// The text form and the source embedded in the SVG are requests for the same schedule: the same base and week.
+	// The text form and the source embedded in the SVG are the same schedule: the same base and week.
 	want := scheduleOf(t, stdoutJSON.Bytes())
 
 	if got := scheduleOf(t, evaluateFile(t, dir, "text.md", text)); got != want {

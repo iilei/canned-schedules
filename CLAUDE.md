@@ -26,6 +26,12 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
 
 ## Decisions — architecture
 
+- **Vocabulary: "schedule", not "request" (decided 2026-11-08).** The Markdown document is *the schedule* (its H1 is
+  the schedule's name, files are `*.canned-schedule.md`); what the page and the previews draw is *the week*; JSON,
+  SVG, text form and MyST are outputs of the schedule; "canonical form" names the normalised schedule. "Request"
+  only where an issue is meant: the issue template and its workflow, the bot comment, `schedule:check` on an issue
+  body, "ready to paste into an issue". Examples use `schedule.md` as the input file (the page's reports and CLI
+  flags box too). Applies to the page, `--help`, usage strings, messages, code comments and the README.
 - **One Go binary (decided).** No CUE (dropped 2026-10-24), no jq, yq, gomplate, `markdown-tool` or sh glue at
   runtime. `rumdl` and `mise` stay as development tools.
   - **Parsing with goldmark:** byte offsets from goldmark segments make `file:line:col` errors possible. Block nodes:
@@ -311,7 +317,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   blank line above? Without it, this block continues the previous one." when only the blank line is missing. No example, since the generic marker example misled. The block above stops at the culprit
   (or the marker), so its swallowed lines raise nothing else. `internal/document/glued.go`; fixtures
   `error/blocks-glued-by-lazy-line`, `error/blocks-glued-after-range`, `error/blocks-without-blank-line`.
-- **Suffix `*.canned-schedule.md`** for schedule requests tracked in a repo, e.g.
+- **Suffix `*.canned-schedule.md`** for schedules tracked in a repo, e.g.
   `schedules/on-call.canned-schedule.md`. `.schedule.md` was rejected as too generic (cron jobs, GitHub Actions
   `on: schedule`, shift plans), because globbing tools (hook, render task, rumdl ignores, the Sphinx idea) would trip
   over unrelated files; `.canned.md` and `.cs.md` don't explain themselves. Issue templates and golden inputs don't
@@ -520,7 +526,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - A static page (`web/`) runs the pipeline compiled to WebAssembly (`cmd/canned-schedules-wasm`, a thin
   `syscall/js` wrapper around `internal/web.Evaluate`). Nothing leaves the browser.
 - Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme; it always embeds the canonical
-  request like `--svg-embed-source`, set in `web.Evaluate` because the page has no `--svg-output-file`, with the
+  schedule in canonical form like `--svg-embed-source`, set in `web.Evaluate` because the page has no `--svg-output-file`, with the
   generator `canned-schedules preflight page <module version>`; the inline copy shows none of it), **Download text**
   (`text` in the evaluate result: the text form with the page's preview settings, `schedule.txt`, disabled while
   the document has errors), the Markdown as a Sphinx page
@@ -685,8 +691,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (`--color-admonition-title`, `-title-background`, `--color-admonition-background`, `--icon-admonition-default` for
   the state swatch) from `--state`; checked against furo 2025.12.19.
 - `templates.Execute` is the shared JSON-shaped template runner (render, report, CSS, kit templates).
-- `internal/myst`: a valid request → MyST (H1, META always as a `Schedule: summary` admonition, BASE with
-  `BaseText`, STATE items written as in the request). docutils requires admonition content, hence BaseText. Text goes
+- `internal/myst`: a valid schedule → MyST (H1, META always as a `Schedule: summary` admonition, BASE with
+  `BaseText`, STATE items written as in the schedule). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
   - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
     (`&nbsp;`) as its body, because docutils rejects an admonition without content, and the class `schedule-empty`.
@@ -703,8 +709,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Channels: `--myst-output-file`, `--sphinx-kit-output-file` (written in `writeOutputs` like the previews, only
   without errors); page: **Download MyST** (`myst` in the evaluate result, like the SVG) and
   `cannedSchedules.sphinxKit(markdown, args)`, which returns a `Uint8Array` or an error string and is built on click.
-- **MyST is build output (decided 2026-10-25):** users edit and validate the GFM request; docs builds regenerate the
-  MyST from it and never edit it by hand. The README's "From request to docs page" recipe shows the CI loop, the
+- **MyST is build output (decided 2026-10-25):** users edit and validate the GFM schedule; docs builds regenerate the
+  MyST from it and never edit it by hand. The README's "From schedule to docs page" recipe shows the CI loop, the
   choice between `.gitignore` and a `git diff --exit-code` drift check, and toctree pages.
 - Verified end to end with sphinx 9.1.0, furo 2025.12.19, myst-parser 5.1.0: `sphinx-build -W` clean, screenshots in
   light and dark match the page.
@@ -785,7 +791,7 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
 - **Sphinx build artifacts** (the styling part is done, see "Sphinx kit"): the same docs build emits the canned
   schedules as artifacts; a cron expression as a tooltip; other themes than Furo. Open: where the docs live, in this
   repo or in a consumer repo.
-- **Admonition-style SVG** (asked 2026-10-24, deferred): a second SVG showing the request as the page's Sphinx view
+- **Admonition-style SVG** (asked 2026-10-24, deferred): a second SVG showing the schedule as the page's Sphinx view
   does: a META card ("Schedule: summary"), the BASE card (`myst.BaseText`), one state-coloured card per STATE with one row
   per range, weekday `<title>` tooltips. Same pattern as the week SVG: a model with all coordinates in
   `internal/render`, a gomplate-compatible `templates/schedule-cards-svg.tmpl`, plain per-state fills with
@@ -817,12 +823,12 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
   - About 1–2 h of work, including new `want.preview` fixtures via `gen.py`.
 - **MyST generated during the Sphinx build** (asked 2026-10-25, deferred). The kit's extension would run the CLI
   when the build starts (`builder-inited`), for `canned_schedules_sources = "schedules/*.canned-schedule.md"` in `conf.py`,
-  and write the MyST pages before Sphinx reads them. The Go tool still parses and validates, and an invalid request
+  and write the MyST pages before Sphinx reads them. The Go tool still parses and validates, and an invalid schedule
   fails the build, so nothing drifts. That is the difference from the rejected Python transform that would have
   rendered GFM inside Sphinx without validating it.
   - Cost: the binary must be available where the docs are built.
   - The extension compares the tool version with the kit's `VERSION` and warns when they differ.
-  - Until then, the README's "From request to docs page" recipe (a CI loop before `sphinx-build`) covers this.
+  - Until then, the README's "From schedule to docs page" recipe (a CI loop before `sphinx-build`) covers this.
 - **Offline page (service worker)** (asked 2026-10-25, deferred): after loading, the page already works offline in its
   tab, and repeat visits reuse the HTTP cache (Pages: 10 minutes fresh, then a cheap revalidation). Offline use is
   the CLI's job; the footer points to it. If ever built, avoid stale results, because syntax changes break documents:

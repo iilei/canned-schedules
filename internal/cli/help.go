@@ -111,8 +111,8 @@ func (d *FlagDoc) Synopsis() string {
 func Help(w io.Writer) error {
 	var b strings.Builder
 
-	b.WriteString("canned-schedules checks a weekly schedule request written in Markdown\nand prints its canonical " +
-		"JSON.\n\nUsage: canned-schedules [flags] request.md\n")
+	b.WriteString("canned-schedules checks a weekly schedule written in Markdown\nand prints its canonical " +
+		"JSON.\n\nUsage: canned-schedules [flags] schedule.md\n")
 
 	docs := FlagDocs()
 
