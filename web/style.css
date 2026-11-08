@@ -61,6 +61,9 @@
     --surface: #ffffff;
     --surface-2: #f0f2f5;
     --text: #1d2129;
+    /* Both themes' text colours, independent of the current theme (the SVG highlight's text frames). */
+    --text-light-scheme: #1d2129;
+    --text-dark-scheme: #e6e8ec;
     --muted: #5f6673;
     --border: #dde1e7;
     --accent: #0b7a68;
@@ -654,17 +657,22 @@ pre.flags {
     width: 100%;
     height: auto;
 }
-/* Source highlight over the SVG (app.js): black and white only, so it contrasts with any state colour. The colours
-   are set in app.js (INK); this sets the text frames' lines: a white halo under a black dashed line. */
+/* Source highlight over the SVG (app.js). The dots are black and white only (INK in app.js), so they contrast with
+   any state colour; the text frames are styled here. */
 .svg-frame .cs-highlight {
     pointer-events: none; /* The runs' tooltips stay reachable. */
 }
-.svg-frame .cs-hl-text {
-    stroke-width: 1.5;
-    stroke-dasharray: 4 2;
+/* Text frames: one 1 px dashed line, the dashes alternating between both themes' text colours. */
+.svg-frame .cs-hl-frame {
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
 }
-.svg-frame .cs-hl-halo {
-    stroke-width: 3.5;
+.svg-frame .cs-hl-frame-a {
+    stroke: var(--text-light-scheme);
+}
+.svg-frame .cs-hl-frame-b {
+    stroke: var(--text-dark-scheme);
+    stroke-dashoffset: 4;
 }
 /* Status bar under the editor (app.js, showSourceStatus): two lines tall at all times, so it never shifts the page. */
 .source-status {

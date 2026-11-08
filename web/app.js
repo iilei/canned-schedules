@@ -171,12 +171,12 @@ function applyHighlight(line) {
   const g = svgEl("g", { class: "cs-highlight", "aria-hidden": "true" },
     svgEl("defs", {}, dots("cs-hl-dense", 6, 1.5), dots("cs-hl-sparse", 10, 1.5)));
   const at = (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height });
-  // Painted areas get only the dots, no outline. Text has no fill to dot, so it gets a frame: a white line under a
-  // black dashed one.
+  // Painted areas get only the dots, no outline. Text has no fill to dot, so it gets a light frame: one dashed line
+  // whose dashes alternate between the light and the dark theme's text colour (style.css), visible on either.
   const area = (r, fill) => g.append(svgEl("rect", { ...at(r), fill }));
   const frame = (r) => g.append(
-    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-halo", fill: "none", stroke: INK.light }),
-    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-text", fill: "none", stroke: INK.dark }));
+    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-frame cs-hl-frame-a", fill: "none" }),
+    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-frame cs-hl-frame-b", fill: "none" }));
   const painted = (h) => h.kind === "base" || h.kind === "range";
   // Shadowed first, so a later range of the same block draws its dense dots on top.
   for (const h of hs.filter(painted)) for (const r of h.shadowed) area(r, "url(#cs-hl-sparse)");
