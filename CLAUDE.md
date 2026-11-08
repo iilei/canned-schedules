@@ -371,9 +371,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     Keeps going after errors and fails at the end. Deletes the outputs of a source that failed, and (full runs
     only) outputs whose source is gone, but **never a file git tracks**. A plain CLI run still leaves earlier
     outputs alone.
-  - `schedule:check <file> [out-dir]`: `report.md` (markdown-gfm), `report.json`, `comment.md` (marker
-    `<!-- canned-schedules -->`, the report, and for a valid request the text form in an 8-tilde fence) and, when
-    valid, `schedule.json` and `schedule.txt`. Issue bodies arrive with CRLF line endings; that works.
+  - `schedule:check <file> [out-dir]`: `report.md` (markdown-gfm), `report.json`, `comment.md` (first line the
+    marker `<!-- canned-schedules:issue-preview -->`, then the report, and for a valid request the text form in an
+    8-tilde fence) and, when valid, `schedule.json`, `schedule.txt` and `schedule.svg` (`--svg-theme auto`, no
+    source embed). Issue bodies arrive with CRLF line endings; that works.
   - `schedule:pre-commit`: checks the **staged** content (`git diff --cached --name-only --diff-filter=ACMR`, then
     `git show ":$f"` into a temporary directory at the same relative path, so reports name the repo path), and exits
     with the worst code (1 document errors, 2 usage). Installed with `mise generate git-pre-commit --write --task
@@ -381,9 +382,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - Task arguments use mise's `usage` spec. With `usage`, mise passes arguments only as `$usage_<name>`; a variadic
     one is a shell-quoted string, unpacked with `eval "set -- ${usage_file:-}"` (checked with quotes, spaces and
     `$(…)` in names).
-  - The issue workflow writes the body to a file from an env var, runs `schedule:check`, finds its earlier comment
-    by the marker (posted by `github-actions[bot]`) and updates it, otherwise comments; it runs only for issues with
-    the template's `Schedule` label.
+  - The issue workflow (step 1 of #38, see "Companion tooling") writes the body to a file from an env var, exactly
+    (`printf '%s'`, no added newline), runs `schedule:check`, uploads the SVG unzipped (`upload-artifact`
+    `archive: false`, valid requests only) and every file as one zip (both kept 30 days), appends their
+    `artifact-url` links to `comment.md`, then takes the comments with the marker by `github-actions[bot]`: updates
+    the oldest, deletes the rest, or comments when there is none. It runs only for issues with the template's
+    `Schedule` label, one run per issue (`concurrency` with `cancel-in-progress`), with `contents: read` and
+    `issues: write` only (job permissions replace the workflow's, so both are listed): it never writes to the
+    repository.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
@@ -409,6 +415,32 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   release`, `gh release edit`, posting issue comments) stay in workflows: **tasks never talk to GitHub**, so a local
   run can't post anything. Issue bodies reach tasks only as files (written from an env var, never interpolated with
   `${{ }}`); task scripts are POSIX `sh`.
+
+## Companion tooling (decided 2026-11-08, #38)
+
+- **A separate project, not this repo.** Everything that talks to a forge (issue comments, uploads, promotion of an
+  approved request to the shelf, releases, housekeeping) lives in a companion project: first a reusable composite
+  GitHub Action and a GitLab CI/CD component, a companion binary only once promotion (step 2) needs one. This repo
+  keeps its guarantee whole: nothing here calls a forge API (apart from its own CI and release), and forge clients,
+  tokens and their dependencies stay out of `go.mod`, the SBOMs and Dependabot.
+- **It runs the released CLI, never embeds it.** The core lives under `internal/`, and a public Go API would be a
+  second contract to keep stable. The companion pins a release (as `examples/consumer` does), reads only the output
+  files (JSON, SVG, text form, reports) and refuses a `schema-version` it doesn't know. When it needs something the
+  outputs lack, the core gains a compatible output (a flag), e.g. the canonical Markdown without the preview for
+  promotion. Being the first real consumer of the contract counts toward the 1.0 criteria.
+- **GitLab:** a catalog component needs a GitLab project with a top-level `templates/` directory (taken here by the
+  Go templates), another reason for the separate project.
+- **What stays here:** the forge-free parts (`schedule:check` and its outputs) and `examples/consumer`, whose
+  workflow does step 1 with plain `gh api` calls until the action exists and then calls it.
+- **Step 1, issue feedback** (designed in the issue's comment): one comment per issue, found by the marker
+  `<!-- canned-schedules:issue-preview -->` and the bot author, edited in place; on GitHub the text form inline and
+  the SVG as a workflow artifact (GitHub strips inline SVG and `data:` URIs, and bots can't attach files); on GitLab
+  an issue webhook calls the pipeline trigger URL (`TRIGGER_PAYLOAD`), the SVG goes through the uploads API and
+  shows inline in a note (a project access token; `CI_JOB_TOKEN` can do neither). Steps that write to a forge say
+  so in their names and support a dry run. Left for later: a body hash and `run=`/`tool=` in the marker, `source.md`
+  in the artifact.
+- **Still open:** what marks a request approved (step 2), shelf versioning (step 3), minimal token scopes, the
+  project's name and the demo repo (`canned-schedules-demo`) for the screen recording.
 
 ## Stability (decided and implemented 2026-10-25)
 

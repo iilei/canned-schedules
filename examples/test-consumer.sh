@@ -62,13 +62,17 @@ rm schedules/kept.canned-schedule.svg
 # check: a valid request (an issue body with CRLF line endings) and one with a namespace typo.
 sed 's/$/\r/' "$schedules.md" >"$work/body.md"
 run schedule:check "$work/body.md" "$work/ok" || fail "check must pass the issue template"
-grep -q '^<!-- canned-schedules -->$' "$work/ok/comment.md" || fail "the comment needs its marker"
+head -n 1 "$work/ok/comment.md" | grep -q '^<!-- canned-schedules:issue-preview -->$' ||
+	fail "the comment must start with its marker"
 grep -q '^~~~~~~~~text$' "$work/ok/comment.md" || fail "the comment must carry the fenced text form"
-[ -f "$work/ok/report.json" ] && [ -f "$work/ok/schedule.json" ] || fail "check must write the report and output"
+for f in report.json schedule.json schedule.txt schedule.svg; do
+	[ -f "$work/ok/$f" ] || fail "check must write $f for a valid request"
+done
 sed 's/\[!NOTE\]/[!SCHEDUEL-STATE]/' "$schedules.md" >"$work/typo.md"
 if run schedule:check "$work/typo.md" "$work/bad" 2>/dev/null; then fail "check must fail a namespace typo"; fi
 grep -q 'disallowed-alert' "$work/bad/comment.md" || fail "the args file must make alerts strict"
-[ ! -f "$work/bad/schedule.txt" ] || fail "an invalid request has no text form"
+[ ! -f "$work/bad/schedule.txt" ] && [ ! -f "$work/bad/schedule.svg" ] || fail "an invalid request has no previews"
+[ -f "$work/bad/report.json" ] || fail "an invalid request still gets its report"
 
 # pre-commit: the staged content counts, not the working tree; paths with spaces keep their repo path.
 mkdir -p "schedules/team a"

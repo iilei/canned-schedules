@@ -1,8 +1,10 @@
 name: schedule request
 
 # Checks a schedule request issue and keeps one comment on it up to date: the report, and for a valid request the
-# preview. The check is the schedule:check mise task, so `mise run schedule:check body.md` gives the same result
-# locally; only posting the comment happens here.
+# text form inline and links to the SVG week and the other files, uploaded as workflow artifacts (GitHub strips inline
+# SVG, and bots can't attach files to issues). The check is the schedule:check mise task, so
+# `mise run schedule:check body.md` gives the same result locally; only the uploads and the comment happen here. The
+# workflow never writes to the repository.
 on:
   issues:
     types: [opened, edited]
@@ -20,8 +22,10 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'Schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Job permissions replace the workflow's, so contents: read is repeated for the checkout.
     permissions:
-      issues: write # Posts or updates the comment.
+      contents: read
+      issues: write # Posts, updates or deletes the bot's own comment.
     steps:
       # Actions are pinned to commit SHAs; the comment names the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,28 +36,67 @@ jobs:
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
 
       # The body is untrusted input: it reaches the shell only through an environment variable and a file, never
-      # through ${{ }} inside the script.
+      # through ${{ }} inside the script. Written exactly, without an added newline.
       - name: Write the issue body to a file
         env:
           BODY: ${{ github.event.issue.body }}
-        run: printf '%s\n' "$BODY" > "$RUNNER_TEMP/request.md"
+        run: printf '%s' "$BODY" > "$RUNNER_TEMP/request.md"
 
       - id: check
         continue-on-error: true
         run: mise run schedule:check "$RUNNER_TEMP/request.md" "$RUNNER_TEMP/report"
 
-      - name: Post or update the comment
+      # The week on its own, not zipped, so the link downloads the SVG itself. The check passes only for a valid
+      # request, the one case with an SVG.
+      - id: svg
+        if: steps.check.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: ${{ runner.temp }}/report/schedule.svg
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+
+      # Everything the check wrote, as one zip: the report, and for a valid request the JSON, text form and SVG.
+      - id: files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: canned-schedule
+          path: |
+            ${{ runner.temp }}/report/report.json
+            ${{ runner.temp }}/report/report.md
+            ${{ runner.temp }}/report/schedule.json
+            ${{ runner.temp }}/report/schedule.txt
+            ${{ runner.temp }}/report/schedule.svg
+          if-no-files-found: error
+          retention-days: 30
+
+      # Finds the comment by its marker and the bot author (so a pasted marker is never touched), updates the oldest
+      # and deletes any others; creates it when there is none.
+      - name: Post or update the comment on the issue
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE: ${{ github.event.issue.number }}
+          SVG_URL: ${{ steps.svg.outputs.artifact-url }}
+          FILES_URL: ${{ steps.files.outputs.artifact-url }}
         run: |
           set -eu
-          body="$RUNNER_TEMP/report/comment.md"
-          id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$ISSUE/comments" \
-            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- canned-schedules -->"))) | .id' |
-            head -n 1)
+          body="$RUNNER_TEMP/comment.md"
+          cp "$RUNNER_TEMP/report/comment.md" "$body"
+          {
+            printf '\n'
+            if [ -n "$SVG_URL" ]; then printf '[Week as SVG](%s) · ' "$SVG_URL"; fi
+            printf '[All files](%s) (kept for 30 days; downloading needs a GitHub login)\n' "$FILES_URL"
+          } >> "$body"
+          ids=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$ISSUE/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and
+              (.body | startswith("<!-- canned-schedules:issue-preview -->"))) | .id')
+          id=$(printf '%s\n' "$ids" | head -n 1)
           if [ -n "$id" ]; then
             gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F "body=@$body" > /dev/null
+            for extra in $(printf '%s\n' "$ids" | tail -n +2); do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/comments/$extra"
+            done
           else
             gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$body"
           fi
