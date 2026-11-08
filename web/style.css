@@ -657,13 +657,22 @@ pre.flags {
     width: 100%;
     height: auto;
 }
-/* Source highlight over the SVG (app.js). The dots are black and white only (INK in app.js), so they contrast with
+/* Source highlight over the SVG (app.js). The stripes are black and white only (INK in app.js), so they contrast with
    any state colour; the text frames are styled here. */
 .svg-frame .cs-highlight {
     pointer-events: none; /* The runs' tooltips stay reachable. */
 }
+/* Painted areas (app.js): stripes by density and ink; the patterns live in the overlay's <defs>. */
+.svg-frame .cs-hl-dense.cs-hl-ink-dark { fill: url(#cs-hl-dense-dark); }
+.svg-frame .cs-hl-dense.cs-hl-ink-light { fill: url(#cs-hl-dense-light); }
+.svg-frame .cs-hl-sparse.cs-hl-ink-dark { fill: url(#cs-hl-sparse-dark); }
+.svg-frame .cs-hl-sparse.cs-hl-ink-light { fill: url(#cs-hl-sparse-light); }
+/* One stripe of a pattern: solid in the middle, fading out at its edges. */
+.svg-frame .cs-hl-stripe-dark { fill: url(#cs-hl-fade-dark); }
+.svg-frame .cs-hl-stripe-light { fill: url(#cs-hl-fade-light); }
 /* Text frames: one 1 px dashed line, the dashes alternating between both themes' text colours. */
 .svg-frame .cs-hl-frame {
+    fill: none;
     stroke-width: 1;
     stroke-dasharray: 4 4;
 }
