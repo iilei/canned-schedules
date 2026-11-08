@@ -13,7 +13,7 @@ let ready = false;
 // ---- editor ------------------------------------------------------------------------------------------------------
 
 // The editor is CodeMirror (editor.js) with Markdown highlighting and diagnostics marked in place. Without editor.js
-// the plain textarea stays, behind the same small interface: value, cursorLine, onChange, onCursor, focus, selectAll,
+// the plain textarea stays, behind the same small interface: value, cursorLine, hasFocus, onChange, onCursor, focus, selectAll,
 // jumpTo, setDiagnostics.
 function createEditor(textarea) {
   const listeners = [];
@@ -42,6 +42,7 @@ function createEditor(textarea) {
     get value() { return textarea.value; },
     set value(text) { textarea.value = text; },
     get cursorLine() { return textareaLine(); },
+    get hasFocus() { return document.activeElement === textarea; },
     onChange: (fn) => listeners.push(fn),
     onCursor: (fn) => cursorListeners.push(fn),
     focus: () => textarea.focus(),
@@ -98,11 +99,35 @@ function stripes(id, gap, width) {
     svgEl("rect", { width, height: gap, fill: "currentColor" }));
 }
 
+// While the JSON tab is hidden and marks lines for the cursor, its tab glows where the selected tab shows its
+// underline: a pulse when the marked lines change, then a soft steady glow until the tab is opened or the marks go.
+// The glow waits for the user: the cursor starts on the H1, whose marks aren't news after a page load.
+let lastMarks = "";
+let cursorUsed = false;
+
+function signalJsonMarks(spans) {
+  const tab = document.querySelector('.tabs [data-tab="json"]');
+  if (!tab || !cursorUsed) return;
+  const key = JSON.stringify(spans);
+  const fresh = spans.length > 0 && key !== lastMarks;
+  lastMarks = spans.length ? key : "";
+  const hidden = state.tab !== "json";
+  tab.classList.toggle("has-marks", spans.length > 0 && hidden);
+  tab.title = spans.length && hidden ? "Lines for the cursor's entry are marked in the JSON" : "";
+  if (fresh && hidden) {
+    tab.classList.remove("pulse");
+    void tab.offsetWidth; // Restart the animation.
+    tab.classList.add("pulse");
+  }
+}
+
 function applyHighlight(line) {
   const svg = $("svg").querySelector("svg");
   const hs = svg ? highlightsAt(line) : [];
   $("highlight-status").textContent = hs.map((h) => h.label).join("\n");
-  jsonView.setHighlight(hs.flatMap((h) => h.json || []).sort((a, b) => a.from - b.from));
+  const spans = hs.flatMap((h) => h.json || []).sort((a, b) => a.from - b.from);
+  jsonView.setHighlight(spans);
+  signalJsonMarks(spans);
   if (!svg) return;
   svg.querySelector(".cs-highlight")?.remove();
   if (!hs.length) return;
@@ -323,6 +348,13 @@ function selectTab(tab) {
   state.tab = tab;
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
   for (const p of document.querySelectorAll(".tab-panel")) p.hidden = p.dataset.panel !== tab;
+  const json = document.querySelector('.tabs [data-tab="json"]');
+  if (json) {
+    // Opening the JSON tab answers the glow; leaving it with marks shows the steady glow again, without a pulse.
+    json.classList.toggle("has-marks", tab !== "json" && lastMarks !== "");
+    json.classList.remove("pulse");
+    json.title = tab !== "json" && lastMarks ? "Lines for the cursor's entry are marked in the JSON" : "";
+  }
 }
 
 function debounce(fn, ms) {
@@ -659,7 +691,8 @@ function wire() {
   }
   $("copy-flags").addEventListener("click", copyFlags);
   editor.onChange(debounce(evaluate, 120));
-  editor.onCursor(applyHighlight);
+  // Loading a document moves the cursor too; only a cursor in the focused editor is the user's.
+  editor.onCursor((line) => { cursorUsed ||= editor.hasFocus; applyHighlight(line); });
   editor.onChange(updateReset);
   $("preset").addEventListener("change", () => choosePreset($("preset").value));
   $("reset").addEventListener("click", () => { if (current) load(current.text); });
