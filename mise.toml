@@ -10,6 +10,8 @@ goreleaser = "2.19.0"
 syft = "1.55.0"
 # Markdown style (.rumdl.toml): README, CLAUDE.md, templates, presets and schedule files.
 rumdl = "0.3.0"
+# The Go library's API against the last release (api:diff). x/exp has no tags: a pseudo-version at least two weeks old.
+"go:golang.org/x/exp/cmd/apidiff" = "0.0.0-20261014143641-f0251eb4aa3e"
 
 [tasks.fmt]
 description = "Format Go code using the configured golangci-lint formatters"
@@ -157,6 +159,54 @@ for f in *.tar.gz *.zip; do
   fi
 done
 echo "release verified: signed by $fpr, checksums and sidecars match"
+'''
+
+[tasks."api:diff"]
+description = "Compare the Go library's exported API with the last release; with --release, fail on a too small bump"
+usage = '''
+flag "--release <tag>" help="The tag being released (checked out): incompatible changes need a new minor (before 1.0) or major version"
+flag "--base <ref>" help="Compare with this ref instead of the newest regular release before HEAD or the tag"
+'''
+run = '''
+set -eu
+pkg=github.com/iilei/canned-schedules
+release=${usage_release:-}
+head=HEAD
+if [ -n "$release" ]; then
+  case $release in
+  v[0-9]*.[0-9]*.[0-9]*) ;;
+  *) echo "api:diff: --release $release: want vMAJOR.MINOR.PATCH, optionally with -pre" >&2; exit 2 ;;
+  esac
+  [ "$(git rev-parse -q --verify "$release^{commit}" || true)" = "$(git rev-parse HEAD)" ] ||
+    { echo "api:diff: --release $release: check out that tag first" >&2; exit 2; }
+  head="$release^"
+fi
+# The newest regular release (no pre-release suffix) that the compared code contains.
+base=${usage_base:-$(git tag --list 'v*' --merged "$head" --sort=-v:refname | grep -v -- - | head -n 1 || true)}
+if [ -z "$base" ]; then
+  echo "api:diff: no earlier release to compare with"
+  exit 0
+fi
+if ! git ls-tree --name-only "$base" | grep -q '\.go$'; then
+  echo "api:diff: $base has no library yet; every exported name of $pkg is new"
+  exit 0
+fi
+tmp=$(mktemp -d)
+trap 'git worktree remove --force "$tmp/base" >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
+git worktree add --quiet --detach "$tmp/base" "$base"
+(cd "$tmp/base" && apidiff -w "$tmp/base.api" "$pkg")
+apidiff "$tmp/base.api" "$pkg" >"$tmp/all"
+apidiff -incompatible "$tmp/base.api" "$pkg" >"$tmp/incompatible"
+echo "API of $pkg compared with $base:"
+if [ -s "$tmp/all" ]; then cat "$tmp/all"; else echo "no changes"; fi
+[ -n "$release" ] && [ -s "$tmp/incompatible" ] || exit 0
+# Incompatible changes: before 1.0 the minor must rise (0.2.x -> 0.3.0), from 1.0 on the major.
+core() { v=${1#v}; echo "${v%%-*}" | tr . ' '; }
+set -- $(core "$base") $(core "$release")
+if [ "$1" -eq 0 ] && { [ "$4" -gt 0 ] || [ "$5" -gt "$2" ]; }; then exit 0; fi
+if [ "$1" -gt 0 ] && [ "$4" -gt "$1" ]; then exit 0; fi
+echo "api:diff: $release has incompatible API changes since $base; it needs a new $([ "$1" -eq 0 ] && echo minor || echo major) version" >&2
+exit 1
 '''
 
 [tasks."golden:check"]
