@@ -569,7 +569,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **Output key order (decided 2026-11-08):** `schema-version, name, summary, annotations, base, week, transitions,
     warnings`, so what H1 and META produce is one block and `base` sits next to `week`. Key order is not contract,
     so no new `schema-version`; `gen.py` and the fixtures were regenerated.
-  - **`--svg-annotations` (decided 2026-11-08):** a META section below the legend, rows sorted by key like the JSON.
+  - **`--svg-annotations` (decided 2026-11-08):** a META section in the right column above the transition table:
+    the heading, the summary (italic; it then leaves its place beside the title, so it reads as part of META) and
+    the annotation rows sorted by key like the JSON, then a divider rule with `sectionGap` above and below before
+    the table. Without the flag the layout is unchanged.
     Opt-in (needs `--svg-output-file`) for the same reason as `--svg-embed-source`; the page always shows it.
     Template key `annotations`, `null` without the flag (gomplate's strict missing keys).
 - **Loading overlay:** `#hud` covers the page until the WebAssembly checker runs (`start()` hides it), and stays with
