@@ -250,6 +250,8 @@ version=$(node -p "require('./schema/config.json')['schema-version']")
 mkdir -p "$out/schema/$version"
 cp schema/*.schema.json "$out/schema/$version/"
 if [ -d schema/archive ]; then cp -R schema/archive/. "$out/schema/"; fi
+# Cache busting, last, once every file is in place: content hashes in the URLs of what the page loads and fetches.
+node editor/stamp-assets.mjs "$out"
 echo "built $out ($(du -sh "$out" | cut -f1))"
 '''
 
