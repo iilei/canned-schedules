@@ -453,6 +453,30 @@ The text after the marker becomes the callout's title (the state id or the summa
 Colours per state, display names and weekday-aware layout need the tool itself: use the [Sphinx kit](#sphinx) or the
 SVG preview for those.
 
+## Go library
+
+Tools written in Go can import the pipeline instead of running the binary. The package
+`github.com/iilei/canned-schedules` evaluates a document and renders the same outputs the CLI writes: the JSON,
+diagnostics with positions, the error report, the canonical Markdown, the text form, the ASCII and SVG previews,
+and the SVG of a stored `.canned-schedule.json`. It never touches the network or the file system.
+
+```go
+r, err := cannedschedules.Evaluate(src, &cannedschedules.Options{
+	Preview: &cannedschedules.PreviewOptions{}, // plan previews, as the CLI's preview flags do
+})
+if err != nil {
+	return err // unusable options only; document problems are r.Diagnostics
+}
+if !r.Valid() {
+	md, _ := r.Report("schedule.md").Markdown()
+	// post md
+}
+svg, err := r.SVG(cannedschedules.SVGOptions{Theme: cannedschedules.ThemeAuto})
+```
+
+The package documentation lists everything (`go doc github.com/iilei/canned-schedules`). Its exported API follows
+the module's version, see [Stability](#stability).
+
 ## Error reports
 
 `canned-schedules` never posts anything to GitHub or GitLab. It writes an error report that your CI job or bot can
@@ -640,7 +664,7 @@ aws autoscaling describe-scheduled-actions --auto-scaling-group-name "$asg" --ou
     aws autoscaling delete-scheduled-action --auto-scaling-group-name "$asg" --scheduled-action-name "$name"
   done
 
-while IFS=$'\t' read -r name cron min desired max; do
+while IFS=$'	' read -r name cron min desired max; do
   [ -n "$name" ] || continue
   aws autoscaling put-scheduled-update-group-action --auto-scaling-group-name "$asg" \
     --scheduled-action-name "$name" --recurrence "$cron" --time-zone Etc/UTC \
@@ -782,6 +806,9 @@ so a range such as `^0.1` or `~0.1` never picks up a breaking change.
   - `2026-10-26` (`v0.2.0`): `digests` removed from the output; compare or hash `base` and `week` yourself.
   - `2026-10-25` (`v0.0.1-pre.6`): the first date, replacing `schema-version` `1`; the output and report schemas
     allow additional properties.
+- **The Go library's API** (the package at the module root) follows the tool's version: before 1.0 a breaking API
+  change raises the minor version, a compatible one the patch. Its data types mirror the output schema of the
+  `schema-version` they carry.
 - **Not part of the contract:** diagnostic messages (their codes are), the layout of the previews, the
   [paint trace](#paint-trace) (`--verbose` and `--trace-output-file`, although its schema is published too), and the
   JSON's key order (stable, but parse the JSON rather than matching its text).

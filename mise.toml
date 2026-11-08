@@ -233,7 +233,7 @@ wasm="$(go env GOROOT)/lib/wasm"
 env -i HOME="$HOME" \
   PATH="$wasm:$(dirname "$(command -v go)"):$(dirname "$(command -v node)"):/usr/bin:/bin" \
   GOCACHE="$(go env GOCACHE)" GOMODCACHE="$(go env GOMODCACHE)" GOOS=js GOARCH=wasm \
-  go test -exec="$wasm/go_js_wasm_exec" ./internal/... ./schema/
+  go test -exec="$wasm/go_js_wasm_exec" . ./internal/... ./schema/
 '''
 
 [tasks."example:test"]
