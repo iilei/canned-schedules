@@ -32,6 +32,8 @@ type meta struct {
 	annotations   map[string]string
 	schemaVersion string
 	summary       string
+	// entries are the decoded items in source order, with positions, for the trace.
+	entries []metaEntry
 }
 
 // metaEntry is one decoded META item with the positions of its key and value.
@@ -64,6 +66,8 @@ func decodeMeta(d *document.Directive) (meta, diag.List) {
 	if diags.HasErrors() {
 		return m, diags
 	}
+
+	m.entries = entries
 
 	for _, e := range entries {
 		switch {

@@ -22,8 +22,9 @@ func Trace(opts *Options, src []byte) (*schedule.Trace, error) {
 	return tr, nil
 }
 
-// Highlights computes the page's source highlights on the SVG week of a successfully evaluated document, in the
-// preview's buckets (--preview-downsample).
+// Highlights computes the page's source highlights on the SVG of a successfully evaluated document: boxes around the
+// name, summary and annotation rows, and the week in the preview's buckets (--preview-downsample). The JSON spans are
+// left to the caller, which owns the JSON text.
 func Highlights(opts *Options, out *schedule.Output, src []byte) ([]render.Highlight, error) {
 	cfg, err := previewConfig(opts)
 	if err != nil {
@@ -35,5 +36,8 @@ func Highlights(opts *Options, out *schedule.Output, src []byte) ([]render.Highl
 		return nil, err
 	}
 
-	return render.Highlights(tr, cfg, render.Downsample(out, cfg, opts.Preview.Downsample)), nil
+	p := render.Downsample(out, cfg, opts.Preview.Downsample)
+	m := render.Build(out, cfg, p, svgOptions(opts, nil))
+
+	return render.Highlights(tr, cfg, p, &m), nil
 }

@@ -33,13 +33,17 @@ func TestEvaluateValid(t *testing.T) {
 		t.Error("the page's SVG must embed the source")
 	}
 
-	// One highlight for the base, then one per range item, each on its own source line.
-	if len(res.Highlights) < 2 || res.Highlights[0].Kind != "base" {
+	// The name first; every range highlight points at a range item and covers part of the week.
+	if len(res.Highlights) < 2 || res.Highlights[0].Kind != "name" {
 		t.Fatalf("highlights = %+v", res.Highlights)
 	}
 
 	lines := strings.Split(string(src), "\n")
-	for _, h := range res.Highlights[1:] {
+	for _, h := range res.Highlights {
+		if h.Kind != "range" {
+			continue
+		}
+
 		if h.Line < 1 || !strings.HasPrefix(strings.TrimSpace(lines[h.Line-1]), "> - `") ||
 			len(h.Rects)+len(h.Shadowed) == 0 {
 			t.Errorf("highlight %+v doesn't point at a range item", h)

@@ -1,11 +1,11 @@
 {
   "schema-version": "2026-10-26",
   "name": "Schedule-Name",
-  "base": "Minimum",
   "annotations": {
     "x-owner": "team-xyz",
     "x-ticket": "OPS-1234"
   },
+  "base": "Minimum",
   "week": {
     "MON": [
       {

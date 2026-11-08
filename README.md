@@ -95,9 +95,13 @@ give the CLI the same result, as a shell command or as lines for an args file. *
 by Grafana's (sequential for ordered states, categorical for rotations, and the colour-blind safe Okabe–Ito). Light and dark themes included;
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
 the URL fragment, which browsers never send to the server. The page's SVG, shown and downloaded, always embeds the
-canonical request (like `--svg-embed-source`), so a downloaded picture stays traceable to its schedule. With the
-cursor in a range, its STATE block or the BASE block, the week shows diagonal stripes where that line paints (dashed
-where a later range paints over it), with the [paint trace](#paint-trace) in a line below. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
+canonical request (like `--svg-embed-source`) and lists the annotations (like `--svg-annotations`), so a downloaded
+picture stays traceable to its schedule. The line under the cursor shows what it produces: a range, its STATE
+block or the BASE block puts diagonal stripes on the week where it paints (dashed where a later range paints over
+it), the H1 and META items get a frame in the SVG, and the JSON tab marks the lines each one produces (for the
+META marker: summary and the whole `annotations` object; for ranges: the runs and transitions where its state
+shows). A line below the SVG explains it with the
+[paint trace](#paint-trace). It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
 
 ```sh
 mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)
@@ -205,6 +209,7 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                                                                                             |
 | `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                                                                                              |
 | `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata; needs `--svg-output-file`                                                                                                                            |
+| `--svg-annotations`               |         | Show the META annotations (`x-*` keys) in a section of the SVG; needs `--svg-output-file`                                                                                                               |
 | `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                                                                                           |
 | `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors)                                                                        |
 | `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                                                                                                  |
@@ -274,6 +279,10 @@ good preview with a broken one.
 
 The SVG comes from the built-in [`templates/schedule-svg.tmpl`](templates/schedule-svg.tmpl). The tool computes all
 coordinates, colours and labels, so the template is plain markup that also runs with gomplate.
+
+With `--svg-annotations`, a section below the legend lists the META annotations (`x-*` keys), sorted by key as in
+the JSON. It is opt-in for the same reason as the source embed below: owners and links would otherwise travel with
+every copy of the picture.
 
 With `--svg-embed-source`, the SVG also carries the request in its `<metadata>`: the canonical form (see below) as a
 `cs:source` element with the generating version as an attribute. Evaluating it regenerates the JSON, so the picture
@@ -524,8 +533,8 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
   "schema-version": "2026-10-26",
   "name": "Office Hours",
   "summary": "Weekdays with a late Friday",
-  "base": "Minimum",
   "annotations": {"x-owner": "team-xyz"},
+  "base": "Minimum",
   "week": {
     "MON": [
       {"start": "00:00", "end": "06:00", "state": "Minimum"},

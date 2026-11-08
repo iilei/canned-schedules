@@ -7,6 +7,7 @@ package render
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -75,22 +76,24 @@ type Model struct {
 	// Dark is the palette for prefers-color-scheme: dark; only set in auto mode.
 	Dark *Palette `json:"dark"`
 	// Source is the request embedded in the metadata (--svg-embed-source); nil means none.
-	Source      *Source     `json:"source"`
-	Palette     Palette     `json:"palette"`
-	Scheme      string      `json:"scheme"`
-	Font        string      `json:"font"`
-	Transitions Transitions `json:"transitions"`
-	Labels      []Text      `json:"labels"`
-	Days        []Day       `json:"days"`
-	Ticks       []Line      `json:"ticks"`
-	Guides      []Line      `json:"guides"`
-	Summary     Text        `json:"summary"`
-	Title       Text        `json:"title"`
-	Legend      Legend      `json:"legend"`
-	Divider     Line        `json:"divider"`
-	Width       float64     `json:"width"`
-	Height      float64     `json:"height"`
-	Bucket      int         `json:"bucket"`
+	Source *Source `json:"source"`
+	// Annotations is the META section below the legend (--svg-annotations); nil means none.
+	Annotations *Annotations `json:"annotations"`
+	Palette     Palette      `json:"palette"`
+	Scheme      string       `json:"scheme"`
+	Font        string       `json:"font"`
+	Transitions Transitions  `json:"transitions"`
+	Labels      []Text       `json:"labels"`
+	Days        []Day        `json:"days"`
+	Ticks       []Line       `json:"ticks"`
+	Guides      []Line       `json:"guides"`
+	Summary     Text         `json:"summary"`
+	Title       Text         `json:"title"`
+	Legend      Legend       `json:"legend"`
+	Divider     Line         `json:"divider"`
+	Width       float64      `json:"width"`
+	Height      float64      `json:"height"`
+	Bucket      int          `json:"bucket"`
 }
 
 // Source is the canonical request an SVG carries in its metadata: evaluating it regenerates the JSON, so the picture
@@ -100,6 +103,30 @@ type Source struct {
 	MediaType string `json:"mediaType"`
 	Generator string `json:"generator"`
 	Text      string `json:"text"`
+}
+
+// SVGOptions configure the SVG beyond the preview buckets.
+type SVGOptions struct {
+	// Source is embedded in the metadata when non-nil; its Namespace and MediaType are filled in by SVG.
+	Source *Source
+	// Theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark.
+	Theme string
+	// Annotations shows the META annotations (x-* keys) in a section below the legend. Opt-in, because owners and
+	// links would otherwise travel with every shared picture.
+	Annotations bool
+}
+
+// Annotations is the section listing the output's annotations, sorted by key as in the JSON.
+type Annotations struct {
+	Rows    []AnnotationRow `json:"rows"`
+	Heading Text            `json:"heading"`
+	Rule    Line            `json:"rule"`
+}
+
+// AnnotationRow is one annotation: the key and its value, in two aligned columns.
+type AnnotationRow struct {
+	Key   Text `json:"key"`
+	Value Text `json:"value"`
 }
 
 // State carries the CSS class and colour of one configured state.
@@ -168,14 +195,12 @@ type Swatch struct {
 	Y     float64 `json:"y"`
 }
 
-// SVG renders out as SVG with buckets of size minutes, using the state order, display names and styles from cfg. The
-// theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark. A non-nil source is
-// embedded in the metadata; its Namespace and MediaType are filled in here.
-func SVG(out *schedule.Output, cfg *config.Config, size int, theme string, source *Source) ([]byte, error) {
-	m := Build(out, cfg, Downsample(out, cfg, size), theme)
+// SVG renders out as SVG with buckets of size minutes, using the state order, display names and styles from cfg.
+func SVG(out *schedule.Output, cfg *config.Config, size int, o SVGOptions) ([]byte, error) {
+	m := Build(out, cfg, Downsample(out, cfg, size), o)
 
-	if source != nil {
-		s := *source
+	if o.Source != nil {
+		s := *o.Source
 		s.Namespace, s.MediaType = SourceNamespace, "text/markdown"
 		m.Source = &s
 	}
@@ -188,11 +213,11 @@ func execute(tmpl string, model any) ([]byte, error) {
 	return templates.Execute(tmpl, model)
 }
 
-// Build computes the render model for the downsampled week p in the given theme.
-func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Model {
+// Build computes the render model for the downsampled week p; o.Source is ignored (SVG embeds it).
+func Build(out *schedule.Output, cfg *config.Config, p Preview, o SVGOptions) Model {
 	m := Model{Font: fontFamily, Bucket: p.Size}
 
-	switch theme {
+	switch o.Theme {
 	case ThemeLight:
 		m.Palette, m.Scheme = palette(cfg, false), "light"
 	case ThemeDark:
@@ -242,10 +267,19 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, theme string) Mo
 	right = math.Max(right, m.Summary.X+float64(len([]rune(m.Summary.Text)))*headerCharW)
 	bottom := math.Max(weekBottom, tableBottom)
 	right = m.legend(out, cfg, p, bottom, right)
+	height := bottom + legendH
+
+	if o.Annotations && len(out.Annotations) > 0 {
+		height, right = m.annotations(out, height, right)
+	}
 
 	m.Width = math.Ceil(right + margin)
-	m.Height = bottom + legendH
+	m.Height = height
 	m.Legend.Rule = Line{X1: labelW, Y1: bottom + margin, X2: m.Width - margin, Y2: bottom + margin}
+
+	if m.Annotations != nil {
+		m.Annotations.Rule.X2 = m.Width - margin
+	}
 
 	for i := range m.Guides {
 		m.Guides[i].Y2 = weekBottom
@@ -382,6 +416,40 @@ func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top,
 	}
 
 	return math.Max(right, x-legendGap)
+}
+
+// annotations adds the META section below the legend: a heading and one key/value row per annotation, sorted by key
+// like the JSON. It returns the new bottom and right edge.
+func (m *Model) annotations(out *schedule.Output, top, right float64) (float64, float64) {
+	keys := make([]string, 0, len(out.Annotations))
+	keyW := 0
+
+	for k := range out.Annotations {
+		keys = append(keys, k)
+		keyW = max(keyW, len([]rune(k)))
+	}
+
+	slices.Sort(keys)
+
+	a := &Annotations{
+		Rule:    Line{X1: labelW, Y1: top, Y2: top},
+		Heading: Text{Text: "META", X: labelW, Y: top + lineH},
+	}
+	valueX := labelW + float64(keyW)*charW + cellPadding
+
+	for i, k := range keys {
+		y := top + float64(i+tableFirstRow)*lineH
+		v := diag.Sanitize(out.Annotations[k])
+		a.Rows = append(a.Rows, AnnotationRow{
+			Key:   Text{Text: diag.Sanitize(k), X: labelW, Y: y},
+			Value: Text{Text: v, X: valueX, Y: y},
+		})
+		right = math.Max(right, valueX+float64(len([]rune(v)))*charW)
+	}
+
+	m.Annotations = a
+
+	return top + float64(len(keys)+tableFirstRow)*lineH, right
 }
 
 // approximateNote explains a lossy preview in the SVG.

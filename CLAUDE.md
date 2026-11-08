@@ -555,6 +555,23 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `path:line:col: info[paint]: …`, after the report, never redirected by `--error-output-file`) and
   `--trace-output-file` (see "Stability"). The forward direction of #42; the reverse (hover a run → source lines)
   is still open.
+  - **Header entries and the JSON tab (decided 2026-11-08):** the H1 (`name`) and each META item are highlight
+    entries too: a dashed frame around the title or the annotation row in the SVG, and in the JSON tab the lines of
+    `name`, `schema-version` or `annotations.<key>`. The **META marker line** is its own entry (`meta-block`) for
+    everything the block produces: in the JSON, `summary`, the whole `annotations` object (braces included, when the
+    block has `x-*` keys) and `schema-version` (when declared), one contiguous run thanks to the key order; in the
+    SVG, frames around the summary and the whole META section. Base and ranges mark the `week` runs they paint a
+    minute of and the `transitions` that switch to them at a minute they paint. The JSON spans come from
+    `internal/web/jsonmap.go` (`json.Decoder` offsets over the exact text the page shows); the viewer scrolls only
+    its own box, never the page. Matching in `app.js`: the entries on the cursor line; on a line without one (a
+    STATE marker, a blank line inside a block), every entry of the block around it. The trace carries `name` and
+    `meta` (block, summary, items with positions) for this.
+  - **Output key order (decided 2026-11-08):** `schema-version, name, summary, annotations, base, week, transitions,
+    warnings`, so what H1 and META produce is one block and `base` sits next to `week`. Key order is not contract,
+    so no new `schema-version`; `gen.py` and the fixtures were regenerated.
+  - **`--svg-annotations` (decided 2026-11-08):** a META section below the legend, rows sorted by key like the JSON.
+    Opt-in (needs `--svg-output-file`) for the same reason as `--svg-embed-source`; the page always shows it.
+    Template key `annotations`, `null` without the flag (gomplate's strict missing keys).
 - **Loading overlay:** `#hud` covers the page until the WebAssembly checker runs (`start()` hides it), and stays with
   the reason when loading fails (no WebAssembly, `app.wasm` not loadable). `fetchWasm()` streams the download to show
   the megabytes loaded, with a total and percentage only when the response isn't content-encoded (Content-Length

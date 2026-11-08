@@ -59,12 +59,18 @@ func Evaluate(src []byte, args []string) Result {
 			// The page writes no file, so --svg-embed-source can't be passed; its SVG (shown and downloaded) always
 			// carries the canonical request, so a downloaded picture stays traceable to its schedule.
 			opts.Preview.SVGEmbedSource = true
+			// The page shows the annotations section too: the editor already holds them, and its SVG carries the
+			// source anyway.
+			opts.Preview.SVGAnnotations = true
 			res.JSON = encode(out)
 			res.SVG = string(must(cli.SVG(&opts, out, src, generator())))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
 			res.Text = string(must(cli.Text(&opts, out, src, false)))
 			res.Highlights, _ = cli.Highlights(&opts, out, src)
+			if tr, err := cli.Trace(&opts, src); err == nil {
+				attachJSON(res.Highlights, out, tr, res.JSON)
+			}
 		}
 	}
 

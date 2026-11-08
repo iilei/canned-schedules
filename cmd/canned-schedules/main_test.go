@@ -434,3 +434,29 @@ func TestVerboseAndTraceFile(t *testing.T) {
 		t.Error("a failed run must leave the trace file alone")
 	}
 }
+
+func TestSVGAnnotations(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{"--svg-annotations", basic}, &stdout, &stderr); code != exitInvalid ||
+		!strings.Contains(stderr.String(), "--svg-annotations needs --svg-output-file") {
+		t.Errorf("exit %d: %s", code, stderr.String())
+	}
+
+	target := filepath.Join(t.TempDir(), "s.svg")
+	input := "../../testdata/golden/valid/annotations/input.md"
+
+	if code := run(
+		[]string{"--svg-annotations", "--svg-output-file", target, input},
+		&stdout,
+		&stderr,
+	); code != exitOK {
+		t.Fatalf("exit %d: %s", code, stderr.String())
+	}
+
+	if data, err := os.ReadFile(target); err != nil || !strings.Contains(string(data), ">OPS-1234</text>") {
+		t.Errorf("the SVG must list the annotations: %v", err)
+	}
+}

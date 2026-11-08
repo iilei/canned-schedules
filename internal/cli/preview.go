@@ -51,6 +51,8 @@ type PreviewOptions struct {
 	Downsample int
 	// SVGEmbedSource is --svg-embed-source: the SVG carries the canonical request in its metadata.
 	SVGEmbedSource bool
+	// SVGAnnotations is --svg-annotations: the SVG lists the META annotations below the legend.
+	SVGAnnotations bool
 	// noDownsample records --no-preview-downsample to detect the conflicting combination.
 	noDownsample bool
 	// downsampleSet records an explicit --preview-downsample.
@@ -92,6 +94,8 @@ func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 		"`dark`")
 	fs.BoolVar(&p.SVGEmbedSource, "svg-embed-source", false, "Embed the canonical request in the SVG's metadata; "+
 		"needs `--svg-output-file`")
+	fs.BoolVar(&p.SVGAnnotations, "svg-annotations", false, "Show the META annotations (`x-*` keys) in a section "+
+		"of the SVG; needs `--svg-output-file`")
 	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "Write an ASCII preview (only when the document has no errors)")
 	fs.StringVar(&p.TextFile, "text-output-file", "", "Write the text form: the canonical request with the ASCII "+
 		"preview, itself a valid request (only when the document has no errors)")
@@ -121,6 +125,11 @@ func checkPreviewFlags(p *PreviewOptions) diag.List {
 	if p.SVGEmbedSource && p.SVGFile == "" {
 		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
 			"--svg-embed-source needs --svg-output-file"))
+	}
+
+	if p.SVGAnnotations && p.SVGFile == "" {
+		diags = append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag,
+			"--svg-annotations needs --svg-output-file"))
 	}
 
 	return append(diags, checkDownsample(p)...)

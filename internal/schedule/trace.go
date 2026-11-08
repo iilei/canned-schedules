@@ -33,12 +33,38 @@ var traceSchema = sync.OnceValues(func() (*jsonschema.Schema, error) {
 // Trace explains the painting: which minutes each range covers, where it wins and where later ranges paint over it.
 // It is a debugging aid (--verbose, --trace-output-file, the page's highlights), outside the stability promise: its
 // shape may change without a new schema-version. Minutes are exact, never bucketed. Field order is the JSON key order.
-type Trace struct {
+type Trace struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
+	// Name is the H1; Meta the META block, absent without one. They say where the output's name, summary,
+	// schema-version and annotations come from.
+	Name   TraceText    `json:"name"`
+	Meta   *TraceMeta   `json:"meta,omitempty"`
 	Base   TraceBase    `json:"base"`
 	Ranges []TraceRange `json:"ranges"`
 	// owners holds, per minute of the week from MON 00:00, the index of the range that paints it last; -1 is base.
 	owners []int
 	ranges []stateRange
+}
+
+// TraceText is a piece of source text with its position.
+type TraceText struct {
+	Value  string `json:"value"`
+	Line   int    `json:"line"`
+	Column int    `json:"column"`
+}
+
+// TraceMeta is the META block: its lines, the summary on its marker line and its items in source order.
+type TraceMeta struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
+	Block   Lines        `json:"block"`
+	Summary *TraceText   `json:"summary,omitempty"`
+	Entries []TraceEntry `json:"entries"`
+}
+
+// TraceEntry is one META item: schema-version or an x-* key, which the output lists under annotations.
+type TraceEntry struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Line   int    `json:"line"`
+	Column int    `json:"column"`
 }
 
 // TraceBase is the base state and the minutes no range paints over.
@@ -129,6 +155,20 @@ func newTrace(ev *evaluation, opts Options) *Trace {
 	t := &Trace{owners: paintOwners(ev.ranges), ranges: ev.ranges, Ranges: []TraceRange{}}
 
 	t.Base = TraceBase{State: ev.base.ID, Origin: BaseFromConfig}
+	t.Name = TraceText{Value: ev.doc.Name.Value, Line: ev.doc.Name.Pos.Line, Column: ev.doc.Name.Pos.Col}
+
+	if d := ev.doc.Meta; d != nil {
+		t.Meta = &TraceMeta{Block: blockLines(d), Entries: []TraceEntry{}}
+		if d.Title.Value != "" {
+			t.Meta.Summary = &TraceText{Value: d.Title.Value, Line: d.Title.Pos.Line, Column: d.Title.Pos.Col}
+		}
+
+		for _, e := range ev.meta.entries {
+			t.Meta.Entries = append(t.Meta.Entries, TraceEntry{
+				Key: e.key, Value: e.value, Line: e.keyPos.Line, Column: e.keyPos.Col,
+			})
+		}
+	}
 
 	switch {
 	case ev.doc.Base != nil:
@@ -246,7 +286,7 @@ func dayNames(days []int) []string {
 	return out
 }
 
-// blockLines is the line span of a STATE block: from its marker to its last item.
+// blockLines is the line span of a directive block: from its marker to its last item.
 func blockLines(d *document.Directive) Lines {
 	l := Lines{From: d.KindPos.Line, To: d.KindPos.Line}
 	if n := len(d.Items); n > 0 {

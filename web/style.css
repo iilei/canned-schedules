@@ -497,6 +497,11 @@ button.ghost:disabled {
     background-color: var(--hl-warn-line);
     box-shadow: inset 3px 0 var(--warn);
 }
+/* JSON lines produced by the source entry under the editor cursor. */
+.cm-src-line {
+    background-color: var(--hl-selection);
+    box-shadow: inset 3px 0 var(--text);
+}
 /* The markers parse as Markdown links; the descendant rule beats the link colour inside them. */
 .cm-schedule-marker,
 .cm-schedule-marker * {
@@ -663,6 +668,11 @@ pre.flags {
     stroke: currentColor;
     stroke-width: 1;
     stroke-dasharray: 3 3;
+}
+.svg-frame .cs-hl-text {
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 2;
 }
 .highlight-status {
     color: var(--muted);

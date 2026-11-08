@@ -63,7 +63,7 @@ function createEditor(textarea) {
 
 // The JSON tab: a read-only CodeMirror view with highlighting and folding, or the plain <pre>.
 function createJsonView(pre) {
-  if (!globalThis.CannedEditor) return { set value(text) { pre.textContent = text; } };
+  if (!globalThis.CannedEditor) return { set value(text) { pre.textContent = text; }, setHighlight() {} };
   const host = Object.assign(document.createElement("div"), { className: "cm-host viewer", id: "json" });
   pre.replaceWith(host);
   return globalThis.CannedEditor.createViewer(host, { label: "Canonical JSON output" });
@@ -71,16 +71,19 @@ function createJsonView(pre) {
 
 // ---- source highlight ----------------------------------------------------------------------------------------------
 
-// While the cursor is in a range item, its STATE block or the BASE block, the SVG week shows diagonal stripes where
-// that entry paints: dense where its state shows, sparse and dashed where a later range paints over it. The
-// rectangles come from the checker in the preview's buckets, so they line up with the drawn segments. The overlay
-// lives only in the page's DOM: state.svg, which Download SVG saves, never carries it.
+// The entry under the editor cursor shows where it lands in the outputs. In the SVG week: diagonal stripes where a
+// range or the base paints (dense where its state shows, sparse and dashed where a later range paints over it), and
+// a frame around the name, the summary or an annotation row. In the JSON tab: the lines it produces. The checker
+// computes all of it (rectangles in the preview's buckets, JSON line spans); the overlay lives only in the page's
+// DOM, so state.svg, which Download SVG saves, never carries it.
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+// The entries on this line (the META marker has its own entry for the whole block); on a line without one (a STATE
+// marker, a blank line inside a block), every entry of the block around it.
 function highlightsAt(line) {
   const all = state.highlights || [];
-  const item = all.filter((h) => h.kind === "range" && h.line === line);
-  return item.length ? item : all.filter((h) => h.block.from > 0 && line >= h.block.from && line <= h.block.to);
+  const hit = all.filter((h) => h.line === line);
+  return hit.length ? hit : all.filter((h) => h.block.from > 0 && line >= h.block.from && line <= h.block.to);
 }
 
 function svgEl(name, attrs, ...children) {
@@ -99,17 +102,21 @@ function applyHighlight(line) {
   const svg = $("svg").querySelector("svg");
   const hs = svg ? highlightsAt(line) : [];
   $("highlight-status").textContent = hs.map((h) => h.label).join("\n");
+  jsonView.setHighlight(hs.flatMap((h) => h.json || []).sort((a, b) => a.from - b.from));
   if (!svg) return;
   svg.querySelector(".cs-highlight")?.remove();
   if (!hs.length) return;
 
   const g = svgEl("g", { class: "cs-highlight", "aria-hidden": "true" },
     svgEl("defs", {}, stripes("cs-hl-dense", 6, 2.5), stripes("cs-hl-sparse", 10, 1.5)));
-  const rect = (r, cls, fill) => svgEl("rect", { class: cls, x: r.x, y: r.y, width: r.width, height: r.height, fill, rx: 1 });
+  const rect = (r, cls, fill) => svgEl("rect", { class: cls, x: r.x, y: r.y, width: r.width, height: r.height, fill, rx: 2 });
+  const painted = (h) => h.kind === "base" || h.kind === "range";
   // Shadowed first, so a later range of the same block draws its dense stripes on top.
-  for (const h of hs) for (const r of h.shadowed) g.append(rect(r, "cs-hl-shadowed", "url(#cs-hl-sparse)"));
-  for (const h of hs) for (const r of h.rects) g.append(rect(r, "cs-hl-effective", "url(#cs-hl-dense)"));
-  (svg.querySelector("g.week") || svg.lastElementChild).after(g);
+  for (const h of hs.filter(painted)) for (const r of h.shadowed) g.append(rect(r, "cs-hl-shadowed", "url(#cs-hl-sparse)"));
+  for (const h of hs) {
+    for (const r of h.rects) g.append(painted(h) ? rect(r, "cs-hl-effective", "url(#cs-hl-dense)") : rect(r, "cs-hl-text", "none"));
+  }
+  svg.append(g); // Last, so frames around text sit on top; pointer-events: none keeps the tooltips reachable.
 }
 
 // ---- theme ---------------------------------------------------------------------------------------------------------
@@ -173,8 +180,6 @@ function render(res) {
   // The SVG comes from the tool's template, which escapes all text; the HTML previews come from goldmark in safe
   // mode (raw HTML dropped, dangerous links removed).
   $("svg").innerHTML = state.svg || '<p class="placeholder">Fix the errors to see the week.</p>';
-  state.highlights = res.highlights || [];
-  applyHighlight(editor.cursorLine);
   $("download-svg").disabled = !state.svg;
   $("download-kit").disabled = !state.svg;
   state.myst = res.myst || "";
@@ -184,6 +189,8 @@ function render(res) {
   $("rendered").innerHTML = res[state.flavour + "-html"] || "";
   $("rendered").className = "rendered " + state.flavour;
   jsonView.value = res.json || "No output: the request has errors (see Diagnostics).";
+  state.highlights = res.highlights || [];
+  applyHighlight(editor.cursorLine); // After the JSON: replacing its text clears the viewer's marks.
   $("ascii").textContent = res.ascii || "No preview: the request has errors (see Diagnostics).";
   state.last = res;
 

@@ -69,6 +69,17 @@ const diagnosticLines = StateField.define({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// The JSON viewer marks the lines the source entry under the editor cursor produces (app.js, applyHighlight).
+const setSourceLines = StateEffect.define();
+const sourceLines = StateField.define({
+  create: () => Decoration.none,
+  update(deco, tr) {
+    for (const e of tr.effects) if (e.is(setSourceLines)) deco = e.value;
+    return tr.docChanged ? Decoration.none : deco;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // offset converts the tool's 1-based line and column (columns count code points) into a document offset.
 function offset(doc, line, column) {
   const l = doc.line(Math.min(Math.max(line, 1), doc.lines));
@@ -156,7 +167,7 @@ function createViewer(parent, { label = "" } = {}) {
     parent,
     state: EditorState.create({
       extensions: [
-        lineNumbers(), foldGutter(), EditorState.readOnly.of(true), EditorView.editable.of(false), json(),
+        lineNumbers(), foldGutter(), EditorState.readOnly.of(true), EditorView.editable.of(false), json(), sourceLines,
         syntaxHighlighting(highlight), search(), keymap.of(searchKeymap), theme,
         EditorView.contentAttributes.of({ "aria-label": label }),
       ],
@@ -165,7 +176,25 @@ function createViewer(parent, { label = "" } = {}) {
 
   return {
     view,
-    set value(text) { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } }); },
+    set value(text) {
+      if (text !== view.state.doc.toString()) view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+    },
+    // spans: [{from, to}] 1-based inclusive line spans. The first one scrolls into view inside the viewer only:
+    // EditorView.scrollIntoView would also scroll the page, which jumps away from the editor the user is typing in.
+    setHighlight(spans) {
+      const doc = view.state.doc;
+      const builder = new RangeSetBuilder();
+      for (const { from, to } of spans) {
+        for (let n = Math.max(1, from); n <= Math.min(to, doc.lines); n++) {
+          builder.add(doc.line(n).from, doc.line(n).from, Decoration.line({ class: "cm-src-line" }));
+        }
+      }
+      view.dispatch({ effects: setSourceLines.of(builder.finish()) });
+      if (!spans.length || spans[0].from > doc.lines) return;
+      const top = view.lineBlockAt(doc.line(spans[0].from).from).top;
+      const s = view.scrollDOM;
+      if (top < s.scrollTop || top > s.scrollTop + s.clientHeight - 40) s.scrollTop = Math.max(0, top - s.clientHeight / 3);
+    },
   };
 }
 

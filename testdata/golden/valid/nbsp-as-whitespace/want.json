@@ -2,10 +2,10 @@
   "schema-version": "2026-10-26",
   "name": "Office Hours",
   "summary": "Quiet days",
-  "base": "Minimum",
   "annotations": {
     "x-owner": "team-xyz"
   },
+  "base": "Minimum",
   "week": {
     "MON": [
       {

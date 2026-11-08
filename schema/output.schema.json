@@ -6,8 +6,8 @@
   "required": [
     "schema-version",
     "name",
-    "base",
     "annotations",
+    "base",
     "week",
     "transitions",
     "warnings"
@@ -22,9 +22,6 @@
     "summary": {
       "$ref": "#/$defs/text"
     },
-    "base": {
-      "$ref": "#/$defs/state-id"
-    },
     "annotations": {
       "type": "object",
       "maxProperties": 40,
@@ -35,6 +32,9 @@
           "maxLength": 48
         }
       }
+    },
+    "base": {
+      "$ref": "#/$defs/state-id"
     },
     "week": {
       "description": "Per-day half-open runs covering 00:00-00:00; end 00:00 means the end of the day.",

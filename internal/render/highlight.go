@@ -2,6 +2,8 @@ package render
 
 import (
 	"fmt"
+	"math"
+	"strings"
 
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/schedule"
@@ -9,25 +11,52 @@ import (
 
 // Highlight kinds.
 const (
-	HighlightRange = "range"
-	HighlightBase  = "base"
+	HighlightName = "name"
+	// HighlightMetaBlock is the whole META block, from its marker line: summary, annotations and schema-version.
+	HighlightMetaBlock = "meta-block"
+	HighlightMeta      = "meta" // A META item: schema-version or an x-* key.
+	HighlightBase      = "base"
+	HighlightRange     = "range"
+)
+
+// schemaVersionKey is the META key that isn't an annotation.
+const schemaVersionKey = "schema-version"
+
+// Text box padding around a label, and the font sizes the template uses.
+const (
+	boxPad        = 3
+	titleFontSize = 18
+	headerFont    = 14
+	bodyFont      = 12
+	boxDescent    = 0.35 // Of the font size, below the baseline.
+	rowBoxGap     = 2    // Neighbouring annotation rows' frames stay this far apart.
+	rowBoxRaise   = 0.5  // Row frames start this far above the font size over the baseline.
 )
 
 // Highlight is the part of the SVG week one source entry paints: the preflight page stripes it while the editor
 // cursor is in that entry. It uses the preview's buckets, so the stripes line up with the drawn segments.
 type Highlight struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
 	Kind string `json:"kind"`
-	// Line is the source line of the range item or the BASE block; 0 for a base from --base or the config.
+	// Line is the source line of the entry: the H1, the META marker (summary), a META item, the BASE block or a range
+	// item; 0 for a base from --base or the config.
 	Line int `json:"line"`
-	// Block is the line span the cursor may be in: the STATE block for a range, the BASE line for the base.
+	// Block is the block the entry belongs to: the META block for the summary and META items, the STATE block for a
+	// range, the entry's own line otherwise. The cursor on a block's first line highlights all its entries.
 	Block schedule.Lines `json:"block"`
-	State string         `json:"state"`
-	Class string         `json:"class"`
+	// Key is the META item's key (schema-version or x-*); empty for other kinds.
+	Key   string `json:"key,omitempty"`
+	State string `json:"state,omitempty"`
+	Class string `json:"class,omitempty"`
 	// Rects are the buckets where this entry shows; Shadowed those it covers mostly but a later range paints over.
 	Rects    []Rect `json:"rects"`
 	Shadowed []Rect `json:"shadowed"`
-	// Label describes the entry in exact minutes, for a status line.
+	// Label describes the entry (in exact minutes for base and ranges), for a status line.
 	Label string `json:"label"`
+	// JSON are the line spans of the output JSON (as the page shows it) that the entry produces; filled in by the
+	// page's evaluation, which owns the JSON text.
+	JSON []schedule.Lines `json:"json"`
+	// Owner is the painting owner for base (-1) and ranges (their index); unused for other kinds.
+	Owner int `json:"-"`
 }
 
 // Rect is a rectangle in the SVG's user coordinates.
@@ -38,20 +67,20 @@ type Rect struct {
 	Height float64 `json:"height"`
 }
 
-// Highlights computes one highlight per trace entry (base first, then the ranges in source order) on the buckets of
-// p, the preview the SVG draws. A bucket is an entry's when it shows the entry's state and, among the minutes of that
+// Highlights computes one highlight per trace entry: the name, the summary and the META items (boxes around their
+// text in m, the model the SVG draws), then the base and the ranges in source order on the buckets of p. A bucket is an entry's when it shows the entry's state and, among the minutes of that
 // state, the entry paints the most (ties go to the later range, as in painting). A range's bucket is shadowed when the
 // range covers at least half of it but the bucket isn't the range's.
-func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview) []Highlight {
+func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []Highlight {
+	out := headerHighlights(tr, m)
 	winners := bucketWinners(tr, p)
 	lines := tr.Lines()
-	out := make([]Highlight, 0, len(tr.Ranges)+1)
 
 	for o := -1; o < len(tr.Ranges); o++ {
 		i, _ := stateInfo(cfg, tr.State(o))
 		h := Highlight{
 			Kind: HighlightRange, State: tr.State(o), Class: stateClass(i), Rects: []Rect{},
-			Shadowed: []Rect{},
+			Shadowed: []Rect{}, Owner: o,
 		}
 
 		if o < 0 {
@@ -92,6 +121,111 @@ func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview) []Highlight {
 	}
 
 	return out
+}
+
+// headerHighlights covers what the H1 and the META block produce: name, summary and the META items. Their SVG
+// rects frame the title, the summary and (with --svg-annotations) the annotation rows.
+func headerHighlights(tr *schedule.Trace, m *Model) []Highlight {
+	line := func(n int) schedule.Lines { return schedule.Lines{From: n, To: n} }
+	h := Highlight{
+		Kind: HighlightName, Line: tr.Name.Line, Block: line(tr.Name.Line), Rects: []Rect{}, Shadowed: []Rect{},
+		Label: fmt.Sprintf("line %d: name %q", tr.Name.Line, tr.Name.Value),
+	}
+
+	if m.Title.Text != "" {
+		h.Rects = append(h.Rects, textBox(m.Title, titleCharW, titleFontSize))
+	}
+
+	out := []Highlight{h}
+
+	if tr.Meta == nil {
+		return out
+	}
+
+	out = append(out, metaBlock(tr.Meta, m))
+
+	for _, e := range tr.Meta.Entries {
+		h := Highlight{
+			Kind: HighlightMeta, Line: e.Line, Block: tr.Meta.Block, Key: e.Key, Rects: []Rect{}, Shadowed: []Rect{},
+			Label: fmt.Sprintf("line %d: %s %q", e.Line, e.Key, e.Value),
+		}
+
+		if m.Annotations != nil {
+			for _, r := range m.Annotations.Rows {
+				if r.Key.Text == e.Key {
+					box := textBox(r.Key, charW, bodyFont)
+					box.Width = r.Value.X - r.Key.X + float64(len([]rune(r.Value.Text)))*charW + boxPad + boxPad
+					box.Y, box.Height = r.Key.Y-bodyFont-rowBoxRaise, lineH-rowBoxGap
+					h.Rects = append(h.Rects, box)
+				}
+			}
+		}
+
+		out = append(out, h)
+	}
+
+	return out
+}
+
+// metaBlock is the entry of the META marker line: everything the block produces. Its SVG rects frame the summary and
+// the whole annotations section; its JSON spans (filled in by the page) cover summary, annotations and
+// schema-version.
+func metaBlock(meta *schedule.TraceMeta, m *Model) Highlight {
+	h := Highlight{
+		Kind: HighlightMetaBlock, Line: meta.Block.From, Block: meta.Block, Rects: []Rect{}, Shadowed: []Rect{},
+	}
+
+	var parts []string
+
+	if s := meta.Summary; s != nil {
+		parts = append(parts, fmt.Sprintf("summary %q", s.Value))
+
+		if m.Summary.Text != "" {
+			h.Rects = append(h.Rects, textBox(m.Summary, headerCharW, headerFont))
+		}
+	}
+
+	annotations := 0
+
+	for _, e := range meta.Entries {
+		if e.Key == schemaVersionKey {
+			parts = append(parts, fmt.Sprintf("schema-version %q", e.Value))
+		} else {
+			annotations++
+		}
+	}
+
+	if annotations > 0 {
+		parts = append(parts, fmt.Sprintf("%d annotation(s)", annotations))
+	}
+
+	if a := m.Annotations; a != nil && len(a.Rows) > 0 {
+		box := textBox(a.Heading, headerCharW, headerFont)
+		last := a.Rows[len(a.Rows)-1]
+
+		for _, r := range a.Rows {
+			box.Width = math.Max(box.Width, r.Value.X-box.X+float64(len([]rune(r.Value.Text)))*charW+boxPad)
+		}
+
+		box.Height = last.Key.Y + bodyFont*boxDescent + boxPad - box.Y
+		h.Rects = append(h.Rects, box)
+	}
+
+	h.Label = fmt.Sprintf("line %d: META block", h.Line)
+	if len(parts) > 0 {
+		h.Label += ": " + strings.Join(parts, ", ")
+	}
+
+	return h
+}
+
+// textBox frames a label drawn at t with the given character advance and font size.
+func textBox(t Text, advance, size float64) Rect {
+	return Rect{
+		X: t.X - boxPad, Y: t.Y - size,
+		Width:  float64(len([]rune(t.Text)))*advance + 2*boxPad,
+		Height: size*(1+boxDescent) + boxPad,
+	}
 }
 
 // bucketWinners returns, per day and bucket, the entry (-1 = base) whose minutes the bucket shows: among the minutes

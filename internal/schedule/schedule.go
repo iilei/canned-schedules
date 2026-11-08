@@ -36,8 +36,8 @@ type Output struct {
 	SchemaVersion string            `json:"schema-version"`
 	Name          string            `json:"name"`
 	Summary       string            `json:"summary,omitempty"`
-	Base          string            `json:"base"`
 	Annotations   map[string]string `json:"annotations"`
+	Base          string            `json:"base"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
 	Warnings      []Warning         `json:"warnings"`
@@ -125,8 +125,8 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		SchemaVersion: ev.meta.schemaVersion,
 		Name:          ev.doc.Name.Value,
 		Summary:       ev.meta.summary,
-		Base:          ev.base.ID,
 		Annotations:   ev.meta.annotations,
+		Base:          ev.base.ID,
 		Week:          weekRuns(week),
 		Transitions:   transitions(week),
 		Warnings:      Warnings(src, diags),
