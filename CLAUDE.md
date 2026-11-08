@@ -393,8 +393,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
-  - The example pins `0.2.0`, the first without `digests` (`0.1.0` was the first regular release, `0.0.1-pre.6` the
-    first with the date as `schema-version`, `0.0.1-pre.4` the first with provenance attestations, which mise
+  - The example pins `0.2.1`, the first with the Go library (`0.2.0` was the first without `digests`, `0.1.0` the
+    first regular release, `0.0.1-pre.6` the first with the date as `schema-version`, `0.0.1-pre.4` the first with provenance attestations, which mise
     verifies on install). Bump it
     in the same PR that prepares a release, then tag right after the merge, so the release's own README and example
     reference it; `example:test` builds from source, so CI passes before the tag exists. If the release run fails,
@@ -479,6 +479,33 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     - **Not done yet:** moving `cmd/canned-schedules` and `internal/web` onto the facade (optional: parity is
       tested).
   - **Licence:** importers are bound by FSL-1.1-ALv2, like users of the binary.
+- **The companion project (decided 2026-11-08):**
+  - **Name:** `github.com/iilei/canned-schedules-companion`, public; the binary has the same name. The
+    `canned-schedules-` prefix sorts it next to the core and gives mise `github:iilei/canned-schedules-companion`;
+    `-bot`, `-ci` and `-forge` were rejected because the binary runs locally too, `-shelf` because step 1 isn't
+    about the shelf.
+  - **The binary is the core of the design,** usable locally as well as in CI: for reproducing CI, for forges other
+    than GitHub and GitLab, and for teams without an issue bot. Every step splits into a **local part** (files in,
+    files out; no network, no tokens, the core's guarantees) and a thin **forge part** (posting, opening, uploading).
+    The Action and the GitLab component only install the binary and run it.
+  - **Commands are `<step> <verb>`,** and the verb says whether it writes to a forge: local `render`, `prepare`,
+    `check`; forge `post`, `open`, `publish`, `retire` (e.g. `preview render` / `preview post`, `promote prepare` /
+    `promote open`, `housekeep check` / `housekeep retire`). Forge verbs support `--dry-run` and take the forge
+    explicitly (`--forge github|gitlab`), never guessed from `GITHUB_ACTIONS` or `GITLAB_CI` (hidden state, as with
+    the rejected custom prefix). Markers are `<!-- canned-schedules:<step> -->`.
+  - **Action** at the repo root (`uses: iilei/canned-schedules-companion@v…`), subfolders once there are several
+    steps. On GitHub the binary can't upload workflow artifacts itself: render → `actions/upload-artifact` → post
+    with the links.
+  - **Versions:** its own semver from `v0.1.0`, independent of the core, which its `go.mod` pins and its release
+    notes name; the core's release pipeline (goreleaser, signing, attestations, install via mise) is reused.
+  - **Licence: FSL-1.1-ALv2, like the core.** The binary compiles the core in, so a permissive licence for the
+    companion's own code would free little (every copy of the binary is bound by the core's terms anyway) and
+    confuse more; and a hosted request bot, the likeliest commercial product, is closer to the companion than to the
+    core. Apache-2.0 only if outside contributions (adapters for Forgejo, Bitbucket, Azure DevOps) need it, since
+    loosening later is easy and the reverse isn't. `THIRD_PARTY_LICENSES.md` lists the core with its licence; no
+    CLA.
+  - `examples/consumer/scripts/canned-schedule` is the shell prototype of the local part; the example calls the
+    companion once it exists.
 - **GitLab:** a catalog component needs a GitLab project with a top-level `templates/` directory (taken here by the
   Go templates), another reason for the separate project.
 - **What stays here:** the forge-free parts (the library, `schedule:check` and its outputs) and `examples/consumer`,
