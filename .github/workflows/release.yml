@@ -46,6 +46,18 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
+      # Fail fast (before the multi-minute build) if the key cannot sign,
+      # e.g. because the key or its signing subkey has expired.
+      - name: Verify GPG key can sign
+        env:
+          GPG_FINGERPRINT: ${{ steps.gpg.outputs.fingerprint }}
+        run: |
+          gpg --list-secret-keys --list-options show-unusable-subkeys "$GPG_FINGERPRINT"
+          if ! echo "preflight" | gpg --batch --local-user "$GPG_FINGERPRINT" --detach-sign --output /dev/null; then
+            echo "::error::GPG key $GPG_FINGERPRINT cannot sign (expired/revoked key or subkey?). Extend its expiry and update the GPG_PRIVATE_KEY secret."
+            exit 1
+          fi
+
       # goreleaser creates the release as a draft, and only the publish job, after every smoke test, publishes it. A
       # release that is already published (the Releases page tags and publishes in one step) would bypass the smoke
       # tests, so the build stops. The tags endpoint finds published releases only; a draft gives 404 and passes.
