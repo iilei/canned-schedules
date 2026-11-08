@@ -2,7 +2,6 @@ package render
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/iilei/canned-schedules/internal/config"
@@ -167,8 +166,8 @@ func headerHighlights(tr *schedule.Trace, m *Model) []Highlight {
 	return out
 }
 
-// metaBlock is the entry of the META marker line: everything the block produces. Its SVG rects frame the summary and
-// the whole annotations section; its JSON spans (filled in by the page) cover summary, annotations and
+// metaBlock is the entry of the META marker line: everything the block produces. Its SVG rect frames the META
+// section (with --svg-annotations) or the summary beside the title (without); its JSON spans (filled in by the page) cover summary, annotations and
 // schema-version.
 func metaBlock(meta *schedule.TraceMeta, m *Model) Highlight {
 	h := Highlight{
@@ -199,15 +198,11 @@ func metaBlock(meta *schedule.TraceMeta, m *Model) Highlight {
 		parts = append(parts, fmt.Sprintf("%d annotation(s)", annotations))
 	}
 
-	if a := m.Annotations; a != nil && len(a.Rows) > 0 {
+	// The META section (heading, summary, rows) as one frame, down to just above its rule.
+	if a := m.Annotations; a != nil {
 		box := textBox(a.Heading, headerCharW, headerFont)
-		last := a.Rows[len(a.Rows)-1]
-
-		for _, r := range a.Rows {
-			box.Width = math.Max(box.Width, r.Value.X-box.X+float64(len([]rune(r.Value.Text)))*charW+boxPad)
-		}
-
-		box.Height = last.Key.Y + bodyFont*boxDescent + boxPad - box.Y
+		box.Width = m.annotationsRight() - box.X + boxPad
+		box.Height = a.Rule.Y1 - boxPad - box.Y
 		h.Rects = append(h.Rects, box)
 	}
 

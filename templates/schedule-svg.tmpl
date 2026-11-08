@@ -10,7 +10,8 @@
   because several SVG renderers (librsvg, image converters, PDF pipelines) don't support them. Every rule is scoped to
   .canned-schedule, because an SVG inlined into HTML shares the page's style sheet.
 
-  With --svg-annotations, a section below the legend lists the META annotations (x-* keys), sorted like the JSON.
+  With --svg-annotations, a META section above the transition table holds the summary (instead of beside the title)
+  and the annotations (x-* keys), sorted like the JSON, with a rule between it and the table.
 
   With --svg-embed-source, the metadata carries the canonical request as escaped text (not CDATA: the request could
   contain "]]>"), with the generator.
@@ -95,6 +96,9 @@
   <g class="annotations">
     <line class="divider" x1="{{ .rule.x1 }}" y1="{{ .rule.y1 }}" x2="{{ .rule.x2 }}" y2="{{ .rule.y2 }}"/>
     <text class="label" x="{{ .heading.x }}" y="{{ .heading.y }}" font-size="14">{{ html .heading.text }}</text>
+    {{- with .summary }}
+    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="14" font-style="italic">{{ html .text }}</text>
+    {{- end }}
     {{- range .rows }}
     <text class="label" x="{{ .key.x }}" y="{{ .key.y }}" font-size="12">{{ html .key.text }}</text>
     <text class="label" x="{{ .value.x }}" y="{{ .value.y }}" font-size="12">{{ html .value.text }}</text>

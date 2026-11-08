@@ -209,7 +209,7 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 | `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                                                                                             |
 | `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                                                                                              |
 | `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata; needs `--svg-output-file`                                                                                                                            |
-| `--svg-annotations`               |         | Show the META annotations (`x-*` keys) in a section of the SVG; needs `--svg-output-file`                                                                                                               |
+| `--svg-annotations`               |         | Show a META section above the transition table: the summary and the annotations (`x-*` keys); needs `--svg-output-file`                                                                                 |
 | `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                                                                                           |
 | `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors)                                                                        |
 | `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                                                                                                  |
@@ -280,8 +280,9 @@ good preview with a broken one.
 The SVG comes from the built-in [`templates/schedule-svg.tmpl`](templates/schedule-svg.tmpl). The tool computes all
 coordinates, colours and labels, so the template is plain markup that also runs with gomplate.
 
-With `--svg-annotations`, a section below the legend lists the META annotations (`x-*` keys), sorted by key as in
-the JSON. It is opt-in for the same reason as the source embed below: owners and links would otherwise travel with
+With `--svg-annotations`, a META section above the transition table shows the summary (moved there from beside the
+title, so it sits with the rest of META) and the annotations (`x-*` keys), sorted by key as in the JSON, with a rule
+between the section and the table. It is opt-in for the same reason as the source embed below: owners and links would otherwise travel with
 every copy of the picture.
 
 With `--svg-embed-source`, the SVG also carries the request in its `<metadata>`: the canonical form (see below) as a

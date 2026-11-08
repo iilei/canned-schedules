@@ -51,7 +51,7 @@ type PreviewOptions struct {
 	Downsample int
 	// SVGEmbedSource is --svg-embed-source: the SVG carries the canonical request in its metadata.
 	SVGEmbedSource bool
-	// SVGAnnotations is --svg-annotations: the SVG lists the META annotations below the legend.
+	// SVGAnnotations is --svg-annotations: the SVG shows a META section (summary, annotations) above the transitions.
 	SVGAnnotations bool
 	// noDownsample records --no-preview-downsample to detect the conflicting combination.
 	noDownsample bool
@@ -94,8 +94,8 @@ func registerPreviewFlags(fs *flag.FlagSet, p *PreviewOptions) {
 		"`dark`")
 	fs.BoolVar(&p.SVGEmbedSource, "svg-embed-source", false, "Embed the canonical request in the SVG's metadata; "+
 		"needs `--svg-output-file`")
-	fs.BoolVar(&p.SVGAnnotations, "svg-annotations", false, "Show the META annotations (`x-*` keys) in a section "+
-		"of the SVG; needs `--svg-output-file`")
+	fs.BoolVar(&p.SVGAnnotations, "svg-annotations", false, "Show a META section above the transition table: the "+
+		"summary and the annotations (`x-*` keys); needs `--svg-output-file`")
 	fs.StringVar(&p.ASCIIFile, "ascii-output-file", "", "Write an ASCII preview (only when the document has no errors)")
 	fs.StringVar(&p.TextFile, "text-output-file", "", "Write the text form: the canonical request with the ASCII "+
 		"preview, itself a valid request (only when the document has no errors)")

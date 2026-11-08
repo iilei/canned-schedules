@@ -137,15 +137,40 @@ func TestAnnotationsSectionIsOptIn(t *testing.T) {
 	p := Downsample(out, cfg, 15)
 	m := Build(out, cfg, p, SVGOptions{Theme: ThemeAuto, Annotations: true})
 
+	// The section sits in the right column above the transition table, holds the summary (no longer beside the
+	// title), and its rule keeps a margin to both.
+	a := m.Annotations
+	if a == nil || a.Summary == nil || m.Summary.Text != "" || a.Heading.X != m.Transitions.Headers[0].X {
+		t.Fatalf("section = %+v, title summary %q", a, m.Summary.Text)
+	}
+
+	last := a.Rows[len(a.Rows)-1].Key.Y
+	if header := m.Transitions.Headers[0].Y; !(last < a.Rule.Y1-sectionGap/2 && a.Rule.Y1 < header-sectionGap/2) {
+		t.Errorf(
+			"last row %v, rule %v, table header %v: the rule needs a margin on both sides",
+			last,
+			a.Rule.Y1,
+			header,
+		)
+	}
+
+	if a.Summary.Y <= a.Heading.Y || a.Rows[0].Key.Y <= a.Summary.Y {
+		t.Errorf("order must be heading, summary, rows: %+v", a)
+	}
+
 	hs := Highlights(tr, cfg, p, &m)
-	// The META block entry frames the summary and the whole section.
+	// The META block entry frames the whole section, summary included.
 	if hs[0].Kind != HighlightName || len(hs[0].Rects) != 1 || hs[1].Kind != HighlightMetaBlock ||
-		hs[1].Line != 3 || hs[1].Block != (schedule.Lines{From: 3, To: 5}) || len(hs[1].Rects) != 2 ||
+		hs[1].Line != 3 || hs[1].Block != (schedule.Lines{From: 3, To: 5}) || len(hs[1].Rects) != 1 ||
 		hs[2].Key != "x-zeta" || len(hs[2].Rects) != 1 {
 		t.Errorf("header highlights = %+v", hs[:4])
 	}
 
-	if sec, row := hs[1].Rects[1], hs[2].Rects[0]; sec.Y > row.Y || sec.Y+sec.Height < row.Y+row.Height {
+	if sec := hs[1].Rects[0]; sec.Y > a.Summary.Y-headerFont || sec.Y+sec.Height > a.Rule.Y1 {
+		t.Errorf("the section frame %+v must enclose the summary and stay above the rule at %v", sec, a.Rule.Y1)
+	}
+
+	if sec, row := hs[1].Rects[0], hs[2].Rects[0]; sec.Y > row.Y || sec.Y+sec.Height < row.Y+row.Height {
 		t.Errorf("the section frame %+v must enclose the row frame %+v", sec, row)
 	}
 

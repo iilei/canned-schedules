@@ -58,6 +58,8 @@ const (
 	tableFirstRow  = 2  // Rows start below the header line (1-based).
 	swatchY        = 13 // Swatch top below the legend rule.
 	swatchTextY    = 26 // Legend text baseline below the legend rule.
+	sectionGap     = 12 // Space above and below the rule under the META section.
+	tableLead      = 2  // The table's header baseline sits lineH below its top; this pulls it closer to the rule.
 	pixelPrecision = 100
 
 	// SourceNamespace is the XML namespace of the source element in an SVG's metadata.
@@ -77,7 +79,7 @@ type Model struct {
 	Dark *Palette `json:"dark"`
 	// Source is the request embedded in the metadata (--svg-embed-source); nil means none.
 	Source *Source `json:"source"`
-	// Annotations is the META section below the legend (--svg-annotations); nil means none.
+	// Annotations is the META section above the transition table (--svg-annotations); nil means none.
 	Annotations *Annotations `json:"annotations"`
 	Palette     Palette      `json:"palette"`
 	Scheme      string       `json:"scheme"`
@@ -111,13 +113,16 @@ type SVGOptions struct {
 	Source *Source
 	// Theme is ThemeAuto (follow the viewer's prefers-color-scheme), ThemeLight or ThemeDark.
 	Theme string
-	// Annotations shows the META annotations (x-* keys) in a section below the legend. Opt-in, because owners and
-	// links would otherwise travel with every shared picture.
+	// Annotations shows the META section (summary and x-* keys) above the transition table. Opt-in, because owners
+	// and links would otherwise travel with every shared picture.
 	Annotations bool
 }
 
-// Annotations is the section listing the output's annotations, sorted by key as in the JSON.
+// Annotations is the META section above the transition table: the summary (moved there from beside the title, so
+// it sits with the rest of META) and the annotations sorted by key as in the JSON, then a rule above the table.
 type Annotations struct {
+	// Summary is nil without one.
+	Summary *Text           `json:"summary"`
 	Rows    []AnnotationRow `json:"rows"`
 	Heading Text            `json:"heading"`
 	Rule    Line            `json:"rule"`
@@ -230,7 +235,9 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, o SVGOptions) Mo
 	week := float64(titleH + rulerH)
 	m.Title = Text{Text: out.Name, X: labelW, Y: titleH - titleBaseline}
 
-	if out.Summary != "" {
+	section := o.Annotations && (len(out.Annotations) > 0 || out.Summary != "")
+
+	if out.Summary != "" && !section {
 		m.Summary = Text{
 			Text: out.Summary, X: labelW + float64(len([]rune(out.Name)))*titleCharW + cellPadding,
 			Y: titleH - titleBaseline,
@@ -263,23 +270,25 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, o SVGOptions) Mo
 	columnX := float64(labelW+dayW) + columnGap
 	m.Divider = Line{X1: columnX - columnGap/2, Y1: titleH, X2: columnX - columnGap/2, Y2: weekBottom}
 
-	tableBottom, right := m.table(out, cfg, columnX, week)
+	tableTop := week
+	if section {
+		tableTop = m.annotations(out, columnX, titleH)
+	}
+
+	tableBottom, right := m.table(out, cfg, columnX, tableTop)
+	right = math.Max(right, m.annotationsRight())
 	right = math.Max(right, m.Summary.X+float64(len([]rune(m.Summary.Text)))*headerCharW)
 	bottom := math.Max(weekBottom, tableBottom)
 	right = m.legend(out, cfg, p, bottom, right)
-	height := bottom + legendH
-
-	if o.Annotations && len(out.Annotations) > 0 {
-		height, right = m.annotations(out, height, right)
-	}
-
 	m.Width = math.Ceil(right + margin)
-	m.Height = height
+	m.Height = bottom + legendH
 	m.Legend.Rule = Line{X1: labelW, Y1: bottom + margin, X2: m.Width - margin, Y2: bottom + margin}
 
 	if m.Annotations != nil {
 		m.Annotations.Rule.X2 = m.Width - margin
 	}
+
+	m.Divider.Y2 = bottom
 
 	for i := range m.Guides {
 		m.Guides[i].Y2 = weekBottom
@@ -418,9 +427,9 @@ func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top,
 	return math.Max(right, x-legendGap)
 }
 
-// annotations adds the META section below the legend: a heading and one key/value row per annotation, sorted by key
-// like the JSON. It returns the new bottom and right edge.
-func (m *Model) annotations(out *schedule.Output, top, right float64) (float64, float64) {
+// annotations adds the META section at x from top: a heading, the summary, one key/value row per annotation (sorted
+// by key like the JSON), then a rule with a margin on both sides. It returns where the transition table starts.
+func (m *Model) annotations(out *schedule.Output, x, top float64) float64 {
 	keys := make([]string, 0, len(out.Annotations))
 	keyW := 0
 
@@ -431,25 +440,48 @@ func (m *Model) annotations(out *schedule.Output, top, right float64) (float64, 
 
 	slices.Sort(keys)
 
-	a := &Annotations{
-		Rule:    Line{X1: labelW, Y1: top, Y2: top},
-		Heading: Text{Text: "META", X: labelW, Y: top + lineH},
-	}
-	valueX := labelW + float64(keyW)*charW + cellPadding
+	y := top + lineH
+	a := &Annotations{Heading: Text{Text: "META", X: x, Y: y}}
 
-	for i, k := range keys {
-		y := top + float64(i+tableFirstRow)*lineH
-		v := diag.Sanitize(out.Annotations[k])
+	if out.Summary != "" {
+		y += lineH
+		a.Summary = &Text{Text: diag.Sanitize(out.Summary), X: x, Y: y}
+	}
+
+	valueX := x + float64(keyW)*charW + cellPadding
+
+	for _, k := range keys {
+		y += lineH
 		a.Rows = append(a.Rows, AnnotationRow{
-			Key:   Text{Text: diag.Sanitize(k), X: labelW, Y: y},
-			Value: Text{Text: v, X: valueX, Y: y},
+			Key:   Text{Text: diag.Sanitize(k), X: x, Y: y},
+			Value: Text{Text: diag.Sanitize(out.Annotations[k]), X: valueX, Y: y},
 		})
-		right = math.Max(right, valueX+float64(len([]rune(v)))*charW)
 	}
 
+	rule := y + sectionGap
+	a.Rule = Line{X1: x, Y1: rule, Y2: rule} // X2 follows the final width.
 	m.Annotations = a
 
-	return top + float64(len(keys)+tableFirstRow)*lineH, right
+	return rule + sectionGap - tableLead
+}
+
+// annotationsRight is the right edge of the META section's text; 0 without one.
+func (m *Model) annotationsRight() float64 {
+	a := m.Annotations
+	if a == nil {
+		return 0
+	}
+
+	right := a.Heading.X + float64(len([]rune(a.Heading.Text)))*headerCharW
+	if a.Summary != nil {
+		right = math.Max(right, a.Summary.X+float64(len([]rune(a.Summary.Text)))*headerCharW)
+	}
+
+	for _, r := range a.Rows {
+		right = math.Max(right, r.Value.X+float64(len([]rune(r.Value.Text)))*charW)
+	}
+
+	return right
 }
 
 // approximateNote explains a lossy preview in the SVG.
