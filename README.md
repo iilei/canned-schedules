@@ -359,8 +359,9 @@ ready-to-copy setup, tested in this repo's CI:
 - **The outputs are gitignored** by the example's `.gitignore`. To show a preview on GitHub, commit that SVG instead
   and let CI render and run `git diff --exit-code`.
 - **`mise run schedule:check <file> [out-dir]`** checks one request, for example an issue body, and writes
-  `report.md`, `report.json`, `comment.md` (the comment to post) and, when valid, the JSON and the text form. The
-  example's issue workflow runs it and posts the comment; the task itself never talks to GitHub.
+  `report.md`, `report.json`, `comment.md` (the comment to post) and, when valid, the JSON, the text form and the
+  SVG. The example's issue workflow runs it, uploads the files as workflow artifacts and posts the comment with
+  links to them; the task itself never talks to GitHub.
 - **`mise run schedule:pre-commit`** checks what is staged, not the working tree. Install it as a git hook with
   `mise generate git-pre-commit --write --task schedule:pre-commit`.
 - **`canned-schedules.args`** holds flags for every call, one per line. The example makes alerts strict, so a typo

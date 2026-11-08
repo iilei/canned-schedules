@@ -29,12 +29,22 @@ the same commands. This folder is tested in the canned-schedules CI (`mise run e
   colour on a terminal, reports every broken file before it fails, and deletes outputs that would otherwise be stale:
   those of a file that failed, and those whose source is gone. Files git tracks are never deleted.
 - `mise run schedule:check <file> [out-dir]`: checks one request, for example an issue body, and writes
-  `report.md`, `report.json`, `comment.md` and, for a valid request, `schedule.json` and `schedule.txt` into `out-dir`
-  (default `canned-schedule-report`, gitignored). `comment.md` is what the workflow posts.
+  `report.md`, `report.json`, `comment.md` and, for a valid request, `schedule.json`, `schedule.txt` and
+  `schedule.svg` into `out-dir` (default `canned-schedule-report`, gitignored). `comment.md` is what the workflow
+  posts, with links to the uploaded files appended.
 - `mise run schedule:pre-commit`: checks the staged content of every staged schedule, not the working tree, and names
   each problem by its path in the repo.
 
 None of the tasks talks to GitHub or GitLab. The workflow posts the comment; the task only writes files.
+
+## The issue comment
+
+The workflow keeps one comment per request issue, found by its first line `<!-- canned-schedules:issue-preview -->`
+and its author (`github-actions[bot]`), and edits it on every change of the issue. It shows the report and, for a
+valid request, the text form. GitHub doesn't show SVG in comments, so the SVG week goes into a workflow artifact the
+comment links to, next to a zip with every file the check wrote. Downloading needs a GitHub login with read access;
+the artifacts are kept for 30 days, and the next edit of the issue makes new ones. The workflow needs only
+`contents: read` and `issues: write` and never writes to the repository.
 
 ## Settings
 
