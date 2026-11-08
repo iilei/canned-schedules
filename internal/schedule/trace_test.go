@@ -112,3 +112,22 @@ func TestTraceBaseFromConfig(t *testing.T) {
 		t.Errorf("base = %+v", tr.Base)
 	}
 }
+
+func TestTraceSummary(t *testing.T) {
+	t.Parallel()
+
+	tr := explain(t, "# Plan\n\n> [!SCHEDULE-BASE] Off\n\n"+
+		"> [!SCHEDULE-STATE] Minimum\n> - `07:00` to `20:00` MON-FRI\n\n"+
+		"> [!SCHEDULE-STATE] Maximum\n> - `12:00` to `13:00` MON-FRI\n> - `11:00` to `14:00` MON-FRI\n", Options{})
+
+	for owner, want := range map[int]string{
+		-1: "Off is the base (BASE block) · 103 h not painted over",
+		0:  "Minimum MON-FRI 07:00–20:00 · 50 h of 65 h effective",
+		1:  "Maximum MON-FRI 12:00–13:00 · no effect",
+		2:  "Maximum MON-FRI 11:00–14:00 · all 15 h effective",
+	} {
+		if got := tr.Summary(owner); got != want {
+			t.Errorf("Summary(%d) = %q, want %q", owner, got, want)
+		}
+	}
+}

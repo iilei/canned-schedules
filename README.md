@@ -100,8 +100,8 @@ picture stays traceable to its schedule. The line under the cursor shows what it
 block or the BASE block sprinkles black-and-white dots on the week where it paints (sparser where a later range
 paints over it), the H1 and META items get a frame in the SVG, and the JSON tab marks the lines each one produces (for the
 META marker: summary and the whole `annotations` object; for ranges: the runs and transitions where its state
-shows). A line below the SVG explains it with the
-[paint trace](#paint-trace). It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
+shows). A status bar under the editor explains it with the
+[paint trace](#paint-trace), including ranges that have no effect. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
 
 ```sh
 mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)

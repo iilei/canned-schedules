@@ -666,12 +666,23 @@ pre.flags {
 .svg-frame .cs-hl-halo {
     stroke-width: 3.5;
 }
-.highlight-status {
-    color: var(--muted);
-    font-size: 13px;
+/* Status bar under the editor (app.js, showSourceStatus): two lines tall at all times, so it never shifts the page. */
+.source-status {
+    --status-line: 1.45em;
+    height: calc(2 * var(--status-line));
     margin: 6px 2px 0;
-    min-height: 1.4em;
-    white-space: pre-line;
+    color: var(--text);
+    font-size: 12.5px;
+    line-height: var(--status-line);
+    overflow: hidden;
+}
+.source-status > div {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.source-status.empty {
+    color: var(--muted);
 }
 .placeholder {
     color: var(--muted);

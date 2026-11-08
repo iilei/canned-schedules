@@ -137,10 +137,29 @@ function signalJsonMarks(spans) {
   }
 }
 
+// The status bar under the editor explains the entry under the cursor. Its height is fixed at two lines, so the page
+// never moves while the cursor does: each entry takes one line (cut off with "…", the full text on hover), and a
+// third entry or more turns the second line into "+N more". Screen readers get every label.
+const STATUS_HINT = "Put the cursor in the request to see what each line produces.";
+
+function showSourceStatus(labels) {
+  const bar = $("highlight-status");
+  const row = (text, title = text) => Object.assign(document.createElement("div"), { textContent: text, title });
+  bar.classList.toggle("empty", labels.length === 0);
+  if (!labels.length) {
+    bar.replaceChildren(row(STATUS_HINT, ""));
+    return;
+  }
+  const rows = labels.length <= 2 ? labels.map((l) => row(l))
+    : [row(labels[0]), row(`+${labels.length - 1} more`, labels.slice(1).join("\n"))];
+  bar.replaceChildren(...rows);
+  bar.setAttribute("aria-label", labels.join(". "));
+}
+
 function applyHighlight(line) {
   const svg = $("svg").querySelector("svg");
   const hs = svg ? highlightsAt(line) : [];
-  $("highlight-status").textContent = hs.map((h) => h.label).join("\n");
+  showSourceStatus(hs.map((h) => h.label));
   editor.setHighlight(hs.map((h) => h.source));
   const spans = hs.flatMap((h) => h.json || []).sort((a, b) => a.from - b.from);
   jsonView.setHighlight(spans);

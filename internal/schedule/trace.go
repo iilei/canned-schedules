@@ -351,6 +351,29 @@ func (t *Trace) Lines() []TraceLine {
 	return out
 }
 
+// Summary is a one-line description of a trace entry for a status line: owner -1 is the base, otherwise the range
+// index. Unlike Lines, it leaves out where and by which lines a range is painted over, so it stays short. The
+// wording is not contract.
+func (t *Trace) Summary(owner int) string {
+	if owner < 0 {
+		return fmt.Sprintf("%s is the base (%s) · %s not painted over", t.Base.State, baseOrigin(t.Base.Origin),
+			duration(t.Base.Minutes))
+	}
+
+	r := &t.Ranges[owner]
+	head := fmt.Sprintf("%s %s %s–%s", r.State, compact(r.Days), r.Start, r.End)
+	effective := r.Minutes - shadowedMinutes(r.Shadowed)
+
+	switch {
+	case len(r.Shadowed) == 0:
+		return head + " · all " + duration(r.Minutes) + " effective"
+	case effective == 0:
+		return head + " · no effect"
+	default:
+		return fmt.Sprintf("%s · %s of %s effective", head, duration(effective), duration(r.Minutes))
+	}
+}
+
 func baseOrigin(origin string) string {
 	switch origin {
 	case BaseFromDocument:
