@@ -46,6 +46,7 @@ var flagGroups = []struct {
 		{"no-preview-downsample", "", ""},
 		{"myst-output-file", argPath, ""},
 		{"sphinx-kit-output-file", argPath, ""},
+		{"trace-output-file", argPath, ""},
 	}},
 	{"Error report", [][3]string{
 		{"error-output-file", argPath, "stderr"},
@@ -53,6 +54,7 @@ var flagGroups = []struct {
 		{"error-report-template", "<name>", ""},
 	}},
 	{"Other", [][3]string{
+		{"verbose", "", ""},
 		{"help", "", ""},
 		{"version", "", ""},
 	}},

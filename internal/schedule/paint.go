@@ -16,27 +16,40 @@ const (
 // they overlap. A range belongs to its start day and spills past midnight (and from SUN into MON) as needed. The
 // result holds one state id per minute, starting MON 00:00.
 func paint(base config.State, ranges []stateRange) []string {
-	week := make([]string, len(expr.Weekdays)*minutesPerDay)
+	owners := paintOwners(ranges)
+	week := make([]string, len(owners))
 
-	for i := range week {
+	for i, o := range owners {
 		week[i] = base.ID
-	}
-
-	for _, r := range ranges {
-		length := (r.End - r.Start + minutesPerDay) % minutesPerDay
-		if length == 0 {
-			length = minutesPerDay // Start == end means 24 hours.
-		}
-
-		for _, d := range r.Days {
-			start := d*minutesPerDay + r.Start
-			for i := range length {
-				week[(start+i)%len(week)] = r.state.ID
-			}
+		if o >= 0 {
+			week[i] = ranges[o].state.ID
 		}
 	}
 
 	return week
+}
+
+// paintOwners paints range indexes instead of states: every minute of the week holds the index of the range that
+// paints it last, or -1 where the base shows. paint and the trace share it, so they can't disagree.
+func paintOwners(ranges []stateRange) []int {
+	owners := make([]int, minutesPerWeek)
+
+	for i := range owners {
+		owners[i] = -1
+	}
+
+	for i, r := range ranges {
+		length := r.length()
+
+		for _, d := range r.Days {
+			start := d*minutesPerDay + r.Start
+			for m := range length {
+				owners[(start+m)%minutesPerWeek] = i
+			}
+		}
+	}
+
+	return owners
 }
 
 // weekRuns splits the painted week into per-day runs.

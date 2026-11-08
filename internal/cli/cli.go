@@ -27,6 +27,7 @@ var errNotBool = errors.New(`want "true" or "false"`)
 // Options is the parsed command line.
 type Options struct {
 	Sphinx    SphinxOptions
+	Trace     TraceOptions
 	Preview   PreviewOptions
 	Report    ReportOptions
 	Overrides []config.Override
@@ -51,6 +52,14 @@ type SphinxOptions struct {
 	MySTFile string
 	// KitFile is --sphinx-kit-output-file: the Sphinx kit zip.
 	KitFile string
+}
+
+// TraceOptions configure the paint trace, a debugging aid outside the stability promise.
+type TraceOptions struct {
+	// File is --trace-output-file: the trace as JSON.
+	File string
+	// Verbose is --verbose: one line per trace entry on stderr.
+	Verbose bool
 }
 
 // ReportOptions configure the error report.
@@ -109,6 +118,11 @@ func newFlagSet(opts *Options, p *pending) *flag.FlagSet {
 		"Write the schedule as MyST for Sphinx (only when the document has no errors)")
 	fs.StringVar(&opts.Sphinx.KitFile, "sphinx-kit-output-file", "",
 		"Write the Sphinx kit zip (only when the document has no errors)")
+	fs.StringVar(&opts.Trace.File, "trace-output-file", "", "Write the paint trace as JSON: what each range covers, "+
+		"where it shows and where later ranges paint over it; a debugging aid, its shape may change in any release "+
+		"(only when the document has no errors)")
+	fs.BoolVar(&opts.Trace.Verbose, "verbose", false, "Print the paint trace to stderr, one `file:line:col` line per "+
+		"range and one for the base (only when the document has no errors)")
 	fs.StringVar(&opts.Report.File, "error-output-file", "",
 		"Write the error report to this file (always, even when empty)")
 	fs.StringVar(&opts.Report.Format, "error-output-format", "", "Error report format: `txt` or `json`")

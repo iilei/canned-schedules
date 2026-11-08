@@ -648,6 +648,29 @@ pre.flags {
     width: 100%;
     height: auto;
 }
+/* Source highlight: stripes over the week where the entry under the editor cursor paints (app.js). */
+.svg-frame .cs-highlight {
+    color: var(--text);
+    pointer-events: none; /* The runs' tooltips stay reachable. */
+}
+.svg-frame .cs-hl-effective {
+    fill-opacity: 0.6;
+    stroke: currentColor;
+    stroke-width: 1.5;
+}
+.svg-frame .cs-hl-shadowed {
+    fill-opacity: 0.45;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+}
+.highlight-status {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 6px 2px 0;
+    min-height: 1.4em;
+    white-space: pre-line;
+}
 .placeholder {
     color: var(--muted);
     font-size: 14px;

@@ -412,7 +412,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   was accepted, and **changing a field's meaning** (the worst kind: no validator notices).
   Meaning changes come as a new field; the old one goes at the next breaking date. Semver-wise: description fix =
   patch, addition = minor, both same date; everything breaking = major = new date.
-- **Not contract:** diagnostic messages (codes are), preview layout, JSON key order (stable in practice).
+- **Not contract:** diagnostic messages (codes are), preview layout, JSON key order (stable in practice), and the
+  paint trace (`--verbose` lines, `--trace-output-file` and `schema/trace.schema.json`, decided 2026-11-08: a
+  debugging aid; its schema has a versioned `$id` but no `schema-version`, so nobody mistakes it for contract).
 - **Publishing:** Pages serves `schema/<date>/` (`web:build` copies `schema/*.schema.json` there, plus
   `schema/archive/<date>/`, where a breaking change moves the previous files so published `$id`s never disappear);
   every release attaches the schemas and lists them in `checksums.txt` (signed, attested).
@@ -540,6 +542,19 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (Grafana's classic palette, Okabe–Ito for colour-blind readers) start with a neutral grey for the base.
   `TestPalettes` applies each to the issue template and requires no diagnostics (schema valid, a style per built-in
   state).
+- **Source highlight (decided 2026-11-08):** with the editor cursor in a STATE item, its block (marker to last item)
+  or the BASE line, the SVG week gets diagonal stripes where that entry paints: dense where its state shows, sparse
+  and dashed where a later range paints over it (a block shows all its items). A status line under the SVG gives the
+  trace line in exact minutes. Page only and DOM only: `state.svg` (Download SVG) never carries the overlay, and the
+  canonical JSON is untouched. **Resolution follows `--preview-downsample`** (decided with the user): rects sit on
+  the preview's buckets. A bucket is an entry's when it shows the entry's state and the entry paints the most of
+  that state's minutes there (ties to the later range); shadowed when the range covers at least half of it but
+  doesn't own it. Data flow: `schedule.Explain` → `Trace` (built on `paintOwners`, which `paint` shares, so the two
+  can't disagree) → `render.Highlights` (all coordinates in Go) → `highlights` in the evaluate result →
+  `applyHighlight` in `app.js` via the adapter's `onCursor`. The same `Trace` feeds `--verbose` (stderr,
+  `path:line:col: info[paint]: …`, after the report, never redirected by `--error-output-file`) and
+  `--trace-output-file` (see "Stability"). The forward direction of #42; the reverse (hover a run → source lines)
+  is still open.
 - **Loading overlay:** `#hud` covers the page until the WebAssembly checker runs (`start()` hides it), and stays with
   the reason when loading fails (no WebAssembly, `app.wasm` not loadable). `fetchWasm()` streams the download to show
   the megabytes loaded, with a total and percentage only when the response isn't content-encoded (Content-Length

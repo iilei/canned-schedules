@@ -13,25 +13,37 @@ let ready = false;
 // ---- editor ------------------------------------------------------------------------------------------------------
 
 // The editor is CodeMirror (editor.js) with Markdown highlighting and diagnostics marked in place. Without editor.js
-// the plain textarea stays, behind the same small interface: value, onChange, focus, selectAll, jumpTo,
-// setDiagnostics.
+// the plain textarea stays, behind the same small interface: value, cursorLine, onChange, onCursor, focus, selectAll,
+// jumpTo, setDiagnostics.
 function createEditor(textarea) {
   const listeners = [];
+  const cursorListeners = [];
   const changed = () => { for (const fn of listeners) fn(); };
+  let lastLine = 0;
+  const moved = (line) => {
+    if (line === lastLine) return;
+    lastLine = line;
+    for (const fn of cursorListeners) fn(line);
+  };
 
   if (globalThis.CannedEditor) {
     const host = Object.assign(document.createElement("div"), { className: "cm-host editor" });
     textarea.replaceWith(host);
-    const cm = globalThis.CannedEditor.createEditor(host, { label: textarea.getAttribute("aria-label"), onChange: changed });
+    const cm = globalThis.CannedEditor.createEditor(host, { label: textarea.getAttribute("aria-label"), onChange: changed, onCursor: moved });
     cm.onChange = (fn) => listeners.push(fn);
+    cm.onCursor = (fn) => cursorListeners.push(fn);
     return cm;
   }
 
+  const textareaLine = () => textarea.value.slice(0, textarea.selectionStart).split("\n").length;
   textarea.addEventListener("input", changed);
+  for (const ev of ["input", "keyup", "click", "select"]) textarea.addEventListener(ev, () => moved(textareaLine()));
   return {
     get value() { return textarea.value; },
     set value(text) { textarea.value = text; },
+    get cursorLine() { return textareaLine(); },
     onChange: (fn) => listeners.push(fn),
+    onCursor: (fn) => cursorListeners.push(fn),
     focus: () => textarea.focus(),
     selectAll: () => textarea.select(),
     setDiagnostics() {},
@@ -55,6 +67,49 @@ function createJsonView(pre) {
   const host = Object.assign(document.createElement("div"), { className: "cm-host viewer", id: "json" });
   pre.replaceWith(host);
   return globalThis.CannedEditor.createViewer(host, { label: "Canonical JSON output" });
+}
+
+// ---- source highlight ----------------------------------------------------------------------------------------------
+
+// While the cursor is in a range item, its STATE block or the BASE block, the SVG week shows diagonal stripes where
+// that entry paints: dense where its state shows, sparse and dashed where a later range paints over it. The
+// rectangles come from the checker in the preview's buckets, so they line up with the drawn segments. The overlay
+// lives only in the page's DOM: state.svg, which Download SVG saves, never carries it.
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function highlightsAt(line) {
+  const all = state.highlights || [];
+  const item = all.filter((h) => h.kind === "range" && h.line === line);
+  return item.length ? item : all.filter((h) => h.block.from > 0 && line >= h.block.from && line <= h.block.to);
+}
+
+function svgEl(name, attrs, ...children) {
+  const el = document.createElementNS(SVG_NS, name);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  el.append(...children);
+  return el;
+}
+
+function stripes(id, gap, width) {
+  return svgEl("pattern", { id, width: gap, height: gap, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
+    svgEl("rect", { width, height: gap, fill: "currentColor" }));
+}
+
+function applyHighlight(line) {
+  const svg = $("svg").querySelector("svg");
+  const hs = svg ? highlightsAt(line) : [];
+  $("highlight-status").textContent = hs.map((h) => h.label).join("\n");
+  if (!svg) return;
+  svg.querySelector(".cs-highlight")?.remove();
+  if (!hs.length) return;
+
+  const g = svgEl("g", { class: "cs-highlight", "aria-hidden": "true" },
+    svgEl("defs", {}, stripes("cs-hl-dense", 6, 2.5), stripes("cs-hl-sparse", 10, 1.5)));
+  const rect = (r, cls, fill) => svgEl("rect", { class: cls, x: r.x, y: r.y, width: r.width, height: r.height, fill, rx: 1 });
+  // Shadowed first, so a later range of the same block draws its dense stripes on top.
+  for (const h of hs) for (const r of h.shadowed) g.append(rect(r, "cs-hl-shadowed", "url(#cs-hl-sparse)"));
+  for (const h of hs) for (const r of h.rects) g.append(rect(r, "cs-hl-effective", "url(#cs-hl-dense)"));
+  (svg.querySelector("g.week") || svg.lastElementChild).after(g);
 }
 
 // ---- theme ---------------------------------------------------------------------------------------------------------
@@ -118,6 +173,8 @@ function render(res) {
   // The SVG comes from the tool's template, which escapes all text; the HTML previews come from goldmark in safe
   // mode (raw HTML dropped, dangerous links removed).
   $("svg").innerHTML = state.svg || '<p class="placeholder">Fix the errors to see the week.</p>';
+  state.highlights = res.highlights || [];
+  applyHighlight(editor.cursorLine);
   $("download-svg").disabled = !state.svg;
   $("download-kit").disabled = !state.svg;
   state.myst = res.myst || "";
@@ -595,6 +652,7 @@ function wire() {
   }
   $("copy-flags").addEventListener("click", copyFlags);
   editor.onChange(debounce(evaluate, 120));
+  editor.onCursor(applyHighlight);
   editor.onChange(updateReset);
   $("preset").addEventListener("change", () => choosePreset($("preset").value));
   $("reset").addEventListener("click", () => { if (current) load(current.text); });
