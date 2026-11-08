@@ -546,8 +546,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   and is the single source for the checker, the Sphinx kit and the **Equivalent CLI flags** box (shell command with
   POSIX quoting, or one argument per line for `canned-schedules.args`); `args()` adds only `--svg-theme`. Permalink:
   repeated `?states=<id>` or `?states=<id>:<display name>` (split at the first colon; ids can't contain one), written
-  only for custom states; a link with them opens the panel. Still open: an add-phase form (#41), "why is this minute
-  in this state" (#42), presets with their own states.
+  only for custom states; a link with them opens the panel. Still open: an add-phase form (#41), presets with their own
+  states.
 - **Colour palettes (decided 2026-10-26, #40):** page only, no `--palette` CLI flag (no new contract; the CLI flags
   box shows the override). `web/palettes/index.json` lists them (`id`, `label`, `kind` sequential|categorical,
   `description`, `styles`); the dropdown groups them by kind, the choice goes out as `--set-config-at
@@ -573,8 +573,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   can't disagree) → `render.Highlights` (all coordinates in Go) → `highlights` in the evaluate result →
   `applyHighlight` in `app.js` via the adapter's `onCursor`. The same `Trace` feeds `--verbose` (stderr,
   `path:line:col: info[paint]: …`, after the report, never redirected by `--error-output-file`) and
-  `--trace-output-file` (see "Stability"). The forward direction of #42; the reverse (hover a run → source lines)
-  is still open.
+  `--trace-output-file` (see "Stability"). This is #42 (cursor → week).
+  **No reverse direction (decided 2026-11-08):** clicking a segment would move the editor cursor and steal focus
+  (too invasive), and even a hover that only marks the source lines isn't needed: the week stays a pure output, and
+  the way from the week back to the text is to put the cursor on a line. So no `data-` attributes on SVG segments,
+  no per-cell stack of covered items, no document-version counter. #41 (the editing form) reads the cursor.
   - **Black-and-white ink (decided 2026-11-08):** the overlay never uses a theme or state colour. The area is
     sprinkled with dots on a grid tilted by 45° (`patternTransform: rotate(45)`, one dot per cell; 6 px cells where
     the state shows, 10 px where a later range paints over it), each a 1.5 px white square sitting on a black one
