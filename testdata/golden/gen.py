@@ -741,6 +741,28 @@ err(
     "SCHEDULE-STATE",
     "misplaced-directive",
 )
+# Blocks glued together: a line without ">" right after a quote (a lazy continuation line) or no empty line at all
+# keeps the quote going, so the next marker sits inside the block above. One error at that marker, which names the
+# culprit line; nothing about the swallowed lines.
+err(
+    "error/blocks-glued-by-lazy-line",
+    [META, "> [!SCHEDULE-BASE] Minimum\n.\n" + STATE],
+    "SCHEDULE-STATE",
+    "misplaced-directive",
+)
+err(
+    "error/blocks-glued-after-range",
+    [META, BASE, STATE + ".\n> [!SCHEDULE-STATE] Maximum\n> - `20:00` to `02:00` FRI\n"],
+    "SCHEDULE-STATE",
+    "misplaced-directive",
+    nth=2,
+)
+err(
+    "error/blocks-without-blank-line",
+    [META, "> [!SCHEDULE-BASE] Minimum\n" + STATE],
+    "SCHEDULE-STATE",
+    "misplaced-directive",
+)
 err("error/summary-too-long", ["> [!SCHEDULE-META] " + "a" * 81 + "\n", BASE, STATE], "a" * 81, "invalid-summary")
 err("error/summary-bad-character", ["> [!SCHEDULE-META] Office hours!\n", BASE, STATE], "Office", "invalid-summary")
 err("error/summary-trailing-hyphen", ["> [!SCHEDULE-META] Office-\n", BASE, STATE], "Office", "invalid-summary")
