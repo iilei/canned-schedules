@@ -543,8 +543,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `TestPalettes` applies each to the issue template and requires no diagnostics (schema valid, a style per built-in
   state).
 - **Source highlight (decided 2026-11-08):** with the editor cursor in a STATE item, its block (marker to last item)
-  or the BASE line, the SVG week gets diagonal stripes where that entry paints: dense where its state shows, sparse
-  and dashed where a later range paints over it (a block shows all its items). A status line under the SVG gives the
+  or the BASE line, the SVG week gets dots where that entry paints: dense where its state shows, sparse where a
+  later range paints over it (a block shows all its items). A status line under the SVG gives the
   trace line in exact minutes. Page only and DOM only: `state.svg` (Download SVG) never carries the overlay, and the
   canonical JSON is untouched. **Resolution follows `--preview-downsample`** (decided with the user): rects sit on
   the preview's buckets. A bucket is an entry's when it shows the entry's state and the entry paints the most of
@@ -555,6 +555,19 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `path:line:col: info[paint]: …`, after the report, never redirected by `--error-output-file`) and
   `--trace-output-file` (see "Stability"). The forward direction of #42; the reverse (hover a run → source lines)
   is still open.
+  - **Black-and-white ink (decided 2026-11-08):** the overlay never uses a theme or state colour. The area is
+    sprinkled with dots on a grid tilted by 45° (`patternTransform: rotate(45)`, one dot per cell; 6 px cells where
+    the state shows, 10 px where a later range paints over it), each a 1.5 px white square sitting on a black one
+    (the pair tilts with the grid), so most of the state colour stays visible. Rotating the earlier layout (two
+    dots per cell, diagonally offset) gave straight rows: that layout already was a 45° grid. No outline around dotted areas (it confused more than it helped). Text frames
+    (name, summary, META rows) are a white halo under a black dashed line. Every colour contrasts at least 4.58:1
+    with black or white, so every dot and frame stands out, whatever the palette, theme or override. Tried and
+    dropped: two-tone diagonal stripes (hid the state colour), dots as a black core in a white ring (blurred to grey
+    at 1:1). Considered and rejected: stripes in the text colour (vanish on fills close to it), per-state
+    black/white picked in Go (needs both inks under `--svg-theme auto`), and `mix-blend-mode: difference` (worst
+    case 2.96:1: an inverted dark fill is far less bright than white). `INK` in `app.js` is the single source;
+    `TestHighlightInkContrast` reads it and requires at least 4.5:1 for the better ink on every palette fill in
+    both themes, blended over the theme background (worst today: 4.65:1, classic, dark).
   - **Header entries and the JSON tab (decided 2026-11-08):** the H1 (`name`) and each META item are highlight
     entries too: a dashed frame around the title or the annotation row in the SVG, and in the JSON tab the lines of
     `name`, `schema-version` or `annotations.<key>`. The **META marker line** is its own entry (`meta-block`) for
@@ -569,6 +582,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     the JSON tab glows where a selected tab shows its underline (`has-marks`): three pulses when the marked lines
     change, then a steady glow until the tab is opened; no pulse with `prefers-reduced-motion`, and nothing until
     the user moves the cursor in the focused editor (loading a document puts the cursor on the H1).
+    The editor marks the source of what is highlighted (`cm-src-line`, the JSON viewer's tint): the whole block
+    for the META marker and for a block matched as a whole (STATE marker, blank line inside a block), otherwise the
+    entry's own line (range item, META item, BASE, H1). The marks follow edits until the next evaluation; on the
+    cursor line they beat the active-line colour, so a block reads as one, and error and warning backgrounds beat
+    both.
   - **Output key order (decided 2026-11-08):** `schema-version, name, summary, annotations, base, week, transitions,
     warnings`, so what H1 and META produce is one block and `base` sits next to `week`. Key order is not contract,
     so no new `schema-version`; `gen.py` and the fixtures were regenerated.

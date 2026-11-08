@@ -36,6 +36,11 @@ const theme = EditorView.theme({
   ".cm-content": { fontFamily: "var(--mono)", lineHeight: "1.45", caretColor: "var(--text)" },
   ".cm-gutters": { backgroundColor: "var(--surface-2)", color: "var(--muted)", border: "none" },
   ".cm-activeLine": { backgroundColor: "var(--hl-active-line)" },
+  // A marked block (source highlight) keeps its colour on the cursor line too, so it reads as one block; error and
+  // warning backgrounds still win.
+  ".cm-activeLine.cm-src-line:not(.cm-diag-line-error):not(.cm-diag-line-warn)": {
+    backgroundColor: "var(--hl-selection)",
+  },
   ".cm-activeLineGutter": { backgroundColor: "var(--hl-active-line)" },
   "&.cm-focused .cm-cursor": { borderLeftColor: "var(--text)" },
   "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection": {
@@ -69,16 +74,32 @@ const diagnosticLines = StateField.define({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-// The JSON viewer marks the lines the source entry under the editor cursor produces (app.js, applyHighlight).
+// Marked lines for the source highlight (app.js, applyHighlight): in the editor, the lines of the entry under the
+// cursor; in the JSON viewer, the lines it produces. The viewer drops its marks when its text is replaced; the editor
+// keeps them on their lines while the user types, until the next evaluation sets new ones.
 const setSourceLines = StateEffect.define();
-const sourceLines = StateField.define({
+const sourceLinesField = (keepOnEdit) => StateField.define({
   create: () => Decoration.none,
   update(deco, tr) {
+    deco = tr.docChanged ? (keepOnEdit ? deco.map(tr.changes) : Decoration.none) : deco;
     for (const e of tr.effects) if (e.is(setSourceLines)) deco = e.value;
-    return tr.docChanged ? Decoration.none : deco;
+    return deco;
   },
   provide: (f) => EditorView.decorations.from(f),
 });
+const editorSourceLines = sourceLinesField(true);
+const viewerSourceLines = sourceLinesField(false);
+
+// lineMarks turns 1-based inclusive line spans (possibly overlapping) into line decorations.
+function lineMarks(doc, spans) {
+  const lines = new Set();
+  for (const { from, to } of spans) for (let n = Math.max(1, from); n <= Math.min(to, doc.lines); n++) lines.add(n);
+  const builder = new RangeSetBuilder();
+  for (const n of [...lines].sort((a, b) => a - b)) {
+    builder.add(doc.line(n).from, doc.line(n).from, Decoration.line({ class: "cm-src-line" }));
+  }
+  return builder.finish();
+}
 
 // offset converts the tool's 1-based line and column (columns count code points) into a document offset.
 function offset(doc, line, column) {
@@ -127,7 +148,7 @@ function createEditor(parent, { doc = "", label = "", onChange = () => {}, onCur
         Prec.high(keymap.of([
           { key: "Enter", run: insertNewlineContinueMarkup },
           { key: "Backspace", run: deleteMarkupBackward },
-        ])), markerPlugin, diagnosticLines, theme,
+        ])), markerPlugin, diagnosticLines, editorSourceLines, theme,
         EditorView.contentAttributes.of({ "aria-label": label, spellcheck: "false", autocapitalize: "off" }),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChange();
@@ -154,6 +175,8 @@ function createEditor(parent, { doc = "", label = "", onChange = () => {}, onCur
       });
       view.focus();
     },
+    // spans: [{from, to}] the source lines of the entry under the cursor; no scrolling, the cursor is already there.
+    setHighlight(spans) { view.dispatch({ effects: setSourceLines.of(lineMarks(view.state.doc, spans)) }); },
     setDiagnostics(list) {
       const { diags, lines } = toDiagnostics(view.state.doc, list);
       view.dispatch(setDiagnostics(view.state, diags));
@@ -168,7 +191,7 @@ function createViewer(parent, { label = "" } = {}) {
     parent,
     state: EditorState.create({
       extensions: [
-        lineNumbers(), foldGutter(), EditorState.readOnly.of(true), EditorView.editable.of(false), json(), sourceLines,
+        lineNumbers(), foldGutter(), EditorState.readOnly.of(true), EditorView.editable.of(false), json(), viewerSourceLines,
         syntaxHighlighting(highlight), search(), keymap.of(searchKeymap), theme,
         EditorView.contentAttributes.of({ "aria-label": label }),
       ],
@@ -184,13 +207,7 @@ function createViewer(parent, { label = "" } = {}) {
     // EditorView.scrollIntoView would also scroll the page, which jumps away from the editor the user is typing in.
     setHighlight(spans) {
       const doc = view.state.doc;
-      const builder = new RangeSetBuilder();
-      for (const { from, to } of spans) {
-        for (let n = Math.max(1, from); n <= Math.min(to, doc.lines); n++) {
-          builder.add(doc.line(n).from, doc.line(n).from, Decoration.line({ class: "cm-src-line" }));
-        }
-      }
-      view.dispatch({ effects: setSourceLines.of(builder.finish()) });
+      view.dispatch({ effects: setSourceLines.of(lineMarks(doc, spans)) });
       if (!spans.length || spans[0].from > doc.lines) return;
       const top = view.lineBlockAt(doc.line(spans[0].from).from).top;
       const s = view.scrollDOM;

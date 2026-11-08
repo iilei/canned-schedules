@@ -96,9 +96,9 @@ by Grafana's (sequential for ordered states, categorical for rotations, and the 
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
 the URL fragment, which browsers never send to the server. The page's SVG, shown and downloaded, always embeds the
 canonical request (like `--svg-embed-source`) and lists the annotations (like `--svg-annotations`), so a downloaded
-picture stays traceable to its schedule. The line under the cursor shows what it produces: a range, its STATE
-block or the BASE block puts diagonal stripes on the week where it paints (dashed where a later range paints over
-it), the H1 and META items get a frame in the SVG, and the JSON tab marks the lines each one produces (for the
+picture stays traceable to its schedule. The line under the cursor shows what it produces (and the editor marks the lines that produce it): a range, its STATE
+block or the BASE block sprinkles black-and-white dots on the week where it paints (sparser where a later range
+paints over it), the H1 and META items get a frame in the SVG, and the JSON tab marks the lines each one produces (for the
 META marker: summary and the whole `annotations` object; for ranges: the runs and transitions where its state
 shows). A line below the SVG explains it with the
 [paint trace](#paint-trace). It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
