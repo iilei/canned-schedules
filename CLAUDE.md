@@ -517,6 +517,23 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   shows inline in a note (a project access token; `CI_JOB_TOKEN` can do neither). Steps that write to a forge say
   so in their names and support a dry run. Left for later: a body hash and `run=`/`tool=` in the marker, `source.md`
   in the artifact.
+  - **Built in the companion (2026-11-08):** `preview render` (the files and comment of `schedule:check`, byte for
+    byte) and `preview post --forge github` (canned-schedules-companion #2, #3).
+- **Previews are CI's job; the playground link is opt-in (decided 2026-11-08).** By default the comment carries the
+  report and the text form, and the files stay where the team's workflow puts them, so nobody has to wonder where a
+  request's data lands (company restrictions). The bot never links to the public Pages site. A team that hosts the
+  preflight page itself (`mise run web:build`, served from its own Pages site or intranet) opts in with the
+  companion's `preview render --fiddle-link-base-uri <https URI>`: the comment then ends with "Try this schedule in
+  the playground and see its week", linking to that page with the schedule in `#doc=` (base64url, no padding, as
+  `fromHash` in `web/app.js` reads it). Browsers never send the fragment to the server, so the schedule stays in
+  the reader's browser even on the team's own host. Valid requests travel in canonical form, invalid ones as
+  written, so the playground marks their errors; links over 32 KiB give way to a notice. The label names the
+  playground (the full page with its editor): a week-only view (`?show=week`) was discussed but not built.
+  - **Considered and rejected:** the public page as a default link target (data would leave the forge without the
+    team deciding it), and an image URL from the page (Pages is static: an `<img>` or GitHub's image proxy never
+    runs the WebAssembly, so it can't return an SVG).
+  - **Open:** the page as a release asset (`canned-schedules-site_<version>.zip`, signed and in `checksums.txt`), so
+    a team hosts exactly the version it pins instead of building it from a checkout.
 - **Still open:** what marks a request approved (step 2), shelf versioning (step 3), minimal token scopes, the
   project's name and the demo repo (`canned-schedules-demo`) for the screen recording.
 
