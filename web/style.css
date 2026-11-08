@@ -489,6 +489,12 @@ button.ghost:disabled {
     outline: 2px solid var(--focus);
     outline-offset: -2px;
 }
+/* Source highlight: in the editor the lines of the entry under the cursor, in the JSON viewer the lines it produces.
+   Before the diagnostic rules, so an error or warning background wins on the same line. */
+.cm-src-line {
+    background-color: var(--hl-selection);
+    box-shadow: inset 3px 0 var(--text);
+}
 .cm-diag-line-error {
     background-color: var(--hl-error-line);
     box-shadow: inset 3px 0 var(--error);
@@ -496,11 +502,6 @@ button.ghost:disabled {
 .cm-diag-line-warn {
     background-color: var(--hl-warn-line);
     box-shadow: inset 3px 0 var(--warn);
-}
-/* JSON lines produced by the source entry under the editor cursor. */
-.cm-src-line {
-    background-color: var(--hl-selection);
-    box-shadow: inset 3px 0 var(--text);
 }
 /* The markers parse as Markdown links; the descendant rule beats the link colour inside them. */
 .cm-schedule-marker,
@@ -653,26 +654,17 @@ pre.flags {
     width: 100%;
     height: auto;
 }
-/* Source highlight: stripes over the week where the entry under the editor cursor paints (app.js). */
+/* Source highlight over the SVG (app.js): black and white only, so it contrasts with any state colour. The colours
+   are set in app.js (INK); this sets the text frames' lines: a white halo under a black dashed line. */
 .svg-frame .cs-highlight {
-    color: var(--text);
     pointer-events: none; /* The runs' tooltips stay reachable. */
 }
-.svg-frame .cs-hl-effective {
-    fill-opacity: 0.6;
-    stroke: currentColor;
-    stroke-width: 1.5;
-}
-.svg-frame .cs-hl-shadowed {
-    fill-opacity: 0.45;
-    stroke: currentColor;
-    stroke-width: 1;
-    stroke-dasharray: 3 3;
-}
 .svg-frame .cs-hl-text {
-    stroke: currentColor;
     stroke-width: 1.5;
     stroke-dasharray: 4 2;
+}
+.svg-frame .cs-hl-halo {
+    stroke-width: 3.5;
 }
 .highlight-status {
     color: var(--muted);

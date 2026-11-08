@@ -14,7 +14,7 @@ let ready = false;
 
 // The editor is CodeMirror (editor.js) with Markdown highlighting and diagnostics marked in place. Without editor.js
 // the plain textarea stays, behind the same small interface: value, cursorLine, hasFocus, onChange, onCursor, focus, selectAll,
-// jumpTo, setDiagnostics.
+// jumpTo, setDiagnostics, setHighlight.
 function createEditor(textarea) {
   const listeners = [];
   const cursorListeners = [];
@@ -48,6 +48,7 @@ function createEditor(textarea) {
     focus: () => textarea.focus(),
     selectAll: () => textarea.select(),
     setDiagnostics() {},
+    setHighlight() {},
     // Columns from the tool count characters (code points); textarea offsets count UTF-16 units.
     jumpTo(line, column) {
       const lines = textarea.value.split("\n");
@@ -72,8 +73,8 @@ function createJsonView(pre) {
 
 // ---- source highlight ----------------------------------------------------------------------------------------------
 
-// The entry under the editor cursor shows where it lands in the outputs. In the SVG week: diagonal stripes where a
-// range or the base paints (dense where its state shows, sparse and dashed where a later range paints over it), and
+// The entry under the editor cursor shows where it lands in the outputs. In the SVG week: dots where a
+// range or the base paints (dense where its state shows, sparse where a later range paints over it), and
 // a frame around the name, the summary or an annotation row. In the JSON tab: the lines it produces. The checker
 // computes all of it (rectangles in the preview's buckets, JSON line spans); the overlay lives only in the page's
 // DOM, so state.svg, which Download SVG saves, never carries it.
@@ -81,10 +82,16 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 // The entries on this line (the META marker has its own entry for the whole block); on a line without one (a STATE
 // marker, a blank line inside a block), every entry of the block around it.
+// Each comes with the source lines to mark in the editor: the whole block for the META marker and for a block
+// matched as a whole, otherwise the entry's own line.
 function highlightsAt(line) {
   const all = state.highlights || [];
   const hit = all.filter((h) => h.line === line);
-  return hit.length ? hit : all.filter((h) => h.block.from > 0 && line >= h.block.from && line <= h.block.to);
+  if (hit.length) {
+    return hit.map((h) => ({ ...h, source: h.kind === "meta-block" ? h.block : { from: h.line, to: h.line } }));
+  }
+  return all.filter((h) => h.block.from > 0 && line >= h.block.from && line <= h.block.to)
+    .map((h) => ({ ...h, source: h.block }));
 }
 
 function svgEl(name, attrs, ...children) {
@@ -94,9 +101,18 @@ function svgEl(name, attrs, ...children) {
   return el;
 }
 
-function stripes(id, gap, width) {
-  return svgEl("pattern", { id, width: gap, height: gap, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
-    svgEl("rect", { width, height: gap, fill: "currentColor" }));
+// The overlay draws in black and white side by side, never in a theme or state colour: every colour contrasts at
+// least 4.58:1 with black or with white, so one of the two always stands out, whatever the palette, theme or
+// override. TestHighlightInkContrast (internal/web) reads these two values and checks every palette's fills.
+const INK = { dark: "#000000", light: "#ffffff" };
+
+// Dots on a grid tilted by 45°, one per cell. Each dot is a white square sitting on a black one (the pair tilts with
+// the grid), so every dot carries both inks at full weight; most of the cell stays free for the state colour.
+function dots(id, cell, size) {
+  const c = cell / 2;
+  return svgEl("pattern", { id, width: cell, height: cell, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
+    svgEl("rect", { x: c, y: c - size, width: size, height: size, fill: INK.light }),
+    svgEl("rect", { x: c, y: c, width: size, height: size, fill: INK.dark }));
 }
 
 // While the JSON tab is hidden and marks lines for the cursor, its tab glows where the selected tab shows its
@@ -125,6 +141,7 @@ function applyHighlight(line) {
   const svg = $("svg").querySelector("svg");
   const hs = svg ? highlightsAt(line) : [];
   $("highlight-status").textContent = hs.map((h) => h.label).join("\n");
+  editor.setHighlight(hs.map((h) => h.source));
   const spans = hs.flatMap((h) => h.json || []).sort((a, b) => a.from - b.from);
   jsonView.setHighlight(spans);
   signalJsonMarks(spans);
@@ -133,14 +150,18 @@ function applyHighlight(line) {
   if (!hs.length) return;
 
   const g = svgEl("g", { class: "cs-highlight", "aria-hidden": "true" },
-    svgEl("defs", {}, stripes("cs-hl-dense", 6, 2.5), stripes("cs-hl-sparse", 10, 1.5)));
-  const rect = (r, cls, fill) => svgEl("rect", { class: cls, x: r.x, y: r.y, width: r.width, height: r.height, fill, rx: 2 });
+    svgEl("defs", {}, dots("cs-hl-dense", 6, 1.5), dots("cs-hl-sparse", 10, 1.5)));
+  const at = (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height });
+  // Painted areas get only the dots, no outline. Text has no fill to dot, so it gets a frame: a white line under a
+  // black dashed one.
+  const area = (r, fill) => g.append(svgEl("rect", { ...at(r), fill }));
+  const frame = (r) => g.append(
+    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-halo", fill: "none", stroke: INK.light }),
+    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-text", fill: "none", stroke: INK.dark }));
   const painted = (h) => h.kind === "base" || h.kind === "range";
-  // Shadowed first, so a later range of the same block draws its dense stripes on top.
-  for (const h of hs.filter(painted)) for (const r of h.shadowed) g.append(rect(r, "cs-hl-shadowed", "url(#cs-hl-sparse)"));
-  for (const h of hs) {
-    for (const r of h.rects) g.append(painted(h) ? rect(r, "cs-hl-effective", "url(#cs-hl-dense)") : rect(r, "cs-hl-text", "none"));
-  }
+  // Shadowed first, so a later range of the same block draws its dense dots on top.
+  for (const h of hs.filter(painted)) for (const r of h.shadowed) area(r, "url(#cs-hl-sparse)");
+  for (const h of hs) for (const r of h.rects) painted(h) ? area(r, "url(#cs-hl-dense)") : frame(r);
   svg.append(g); // Last, so frames around text sit on top; pointer-events: none keeps the tooltips reachable.
 }
 
