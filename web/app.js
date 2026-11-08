@@ -113,13 +113,58 @@ function svgEl(name, attrs, ...children) {
 // override. TestHighlightInkContrast (internal/web) reads these two values and checks every palette's fills.
 const INK = { dark: "#000000", light: "#ffffff" };
 
-// Dots on a grid tilted by 45°, one per cell. Each dot is a white square sitting on a black one (the pair tilts with
-// the grid), so every dot carries both inks at full weight; most of the cell stays free for the state colour.
-function dots(id, cell, size) {
-  const c = cell / 2;
-  return svgEl("pattern", { id, width: cell, height: cell, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" },
-    svgEl("rect", { x: c, y: c - size, width: size, height: size, fill: INK.light }),
-    svgEl("rect", { x: c, y: c, width: size, height: size, fill: INK.dark }));
+// Diagonal stripes over painted areas, tilted by 45°, in one ink per entry: black or white, whichever contrasts more
+// with the entry's own state colour (contrastInk). Areas where a later range paints over the entry keep that ink,
+// whatever the fill there, so one entry always reads in one ink. Each stripe is a solid core fading to transparent at
+// its edges, and the whole overlay is half transparent (STRIPE_OPACITY), so it blends into the state colour, and most
+// of the area keeps that colour. `period` is the distance between two stripes: dense
+// where the entry's state shows, wider where a later range paints over it.
+const STRIPE_WIDTH = 2.5;
+const STRIPE_OPACITY = 0.5;
+const INKS = ["light", "dark"];
+
+function fade(ink) {
+  const stop = (offset, opacity) => svgEl("stop", { offset, "stop-color": INK[ink], "stop-opacity": opacity });
+  return svgEl("linearGradient", { id: `cs-hl-fade-${ink}` },
+    stop(0, 0), stop(0.3, STRIPE_OPACITY), stop(0.7, STRIPE_OPACITY), stop(1, 0));
+}
+
+function stripes(density, ink, period) {
+  return svgEl("pattern", {
+    id: `cs-hl-${density}-${ink}`, width: period, height: period, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)",
+  }, svgEl("rect", {
+    x: (period - STRIPE_WIDTH) / 2, y: 0, width: STRIPE_WIDTH, height: period, class: `cs-hl-stripe cs-hl-stripe-${ink}`,
+  }));
+}
+
+// The fill as drawn: the browser's computed colour (the SVG is rendered in the page's theme, so palettes, overrides and
+// the theme are all resolved), blended over the SVG's background. Returns [r, g, b] in 0..255, or null.
+function drawnColor(el, under) {
+  const m = getComputedStyle(el).fill.match(/rgba?\(([^)]+)\)/);
+  if (!m) return null;
+  const [r, g, b, a = 1] = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+  return under ? [r, g, b].map((c, i) => c * a + under[i] * (1 - a)) : [r, g, b];
+}
+
+// WCAG relative luminance and contrast ratio.
+function luminance(rgb) {
+  const [r, g, b] = rgb.map((c) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+// Black or white for an entry: the ink with the higher contrast against the drawn colour of its own state (any
+// element with the state's class, e.g. a segment or the legend swatch). TestHighlightInkContrast (internal/web)
+// checks that the better ink reaches 4.5:1 on every palette fill.
+function contrastInk(svg, stateClass) {
+  const bgEl = svg.querySelector(".background");
+  const bg = (bgEl && drawnColor(bgEl)) || [255, 255, 255];
+  const el = stateClass && svg.querySelector(`rect.${stateClass}`);
+  const fill = el ? drawnColor(el, bg) : bg;
+  if (!fill) return "dark";
+  const l = luminance(fill);
+  const [lDark, lLight] = [INK.dark, INK.light].map((hex) => luminance([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))));
+  return contrast(l, lDark) >= contrast(l, lLight) ? "dark" : "light";
 }
 
 // While the JSON tab is hidden and marks lines for the cursor, its tab glows where the selected tab shows its
@@ -163,6 +208,24 @@ function showSourceStatus(labels) {
   bar.setAttribute("aria-label", labels.join(". "));
 }
 
+// The overlay draws on top of the week, so the segments under it would show nothing in devtools. Every segment an
+// overlay rect covers (even partly) therefore gets `cs-hl-under` plus the density and source line of what covers it,
+// e.g. `cs-hl-under cs-hl-under-dense cs-hl-under-line-20`; the next highlight removes them. DOM only: state.svg,
+// which Download SVG saves, is the checker's own text.
+function markSegments(svg, r, classes) {
+  for (const el of svg.querySelectorAll("rect.state")) {
+    const x = +el.getAttribute("x"), y = +el.getAttribute("y");
+    const w = +el.getAttribute("width"), hgt = +el.getAttribute("height");
+    if (r.x < x + w && x < r.x + r.width && r.y < y + hgt && y < r.y + r.height) el.classList.add("cs-hl-under", ...classes);
+  }
+}
+
+function unmarkSegments(svg) {
+  for (const el of svg.querySelectorAll(".cs-hl-under")) {
+    el.classList.remove(...[...el.classList].filter((c) => c.startsWith("cs-hl-under")));
+  }
+}
+
 function applyHighlight(line) {
   const svg = $("svg").querySelector("svg");
   const hs = svg ? highlightsAt(line) : [];
@@ -173,21 +236,32 @@ function applyHighlight(line) {
   signalJsonMarks(spans);
   if (!svg) return;
   svg.querySelector(".cs-highlight")?.remove();
+  unmarkSegments(svg);
   if (!hs.length) return;
 
   const g = svgEl("g", { class: "cs-highlight", "aria-hidden": "true" },
-    svgEl("defs", {}, dots("cs-hl-dense", 6, 1.5), dots("cs-hl-sparse", 10, 1.5)));
+    svgEl("defs", {}, ...INKS.map(fade), ...INKS.flatMap((ink) => [stripes("dense", ink, 7), stripes("sparse", ink, 13)])));
   const at = (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height });
-  // Painted areas get only the dots, no outline. Text has no fill to dot, so it gets a light frame: one dashed line
+  // Painted areas get only the stripes, no outline. Text has no fill to stripe, so it gets a light frame: one dashed line
   // whose dashes alternate between the light and the dark theme's text colour (style.css), visible on either.
-  const area = (r, fill) => g.append(svgEl("rect", { ...at(r), fill }));
-  const frame = (r) => g.append(
-    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-frame cs-hl-frame-a", fill: "none" }),
-    svgEl("rect", { ...at(r), rx: 2, class: "cs-hl-frame cs-hl-frame-b", fill: "none" }));
+  // Classes say what each rect is (for devtools): kind, source line, state, density and ink. The fill comes from
+  // style.css by density and ink, so the stylesheet shows why a rect looks the way it does.
+  const area = (r, h, density, ink) => {
+    g.append(svgEl("rect", {
+      ...at(r), class: `cs-hl-area cs-hl-${h.kind} cs-hl-line-${h.line} cs-hl-${h.class} cs-hl-${density} cs-hl-ink-${ink}`,
+    }));
+    markSegments(svg, r, [`cs-hl-under-${density}`, `cs-hl-under-line-${h.line}`]);
+  };
+  const frame = (r, h) => {
+    const what = `cs-hl-${h.kind} cs-hl-line-${h.line}${h.key ? ` cs-hl-key-${h.key}` : ""}`;
+    g.append(
+      svgEl("rect", { ...at(r), rx: 2, class: `cs-hl-frame cs-hl-frame-a ${what}` }),
+      svgEl("rect", { ...at(r), rx: 2, class: `cs-hl-frame cs-hl-frame-b ${what}` }));
+  };
   const painted = (h) => h.kind === "base" || h.kind === "range";
-  // Shadowed first, so a later range of the same block draws its dense dots on top.
-  for (const h of hs.filter(painted)) for (const r of h.shadowed) area(r, "url(#cs-hl-sparse)");
-  for (const h of hs) for (const r of h.rects) painted(h) ? area(r, "url(#cs-hl-dense)") : frame(r);
+  const inks = new Map(hs.filter(painted).map((h) => [h, contrastInk(svg, h.class)]));
+  for (const h of hs.filter(painted)) for (const r of h.shadowed) area(r, h, "sparse", inks.get(h));
+  for (const h of hs) for (const r of h.rects) painted(h) ? area(r, h, "dense", inks.get(h)) : frame(r, h);
   svg.append(g); // Last, so frames around text sit on top; pointer-events: none keeps the tooltips reachable.
 }
 

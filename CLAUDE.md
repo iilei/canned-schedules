@@ -705,18 +705,31 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (too invasive), and even a hover that only marks the source lines isn't needed: the week stays a pure output, and
   the way from the week back to the text is to put the cursor on a line. So no `data-` attributes on SVG segments,
   no per-cell stack of covered items, no document-version counter. #41 (the editing form) reads the cursor.
-  - **Black-and-white ink (decided 2026-11-08):** the overlay never uses a theme or state colour. The area is
-    sprinkled with dots on a grid tilted by 45° (`patternTransform: rotate(45)`, one dot per cell; 6 px cells where
-    the state shows, 10 px where a later range paints over it), each a 1.5 px white square sitting on a black one
-    (the pair tilts with the grid), so most of the state colour stays visible. Rotating the earlier layout (two
-    dots per cell, diagonally offset) gave straight rows: that layout already was a 45° grid. No outline around dotted areas (it confused more than it helped). Text frames
+  - **Black-and-white ink, one per entry (decided 2026-11-08):** the overlay never uses a theme or state colour.
+    An entry's areas get **diagonal stripes in one ink**, black or white, whichever contrasts more with the entry's
+    own state colour (`contrastInk` in `app.js`): the page reads the browser's computed `fill` of an element with the
+    state's class (the SVG is rendered in the page's theme, so palette, overrides and theme are resolved), blends it
+    over the SVG background and compares WCAG contrast. Where a later range paints over the entry, the stripes keep
+    the entry's ink whatever the fill there, so one entry always reads in one ink (easier to reason about than the
+    best contrast per area). Stripes tilted by 45°, each a solid core fading to transparent at
+    both edges and half transparent overall (`STRIPE_OPACITY`), so they blend into the state colour; 2.5 px every 7 px where the state shows, every 13 px where a
+    later range paints over it, so most of the area keeps the state colour. Tried and dropped the same day: static
+    dots on a 45° grid (both inks), hand-drawn noise phases, `feTurbulence` static and two-ink stripes pulsing as a
+    standing wave; none of the animations ran reliably in Brave.
+    **Classes, not inline fills (decided 2026-11-08, for debugging):** every overlay rect says what it is, e.g.
+    `cs-hl-area cs-hl-range cs-hl-line-20 cs-hl-state-2 cs-hl-dense cs-hl-ink-dark` (frames: `cs-hl-frame`, kind,
+    line, `cs-hl-key-<key>` for META items; pattern stripes: `cs-hl-stripe-<ink>`), and `style.css` assigns the
+    fills by density and ink. The overlay sits on top in `<g class="cs-highlight">`, so the **segments under it are
+    marked too** (`cs-hl-under cs-hl-under-dense cs-hl-under-line-20`, removed by the next highlight; DOM only, the
+    downloaded SVG is the checker's text). No outline around the areas (it confused more than it helped). Text frames
     (name, summary, META rows) are light: one 1 px dashed line whose dashes alternate between the light and the dark
     theme's text colour (`--text-light-scheme`, `--text-dark-scheme`), visible on either background; a black dashed
     line over a white halo was too heavy. Every colour contrasts at least 4.58:1
-    with black or white, so every dot stands out, whatever the palette, theme or override. Tried and
+    with black or white, so the picked ink always stands out, whatever the palette, theme or override. Tried and
     dropped: two-tone diagonal stripes (hid the state colour), dots as a black core in a white ring (blurred to grey
-    at 1:1). Considered and rejected: stripes in the text colour (vanish on fills close to it), per-state
-    black/white picked in Go (needs both inks under `--svg-theme auto`), and `mix-blend-mode: difference` (worst
+    at 1:1). Considered and rejected: stripes in the text colour (vanish on fills close to it), black/white picked
+    in Go (the page's computed style already resolves the theme, and the downloaded SVG never carries the overlay),
+    and `mix-blend-mode: difference` (worst
     case 2.96:1: an inverted dark fill is far less bright than white). `INK` in `app.js` is the single source;
     `TestHighlightInkContrast` reads it and requires at least 4.5:1 for the better ink on every palette fill in
     both themes, blended over the theme background (worst today: 4.65:1, classic, dark).
