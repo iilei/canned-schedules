@@ -804,6 +804,15 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Build: `mise run web:build` → `dist/site` (static files; `web/style.css` stays readable in the repo and is minified
   into the build by the editor's pinned esbuild; `app.wasm` ~10 MB raw / ~2.4 MB gzip, Go's matching
   `wasm_exec.js`, the GitLab template as `template.md`, `version.txt`, which identifies the deployed build but is not shown on the page). `mise run web:serve [--port N]` serves it on 127.0.0.1 only (default port 8080).
+- **Cache busting (decided 2026-11-08):** Pages lets browsers reuse each file for 10 minutes on its own clock, so
+  a deploy could pair a new `app.js` with an old `app.wasm` (their evaluate result has no version). `web:build`
+  ends with `editor/stamp-assets.mjs`: content hashes (`?v=<12 hex>`, SHA-256 per file) on the scripts and the
+  stylesheet in `index.html`, plus a JSON manifest (`#asset-versions`) of the files `app.js` fetches (`app.wasm`,
+  presets, palettes), which `asset()` in `app.js` appends; without the manifest (raw `web/`) plain names are used.
+  Per-file hashes keep unchanged files cached across deploys. `index.html` stays unhashed (up to 10 minutes stale,
+  but consistent with everything it loads); fonts and the dated schemas are left alone. The script fails the
+  build when a local script or stylesheet in `index.html` has no hash. Verified by driving Chromium over the
+  DevTools protocol (headless screenshots with `--timeout` stall the WebAssembly start and prove nothing).
 - Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
   minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
 - Deploy: `.github/workflows/pages.yml` publishes `dist/site` on pushes to `master` (SHA-pinned

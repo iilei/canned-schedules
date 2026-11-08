@@ -7,6 +7,13 @@ const jsonView = createJsonView($("json"));
 const DEFAULT_PRESET = "office-hours";
 const state = { theme: document.documentElement.dataset.theme || "system", flavour: "sphinx", tab: "rendered", svg: "", myst: "", text: "", preset: "" };
 const presets = []; // [{id, label, text}], from presets/index.json
+
+// Content hashes of the files this script fetches, which web:build writes into index.html (editor/stamp-assets.mjs),
+// so a deploy never pairs this script with another build's checker or presets. The raw web/ folder has none.
+const ASSET_VERSIONS = (() => {
+  try { return JSON.parse(document.getElementById("asset-versions")?.textContent || "{}"); } catch (_) { return {}; }
+})();
+const asset = (rel) => (ASSET_VERSIONS[rel] ? `${rel}?v=${ASSET_VERSIONS[rel]}` : rel);
 let current = null; // the selected preset
 let ready = false;
 
@@ -344,8 +351,8 @@ function showStatus(kind, message) {
 // ---- presets ------------------------------------------------------------------------------------------------------
 
 async function loadPresets() {
-  const list = await fetch("presets/index.json").then((r) => r.json());
-  const texts = await Promise.all(list.map((p) => fetch("presets/" + p.id + ".md").then((r) => (r.ok ? r.text() : ""))));
+  const list = await fetch(asset("presets/index.json")).then((r) => r.json());
+  const texts = await Promise.all(list.map((p) => fetch(asset("presets/" + p.id + ".md")).then((r) => (r.ok ? r.text() : ""))));
   list.forEach((p, i) => presets.push({ ...p, text: texts[i] }));
   for (const p of presets) if (!p.hidden) addPresetOption(p);
 }
@@ -599,7 +606,7 @@ const palettes = [];
 let queryPalette = null; // ?palette=…, applied once the palettes are loaded
 
 async function loadPalettes() {
-  palettes.push(...(await fetch("palettes/index.json").then((r) => r.json())));
+  palettes.push(...(await fetch(asset("palettes/index.json")).then((r) => r.json())));
   const groups = { sequential: "Sequential (ordered states)", categorical: "Categorical (unordered states)" };
   for (const [kind, label] of Object.entries(groups)) {
     const group = Object.assign(document.createElement("optgroup"), { label });
@@ -791,7 +798,7 @@ function applyQuery() {
 // server sends the file uncompressed: with Content-Encoding, Content-Length counts compressed bytes while the
 // stream delivers decompressed ones.
 async function fetchWasm() {
-  const res = await fetch("app.wasm");
+  const res = await fetch(asset("app.wasm"));
   if (!res.ok) throw new Error("app.wasm: HTTP " + res.status);
   const encoded = (res.headers.get("Content-Encoding") || "identity") !== "identity";
   const total = encoded ? 0 : Number(res.headers.get("Content-Length")) || 0;
