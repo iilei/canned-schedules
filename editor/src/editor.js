@@ -141,6 +141,7 @@ function createEditor(parent, { doc = "", label = "", onChange = () => {}, onCur
   return {
     view,
     get cursorLine() { return view.state.doc.lineAt(view.state.selection.main.head).number; },
+    get hasFocus() { return view.hasFocus; },
     get value() { return view.state.doc.toString(); },
     set value(text) { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } }); },
     focus() { view.focus(); },

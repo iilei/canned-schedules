@@ -565,7 +565,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     `internal/web/jsonmap.go` (`json.Decoder` offsets over the exact text the page shows); the viewer scrolls only
     its own box, never the page. Matching in `app.js`: the entries on the cursor line; on a line without one (a
     STATE marker, a blank line inside a block), every entry of the block around it. The trace carries `name` and
-    `meta` (block, summary, items with positions) for this.
+    `meta` (block, summary, items with positions) for this. While another tab is open and the JSON marks lines,
+    the JSON tab glows where a selected tab shows its underline (`has-marks`): three pulses when the marked lines
+    change, then a steady glow until the tab is opened; no pulse with `prefers-reduced-motion`, and nothing until
+    the user moves the cursor in the focused editor (loading a document puts the cursor on the H1).
   - **Output key order (decided 2026-11-08):** `schema-version, name, summary, annotations, base, week, transitions,
     warnings`, so what H1 and META produce is one block and `base` sits next to `week`. Key order is not contract,
     so no new `schema-version`; `gen.py` and the fixtures were regenerated.
