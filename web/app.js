@@ -140,7 +140,7 @@ function signalJsonMarks(spans) {
 // The status bar under the editor explains the entry under the cursor. Its height is fixed at two lines, so the page
 // never moves while the cursor does: each entry takes one line (cut off with "…", the full text on hover), and a
 // third entry or more turns the second line into "+N more". Screen readers get every label.
-const STATUS_HINT = "Put the cursor in the request to see what each line produces.";
+const STATUS_HINT = "Put the cursor in the schedule to see what each line produces.";
 
 function showSourceStatus(labels) {
   const bar = $("highlight-status");
@@ -253,10 +253,10 @@ function render(res) {
   $("download-text").disabled = !state.text;
   $("rendered").innerHTML = res[state.flavour + "-html"] || "";
   $("rendered").className = "rendered " + state.flavour;
-  jsonView.value = res.json || "No output: the request has errors (see Diagnostics).";
+  jsonView.value = res.json || "No output: the schedule has errors (see Diagnostics).";
   state.highlights = res.highlights || [];
   applyHighlight(editor.cursorLine); // After the JSON: replacing its text clears the viewer's marks.
-  $("ascii").textContent = res.ascii || "No preview: the request has errors (see Diagnostics).";
+  $("ascii").textContent = res.ascii || "No preview: the schedule has errors (see Diagnostics).";
   state.last = res;
 
   const report = JSON.parse(res.report);
@@ -411,7 +411,7 @@ function download(name, type, content) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current request as MyST.
+// The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current schedule as MyST.
 function downloadKit() {
   const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args());
   if (typeof zip === "string") {
@@ -640,7 +640,7 @@ function flagsText(list) {
     if (arg.startsWith("--") || lines.length === 0) lines.push(shellQuote(arg));
     else lines[lines.length - 1] += " " + shellQuote(arg);
   }
-  return ["canned-schedules", ...lines, "request.md"].join(" \\\n  ") + "\n";
+  return ["canned-schedules", ...lines, "schedule.md"].join(" \\\n  ") + "\n";
 }
 
 function renderFlags() {
@@ -846,7 +846,7 @@ async function start() {
     go.run(instance);
     loadDefaultStates();
     setStates(queryStates || defaultStates);
-    // A link with custom states opens the editor, so the reader sees why the request checks against them.
+    // A link with custom states opens the editor, so the reader sees why the schedule checks against them.
     if (queryStates) $("states-panel").open = true;
     current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
     if (current.hidden) addPresetOption(current);

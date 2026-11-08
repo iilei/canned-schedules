@@ -13,7 +13,7 @@
   With --svg-annotations, a META section above the transition table holds the summary (instead of beside the title)
   and the annotations (x-* keys), sorted like the JSON, with a rule between it and the table.
 
-  With --svg-embed-source, the metadata carries the canonical request as escaped text (not CDATA: the request could
+  With --svg-embed-source, the metadata carries the schedule in canonical form as escaped text (not CDATA: it could
   contain "]]>"), with the generator.
 */ -}}
 <svg xmlns="http://www.w3.org/2000/svg" class="canned-schedule" width="{{ .width }}" height="{{ .height }}" viewBox="0 0 {{ .width }} {{ .height }}" style="color-scheme: {{ .scheme }}" font-family="{{ html .font }}">

@@ -18,10 +18,10 @@ import (
 )
 
 // fileName names the document in reports; the page has no file.
-const fileName = "request.md"
+const fileName = "schedule.md"
 
 // errInvalid means the document has errors, so there is nothing to put into a kit.
-var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid request")
+var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid schedule")
 
 // Result is what the page shows. Previews of the Markdown are rendered even when the document has errors; the
 // canonical JSON, the schedule previews, the highlights, the MyST and the text form only when it has none. States are the
@@ -57,7 +57,7 @@ func Evaluate(src []byte, args []string) Result {
 
 		if out != nil {
 			// The page writes no file, so --svg-embed-source can't be passed; its SVG (shown and downloaded) always
-			// carries the canonical request, so a downloaded picture stays traceable to its schedule.
+			// carries the schedule in canonical form, so a downloaded picture stays traceable to its schedule.
 			opts.Preview.SVGEmbedSource = true
 			// The page shows the annotations section too: the editor already holds them, and its SVG carries the
 			// source anyway.

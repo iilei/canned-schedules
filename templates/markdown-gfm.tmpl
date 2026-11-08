@@ -4,7 +4,7 @@
   The data is the JSON report (--error-output-format json). The template uses plain Go text/template only, so it
   also runs with gomplate as a starting point for your own layout:
 
-    canned-schedules --error-output-format json --error-output-file report.json request.md
+    canned-schedules --error-output-format json --error-output-file report.json schedule.md
     gomplate -c .=report.json -f templates/markdown-gfm.tmpl
 
   Optional keys (file, location, excerpt, example) are read with index, because a missing key is an error otherwise.

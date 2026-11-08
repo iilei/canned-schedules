@@ -95,7 +95,7 @@ give the CLI the same result, as a shell command or as lines for an args file. *
 by Grafana's (sequential for ordered states, categorical for rotations, and the colour-blind safe Okabe–Ito). Light and dark themes included;
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
 the URL fragment, which browsers never send to the server. The page's SVG, shown and downloaded, always embeds the
-canonical request (like `--svg-embed-source`) and lists the annotations (like `--svg-annotations`), so a downloaded
+schedule in canonical form (like `--svg-embed-source`) and lists the annotations (like `--svg-annotations`), so a downloaded
 picture stays traceable to its schedule. The line under the cursor shows what it produces (and the editor marks the lines that produce it): a range, its STATE
 block or the BASE block sprinkles black-and-white dots on the week where it paints (sparser where a later range
 paints over it), the H1 and META items get a frame in the SVG, and the JSON tab marks the lines each one produces (for the
@@ -168,7 +168,7 @@ Or build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)
 ```sh
 mise install
 go build ./cmd/canned-schedules
-./canned-schedules [flags] request.md
+./canned-schedules [flags] schedule.md
 ```
 
 The input is always a regular file of at most 256 KiB, given after the flags. On success the canonical JSON goes to
@@ -177,7 +177,7 @@ the document or in flag values and 2 for an unusable command line or environment
 the file, unreadable input, report not writable):
 
 ```text
-request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
+schedule.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a range is exclusive, so a range that runs until midnight ends at 00:00, e.g. `21:45` to `00:00`
 ```
 
 `canned-schedules --help` prints the same list.
@@ -204,14 +204,14 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 
 | Flag                              | Default | Meaning                                                                                                                                                                                                 |
 | --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--output json\|ascii\|text`      | `json`  | What stdout carries: the canonical JSON, the ASCII preview or the text form (the canonical request with the ASCII preview)                                                                              |
+| `--output json\|ascii\|text`      | `json`  | What stdout carries: the canonical JSON, the ASCII preview or the text form (the schedule in canonical form with the ASCII preview)                                                                     |
 | `--json-output-file <path>`       |         | Write the canonical JSON (only when the document has no errors)                                                                                                                                         |
 | `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                                                                                             |
 | `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                                                                                              |
-| `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata; needs `--svg-output-file`                                                                                                                            |
+| `--svg-embed-source`              |         | Embed the schedule in canonical form in the SVG's metadata; needs `--svg-output-file`                                                                                                                   |
 | `--svg-annotations`               |         | Show a META section above the transition table: the summary and the annotations (`x-*` keys); needs `--svg-output-file`                                                                                 |
 | `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                                                                                           |
-| `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors)                                                                        |
+| `--text-output-file <path>`       |         | Write the text form: the schedule in canonical form with the ASCII preview, itself a valid schedule (only when the document has no errors)                                                              |
 | `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                                                                                                  |
 | `--preview-downsample[=N]`        | `15`    | Preview buckets in minutes (must divide 60); `=N` needs the `=`                                                                                                                                         |
 | `--no-preview-downsample`         |         | Preview at 1-minute resolution (1440 columns per day)                                                                                                                                                   |
@@ -239,7 +239,7 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 ## Previews
 
 ```sh
-./canned-schedules --output ascii request.md
+./canned-schedules --output ascii schedule.md
 ```
 
 ```text
@@ -285,18 +285,18 @@ title, so it sits with the rest of META) and the annotations (`x-*` keys), sorte
 between the section and the table. It is opt-in for the same reason as the source embed below: owners and links would otherwise travel with
 every copy of the picture.
 
-With `--svg-embed-source`, the SVG also carries the request in its `<metadata>`: the canonical form (see below) as a
+With `--svg-embed-source`, the SVG also carries the schedule in its `<metadata>`: the canonical form (see below) as a
 `cs:source` element with the generating version as an attribute. Evaluating it regenerates the JSON, so the picture
 stays traceable to its schedule. It is opt-in, because `x-*` values such as owners or issue
 links then travel with every copy of the picture. Any XML tool reads it back, for example:
 
 ```sh
-xmllint --xpath 'string(//*[local-name()="source"])' preview.svg > request.md
+xmllint --xpath 'string(//*[local-name()="source"])' preview.svg > schedule.md
 ```
 
 ### Text form
 
-`--output text` (or `--text-output-file <path>`) gives the request's **canonical form** with the ASCII preview in a
+`--output text` (or `--text-output-file <path>`) gives the schedule's **canonical form** with the ASCII preview in a
 fenced block after the name:
 
 ````markdown
@@ -322,7 +322,7 @@ MON ::::::::::::::::::::::::====================================================
 The canonical form keeps only what the syntax defines: the name, META, BASE and the STATE blocks with their ranges, in
 source order. Prose, other alerts and links are dropped. Times are written `HH:MM`, weekday expressions without spaces
 (`SAT, SUN` becomes `SAT,SUN`) and state names as the configuration spells them; grouping and order stay as written.
-The text form is itself a valid request that evaluates to the same output, because the parser reads a
+The text form is itself a valid schedule that evaluates to the same output, because the parser reads a
 code block as prose.
 
 ### Paint trace
@@ -332,9 +332,9 @@ line actually does, `--verbose` prints one line per range and one for the base t
 like the error report:
 
 ```text
-request.md:3:5: info[paint]: Minimum is the base (BASE block): 84 h not painted over
-request.md:6:5: info[paint]: Medium MON-FRI 06:00–22:00: covers 80 h, 78 h effective; shadowed: FRI 20:00–22:00 by line 9
-request.md:9:5: info[paint]: Maximum FRI 20:00–02:00: covers 6 h, all effective
+schedule.md:3:5: info[paint]: Minimum is the base (BASE block): 84 h not painted over
+schedule.md:6:5: info[paint]: Medium MON-FRI 06:00–22:00: covers 80 h, 78 h effective; shadowed: FRI 20:00–22:00 by line 9
+schedule.md:9:5: info[paint]: Maximum FRI 20:00–02:00: covers 6 h, all effective
 ```
 
 `--trace-output-file <path>` writes the same trace as JSON (`trace.schema.json`): per range the minutes it covers,
@@ -351,7 +351,7 @@ ready-to-copy setup, tested in this repo's CI:
 - **`mise run schedule:render [file...]`** renders every schedule (or the given ones) into three files next to it and
   prints the text form, in colour on a terminal:
   - `.canned-schedule.json`: the canonical output;
-  - `.canned-schedule.svg`: the preview, with the request embedded;
+  - `.canned-schedule.svg`: the preview, with the schedule embedded;
   - `.canned-schedule.txt`: the text form.
 
   It reports every broken file before failing. When a file fails, its outputs are deleted, and so are outputs whose
@@ -387,23 +387,23 @@ writes a zip with:
 - the stylesheet, generated from the same state styles as the SVG and the page. It styles only schedule admonitions,
   through Furo's own admonition variables, and follows Furo's light, dark and auto modes;
 - Ubuntu and Ubuntu Mono, used only inside schedule admonitions;
-- the request as MyST, and a README with the two `conf.py` lines:
+- the schedule as MyST, and a README with the two `conf.py` lines:
 
   ```python
   sys.path.append(os.path.abspath("_ext"))
   extensions += ["canned_schedules"]
   ```
 
-`--myst-output-file schedule.md` writes just the MyST for a request: the name, the summary, and the META, BASE and STATE
-blocks as `:::{admonition}` blocks with the classes the stylesheet expects, items written as in the request. The issue's
-free text stays out. Colours follow `--set-config-*`; regenerate the kit after changing the state styles. On the page,
+`--myst-output-file schedule.myst.md` writes just the MyST for a schedule: the name, the summary, and the META, BASE and STATE
+blocks as `:::{admonition}` blocks with the classes the stylesheet expects, items written as in the schedule. Free text
+stays out. Colours follow `--set-config-*`; regenerate the kit after changing the state styles. On the page,
 **Download MyST** gives the same file for the document in the editor.
 
-### From request to docs page
+### From schedule to docs page
 
-Treat the MyST as build output: people edit and review the GitHub-flavoured request, and the docs build regenerates
+Treat the MyST as build output: people edit and review the GitHub-flavoured schedule, and the docs build regenerates
 the MyST from it. Nobody edits the MyST by hand. Validation then stays in one place, because the tool writes no MyST
-for an invalid request and exits with 1.
+for an invalid schedule and exits with 1.
 
 In CI, run a step like this before `sphinx-build`:
 
@@ -416,7 +416,7 @@ done
 
 - **Invalid schedules fail the build.** The error report goes to stderr; use `--error-output-file` to keep it.
 - **Generated files:** either add `docs/schedules/` to `.gitignore`, or commit the files and let CI regenerate them
-  and run `git diff --exit-code docs/schedules`, so they can't drift from the requests.
+  and run `git diff --exit-code docs/schedules`, so they can't drift from the schedules.
 - **Each generated file is a page:** list them in a toctree, for example with `:glob:` and `schedules/*`. Put prose
   about a schedule on a hand-written page that links to it.
 
@@ -466,14 +466,14 @@ use, in one of three shapes:
   [`templates/markdown-gfm.tmpl`](templates/markdown-gfm.tmpl), ready to paste into an issue comment.
 
 ```sh
-./canned-schedules --error-report-template markdown-gfm --error-output-file report.md request.md
+./canned-schedules --error-report-template markdown-gfm --error-output-file report.md schedule.md
 ```
 
 There is exactly one built-in template. For your own layout, write the JSON report and render it yourself, for
 example with gomplate; the built-in template is a working starting point:
 
 ```sh
-./canned-schedules --error-output-format json --error-output-file report.json request.md
+./canned-schedules --error-output-format json --error-output-file report.json schedule.md
 gomplate -c .=report.json -f templates/markdown-gfm.tmpl
 ```
 
@@ -631,7 +631,7 @@ actions=$(jq -r --slurpfile cap capacity.json --arg prefix "$prefix" '
      $c.desired, $c.max]
   | @tsv' "$schedule")
 
-# Remove this schedule's earlier actions, so a transition that was dropped from the request stops firing.
+# Remove this schedule's earlier actions, so a transition that was dropped from the schedule stops firing.
 aws autoscaling describe-scheduled-actions --auto-scaling-group-name "$asg" --output json \
   --query "ScheduledUpdateGroupActions[?starts_with(ScheduledActionName, '$prefix-')].ScheduledActionName" |
   jq -r '.[]' |
@@ -719,7 +719,7 @@ it per run:
 ```sh
 ./canned-schedules \
   --set-config-at 'states[0].display-name' --set-config-value '"Switched off"' \
-  request.md
+  schedule.md
 ```
 
 An override replaces the value at its path; the path and the array index must exist.

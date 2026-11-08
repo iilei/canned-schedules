@@ -1,5 +1,5 @@
-// Package myst renders the schedule of a valid request as MyST Markdown for Sphinx: the name, the summary and the
-// META, BASE and STATE blocks as admonitions with the classes the Sphinx kit styles. The request's free text (editing
+// Package myst renders a valid schedule as MyST Markdown for Sphinx: the name, the summary and the
+// META, BASE and STATE blocks as admonitions with the classes the Sphinx kit styles. The schedule's free text (editing
 // hints, syntax reference) is left out; it belongs to the issue, not to a handbook page.
 package myst
 
@@ -21,11 +21,11 @@ const BaseText = "Applies wherever no range is set."
 // no-break space satisfies it while rendering as nothing, so META always looks like an admonition.
 const EmptyBody = "&nbsp;"
 
-// ErrInvalid is returned for a request with errors; only valid requests are rendered.
-var ErrInvalid = errors.New("the request has errors")
+// ErrInvalid is returned for a schedule with errors; only valid schedules are rendered.
+var ErrInvalid = errors.New("the schedule has errors")
 
 // Render parses src and renders its schedule. It needs MyST's colon_fence extension. Items are written
-// as in the request: weekdays get no {abbr} roles, which would only add noise to a file people read.
+// as in the schedule: weekdays get no {abbr} roles, which would only add noise to a file people read.
 func Render(src []byte, cfg *config.Config) (string, error) {
 	doc, diags := document.Parse(src, document.Options{})
 	if diags.HasErrors() {
@@ -93,7 +93,7 @@ func admonition(b *strings.Builder, title, class string, items []document.Item, 
 	b.WriteString(":::\n")
 }
 
-// state returns the CSS class and display name of a state id; the request is valid, so the state exists.
+// state returns the CSS class and display name of a state id; the schedule is valid, so the state exists.
 func state(cfg *config.Config, id string) (string, string) {
 	for i, t := range cfg.States {
 		if strings.EqualFold(t.ID, id) {

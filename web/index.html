@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>canned-schedules preflight</title>
-<meta name="description" content="Write a canned schedule request in Markdown and see it validated and rendered, entirely in your browser.">
+<meta name="description" content="Write a canned schedule in Markdown and see it validated and rendered, entirely in your browser.">
 <link rel="preload" href="fonts/ubuntu-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/ubuntu-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
@@ -48,9 +48,9 @@
 </div>
 
 <main class="layout">
-  <section class="pane editor-pane" id="editor-pane" aria-label="Schedule request">
+  <section class="pane editor-pane" id="editor-pane" aria-label="Schedule">
     <div class="pane-head">
-      <h2>Request</h2>
+      <h2>Schedule</h2>
       <div class="actions">
         <label class="preset-pick"><span class="visually-hidden">Preset</span>
           <select id="preset" title="Start from a preset"></select>
@@ -59,7 +59,7 @@
         <button type="button" class="ghost" id="copy-md" title="Copy the Markdown, ready to paste into an issue">Copy Markdown</button>
       </div>
     </div>
-    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Schedule request in Markdown"></textarea>
+    <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Schedule in Markdown"></textarea>
     <div class="source-status" id="highlight-status" aria-live="polite"></div>
     <div class="options">
       <label>Preview buckets
@@ -91,7 +91,7 @@
     </div>
     <details class="config" id="states-panel">
       <summary>States <span class="muted" id="states-summary"></span></summary>
-      <p class="config-note">The states your request may name, in order: the first is the default base, and colours
+      <p class="config-note">The states your schedule may name, in order: the first is the default base, and colours
         go round robin. Sent as <code>--set-config-at states</code>, like on the CLI.</p>
       <ol class="state-rows" id="state-rows"></ol>
       <div class="actions">
@@ -124,12 +124,12 @@
         <h2>Week</h2>
         <div class="actions">
           <button type="button" class="ghost" id="download-svg" disabled>Download SVG</button>
-          <button type="button" class="ghost" id="download-text" disabled title="The canonical request with the ASCII preview, itself a valid request (like --output text)">Download text</button>
+          <button type="button" class="ghost" id="download-text" disabled title="The schedule in canonical form with the ASCII preview, itself a valid schedule (like --output text)">Download text</button>
           <button type="button" class="ghost" id="download-myst" disabled title="This schedule as MyST Markdown for Sphinx; the issue's free text stays out">Download MyST</button>
           <button type="button" class="ghost" id="download-kit" disabled title="Stylesheet, fonts and a local extension for Sphinx (Furo), plus this schedule as MyST">Download Sphinx kit</button>
         </div>
       </div>
-      <div class="svg-frame" id="svg"><p class="placeholder">The week appears here once the request is valid.</p></div>
+      <div class="svg-frame" id="svg"><p class="placeholder">The week appears here once the schedule is valid.</p></div>
     </div>
 
     <div class="card">

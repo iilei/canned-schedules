@@ -51,7 +51,7 @@ func TestHelp(t *testing.T) {
 		}
 	}
 
-	for _, want := range []string{"Usage: canned-schedules [flags] request.md", "--preview-downsample[=N]", "Exit codes:"} {
+	for _, want := range []string{"Usage: canned-schedules [flags] schedule.md", "--preview-downsample[=N]", "Exit codes:"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("help is missing %q", want)
 		}
@@ -61,7 +61,7 @@ func TestHelp(t *testing.T) {
 func TestHelpFlags(t *testing.T) {
 	t.Parallel()
 
-	for _, args := range [][]string{{"-h"}, {"--help"}, {"-help"}, {"--help", "request.md"}} {
+	for _, args := range [][]string{{"-h"}, {"--help"}, {"-help"}, {"--help", "schedule.md"}} {
 		opts, diags := Parse(args)
 		if !opts.Help || len(diags) != 0 {
 			t.Errorf("%q: Help = %v, diagnostics %v", args, opts.Help, diags)
