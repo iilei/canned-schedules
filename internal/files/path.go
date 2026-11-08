@@ -32,8 +32,7 @@ func DisplayPath(path, home string) string {
 // Reason returns the cause of a file system error without the path it names: *fs.PathError messages repeat the full
 // path, which can contain the user name. Callers print their own (display) path next to it.
 func Reason(err error) string {
-	var pe *fs.PathError
-	if errors.As(err, &pe) {
+	if pe, ok := errors.AsType[*fs.PathError](err); ok {
 		return pe.Err.Error()
 	}
 

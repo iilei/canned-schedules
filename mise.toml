@@ -1,7 +1,7 @@
 [tools]
 # Keep the linter before Go so an older copy in Go's bin directory cannot shadow it.
 golangci-lint = "2.14.0"
-go = "1.25.14"
+go = "1.27.3"
 # Runs the test suites compiled to WebAssembly (test:wasm), like the browser page does.
 node = "22.22.2"
 # Builds, signs and publishes releases (.goreleaser.yml); CI uses the same version.
