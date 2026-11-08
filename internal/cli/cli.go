@@ -2,6 +2,8 @@
 package cli
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -184,26 +186,37 @@ func Parse(args []string) (Options, diag.List) {
 
 // Run evaluates one document with parsed options. It returns the output (nil on errors) and all diagnostics.
 func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
-	cfg, diags := config.Load(opts.Overrides)
+	preview := 0
+	if opts.Preview.Requested() {
+		preview = opts.Preview.Downsample
+	}
+
+	return Evaluate(opts.Overrides, opts.Schedule, preview, src)
+}
+
+// Evaluate is Run without the command line, shared with the library: preview is the bucket size of a planned
+// preview in minutes (it adds the preview-approximate warning when buckets mix states), 0 when none is planned.
+func Evaluate(overrides []config.Override, so schedule.Options, preview int, src []byte) (*schedule.Output, diag.List) {
+	cfg, diags := config.Load(overrides)
 	if cfg == nil {
 		return nil, diags
 	}
 
-	if b := opts.Schedule.Base; b != "" {
+	if b := so.Base; b != "" {
 		if _, ok := cfg.State(b); !ok {
 			return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeInvalidFlag, "--base %q: no such state", b))
 		}
 	}
 
-	out, evalDiags := schedule.Evaluate(src, cfg, opts.Schedule)
+	out, evalDiags := schedule.Evaluate(src, cfg, so)
 	diags = append(diags, evalDiags...)
 
 	if out == nil {
 		return nil, diags
 	}
 
-	if opts.Preview.Requested() {
-		if p := render.Downsample(out, cfg, opts.Preview.Downsample); p.Mixed > 0 {
+	if preview > 0 {
+		if p := render.Downsample(out, cfg, preview); p.Mixed > 0 {
 			diags = append(diags, diag.Warnf(diag.Pos{}, diag.CodePreviewApproximate,
 				"the preview uses %d-minute buckets: %d of them mix states and show the one covering most of the "+
 					"bucket (the JSON stays exact; see --preview-downsample)", p.Size, p.Mixed))
@@ -218,6 +231,21 @@ func Run(opts *Options, src []byte) (*schedule.Output, diag.List) {
 	}
 
 	return out, diags
+}
+
+// JSON encodes the canonical output exactly as the CLI prints and writes it (--json-output-file).
+func JSON(out *schedule.Output) ([]byte, error) {
+	var buf bytes.Buffer
+
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false) // Excerpts start with ">"; this JSON is not embedded in HTML.
+
+	if err := enc.Encode(out); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // SVG renders the SVG preview of a successfully evaluated document with the same config overrides. With

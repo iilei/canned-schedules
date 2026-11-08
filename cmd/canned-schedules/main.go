@@ -17,7 +17,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -109,7 +108,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	case cli.OutputText:
 		data, err = cli.Text(&opts, out, src, color)
 	default:
-		data, err = encodeJSON(out)
+		data, err = cli.JSON(out)
 	}
 
 	if err != nil {
@@ -125,21 +124,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 	return exitOK
 }
 
-// encodeJSON returns the canonical JSON as printed and written (--json-output-file).
-func encodeJSON(out *schedule.Output) ([]byte, error) {
-	var buf bytes.Buffer
-
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false) // Excerpts start with ">"; this JSON is not embedded in HTML.
-
-	if err := enc.Encode(out); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
 // writeOutputs writes the requested output files: the JSON, SVG and ASCII previews, the text form, MyST, the
 // Sphinx kit and the paint trace. It only runs for documents without errors, so a failed run leaves earlier files untouched rather than
 // replacing them with broken ones. The ASCII and text files get colours only with --color always.
@@ -153,7 +137,7 @@ func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
 		path   string
 	}{
 		{flag: "--json-output-file", path: opts.Preview.JSONFile, render: func() ([]byte, error) {
-			return encodeJSON(out)
+			return cli.JSON(out)
 		}},
 		{flag: "--svg-output-file", path: opts.Preview.SVGFile, render: func() ([]byte, error) {
 			return cli.SVG(opts, out, src, generator)

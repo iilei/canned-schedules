@@ -435,17 +435,37 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     JSON schemas and the output types are unchanged: the facade's output types mirror them.
   - **Keep it narrow:** only what a consumer needs, so refactoring `internal/` stays free. `internal/web.Evaluate`
     (the WASM page's facade) is the precedent.
-  - **Shape (proposed, not built):** `Evaluate(src []byte, opts Options) (*Result, error)`: `error` only for unusable
-    options (bad overrides, a sample interval that doesn't divide 60); document problems are `Result.Diagnostics`
-    (code, severity, line, column, message, example), as in the CLI. `Options` holds what the evaluation flags hold:
-    sample interval, require-base / base, alert pattern, config overrides as (path, JSON value) pairs. `Result`
-    carries `Output` (nil on errors), `Diagnostics`, and the renderers: `Canonical()` (the canonical Markdown, for
-    promotion), `Text(TextOptions)`, `ASCII(…)`, `Report()` (JSON and Markdown, as `--error-output-format` and the
-    template give them), and **`SVG(SVGOptions)`** with `Theme` (auto, light, dark), `Downsample`, `EmbedSource` plus
-    `Generator`, `Annotations`: the same SVG the CLI writes. A preview returns its `preview-approximate` warning too.
-  - **SVG from a stored output:** `render.SVG` needs only the output and the config (the source only for the embed),
-    so the facade also offers `RenderSVG(out Output, opts SVGOptions)` on a decoded `.canned-schedule.json`: a
-    re-render for housekeeping or another theme without the Markdown.
+  - **Implemented (2026-11-08):** `cannedschedules.go`, `types.go`, `svg.go` at the root, on top of the CLI's own
+    pipeline functions (`cli.Evaluate`, split out of `cli.Run`, plus `cli.JSON`, `cli.SVG`, …), so library and CLI
+    can't produce different results.
+    - `Evaluate(src []byte, opts *Options) (*Result, error)`; `nil` options are the defaults (a pointer because
+      `Options` is large). The error only wraps `ErrInvalidOptions` (a sample interval or downsample that doesn't
+      divide 60, `Base` with `RequireBase`, a bad `AlertPattern`, anchored by the library); document and config
+      problems are `Result.Diagnostics` (`Severity`, `Code`, `Message`, `Example`, `Line`, `Column`, with message and
+      example sanitized like every CLI output).
+    - `Options`: `SampleInterval`, `RequireBase`, `Base`, `AlertPattern`, `Config []ConfigOverride{Path, Value}`
+      and `Preview *PreviewOptions{Downsample}`. **A preview is planned up front**, as with the CLI's preview flags:
+      only then does the output carry `preview-approximate`, and the preview renderers return `ErrNoPreview`
+      without it, so a library user never gets different warnings than a CLI run with the same previews.
+    - `Result`: `Output *Output` (nil on errors), `Diagnostics`, `Valid()`, `JSON()` (the CLI's exact bytes),
+      `Canonical()` (for promotion), `Text(color)`, `ASCII(color)`, `SVG(SVGOptions)`, `Report(file)`. Renderers of
+      an invalid document return `ErrInvalidDocument`.
+    - `SVGOptions`: `Theme` (`ThemeAuto` when empty, `ThemeLight`, `ThemeDark`), `EmbedSource`, `Generator` (empty
+      means `canned-schedules <this module's version>` from the build info, the dependency's version in a
+      companion), `Annotations`.
+    - `RenderSVG(out *Output, opts *Options, o SVGOptions)` renders a stored output with `opts.Config` and
+      `opts.Preview` only; it validates the output against its schema and requires every state it names in the
+      config. `EmbedSource` is refused there (no document).
+    - `Report` is opaque: `JSON()`, `Markdown()`, `Text()`, `Errors()`, `Warnings()`; the structure is the JSON
+      report's schema.
+    - `Output` and its parts mirror `schedule.Output` field by field, converted through JSON.
+    - **Tests:** `TestGoldenParity` runs every golden fixture through the library and the CLI pipeline with the same
+      options (flag-error fixtures skipped) and requires identical diagnostics, JSON, encoded `Output`, reports,
+      canonical form, ASCII, text form, SVG and `RenderSVG`; `Example` tests are the godoc. The root package is in
+      `test:wasm`.
+    - **Not done yet:** `apidiff` in `mise run check`; moving `cmd/canned-schedules` and `internal/web` onto the
+      facade. The `schema` and `templates` packages are importable too (they sit outside `internal/` because
+      `go:embed` can't reach parent directories) and count as API surface for `apidiff` unless declared otherwise.
   - **Licence:** importers are bound by FSL-1.1-ALv2, like users of the binary.
 - **GitLab:** a catalog component needs a GitLab project with a top-level `templates/` directory (taken here by the
   Go templates), another reason for the separate project.
@@ -948,6 +968,7 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
   (`/canned-schedules`), golangci import prefix `github.com/iilei/canned-schedules`, release texts renamed. Test files
   have relaxed lint rules (`mnd`, `perfsprint`, complexity linters, `fieldalignment`, `rangeValCopy`/`hugeParam`).
 - **Go layout** (skeleton since 2026-10-24):
+  - `.` (package `cannedschedules`): the library facade (see "Companion tooling").
   - `cmd/canned-schedules`: the CLI entry point (`--version`): input reading, report output and exit codes (see
     "Error reporting").
   - `internal/report`: the error report (txt, JSON, built-in Markdown template).
@@ -1000,7 +1021,8 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
   are stale; `mise run docs` regenerates them. `flagGroups` orders the flags and names their placeholders and
   defaults; tests require every registered flag there once and every `Code` constant in `diag.Codes` once. `-h`,
   `--help` (also with other arguments) print the help to stdout and exit 0; `--version` is a regular flag. revive's
-  `exported` rule is on. Skipped on purpose: `Example` tests (everything is `internal/`) and a separate docs site.
+  `exported` rule is on. `Example` tests exist only for the library at the root (everything else is `internal/`);
+  skipped on purpose: a separate docs site.
 - **Examples in messages and docs:** times sit on a 15-minute grid (`6:15`, `21:45`). Never use `23:59`: it reads
   like a recommended end of day, but the end of a range is exclusive and "until midnight" is written `00:00`. The
   `24:00` error says exactly that.
