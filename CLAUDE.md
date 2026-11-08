@@ -419,19 +419,38 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 ## Companion tooling (decided 2026-11-08, #38)
 
 - **A separate project, not this repo.** Everything that talks to a forge (issue comments, uploads, promotion of an
-  approved request to the shelf, releases, housekeeping) lives in a companion project: first a reusable composite
-  GitHub Action and a GitLab CI/CD component, a companion binary only once promotion (step 2) needs one. This repo
+  approved request to the shelf, releases, housekeeping) lives in a companion project: a Go binary built on the
+  library (below) from step 1 on, wrapped by a thin GitHub Action and a GitLab CI/CD component that only install and
+  run it, so later steps extend the binary instead of rewriting shell steps. This repo
   keeps its guarantee whole: nothing here calls a forge API (apart from its own CI and release), and forge clients,
   tokens and their dependencies stay out of `go.mod`, the SBOMs and Dependabot.
-- **It runs the released CLI, never embeds it.** The core lives under `internal/`, and a public Go API would be a
-  second contract to keep stable. The companion pins a release (as `examples/consumer` does), reads only the output
-  files (JSON, SVG, text form, reports) and refuses a `schema-version` it doesn't know. When it needs something the
-  outputs lack, the core gains a compatible output (a flag), e.g. the canonical Markdown without the preview for
-  promotion. Being the first real consumer of the contract counts toward the 1.0 criteria.
+- **It imports a Go library, not the CLI (decided 2026-11-08, revising the same day's "runs the released CLI").** One
+  small facade package at the module root (`github.com/iilei/canned-schedules`, package `cannedschedules`); everything
+  else stays under `internal/`. The companion pins the module in its `go.mod`, the same tag as the binary release, so
+  it is one binary on a runner: no download, no subprocess, typed diagnostics.
+  - **What is contract:** the facade's exported API, under the module's semver (before 1.0 a breaking API change raises
+    the minor, like a new `schema-version`; after 1.0 it needs the `/v2` path). Checked by `apidiff` (or `gorelease`)
+    against the last tag in `mise run check`. The CLI's flags, exit codes and stdout stay a human interface and need
+    no contract of their own; the CLI becomes a user of the facade, so the two can't drift. `schema-version`, the
+    JSON schemas and the output types are unchanged: the facade's output types mirror them.
+  - **Keep it narrow:** only what a consumer needs, so refactoring `internal/` stays free. `internal/web.Evaluate`
+    (the WASM page's facade) is the precedent.
+  - **Shape (proposed, not built):** `Evaluate(src []byte, opts Options) (*Result, error)`: `error` only for unusable
+    options (bad overrides, a sample interval that doesn't divide 60); document problems are `Result.Diagnostics`
+    (code, severity, line, column, message, example), as in the CLI. `Options` holds what the evaluation flags hold:
+    sample interval, require-base / base, alert pattern, config overrides as (path, JSON value) pairs. `Result`
+    carries `Output` (nil on errors), `Diagnostics`, and the renderers: `Canonical()` (the canonical Markdown, for
+    promotion), `Text(TextOptions)`, `ASCII(…)`, `Report()` (JSON and Markdown, as `--error-output-format` and the
+    template give them), and **`SVG(SVGOptions)`** with `Theme` (auto, light, dark), `Downsample`, `EmbedSource` plus
+    `Generator`, `Annotations`: the same SVG the CLI writes. A preview returns its `preview-approximate` warning too.
+  - **SVG from a stored output:** `render.SVG` needs only the output and the config (the source only for the embed),
+    so the facade also offers `RenderSVG(out Output, opts SVGOptions)` on a decoded `.canned-schedule.json`: a
+    re-render for housekeeping or another theme without the Markdown.
+  - **Licence:** importers are bound by FSL-1.1-ALv2, like users of the binary.
 - **GitLab:** a catalog component needs a GitLab project with a top-level `templates/` directory (taken here by the
   Go templates), another reason for the separate project.
-- **What stays here:** the forge-free parts (`schedule:check` and its outputs) and `examples/consumer`, whose
-  workflow does step 1 with plain `gh api` calls until the action exists and then calls it.
+- **What stays here:** the forge-free parts (the library, `schedule:check` and its outputs) and `examples/consumer`,
+  whose workflow does step 1 with plain `gh api` calls until the action exists and then calls it.
 - **Step 1, issue feedback** (designed in the issue's comment): one comment per issue, found by the marker
   `<!-- canned-schedules:issue-preview -->` and the bot author, edited in place; on GitHub the text form inline and
   the SVG as a workflow artifact (GitHub strips inline SVG and `data:` URIs, and bots can't attach files); on GitLab
