@@ -580,8 +580,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     the state shows, 10 px where a later range paints over it), each a 1.5 px white square sitting on a black one
     (the pair tilts with the grid), so most of the state colour stays visible. Rotating the earlier layout (two
     dots per cell, diagonally offset) gave straight rows: that layout already was a 45° grid. No outline around dotted areas (it confused more than it helped). Text frames
-    (name, summary, META rows) are a white halo under a black dashed line. Every colour contrasts at least 4.58:1
-    with black or white, so every dot and frame stands out, whatever the palette, theme or override. Tried and
+    (name, summary, META rows) are light: one 1 px dashed line whose dashes alternate between the light and the dark
+    theme's text colour (`--text-light-scheme`, `--text-dark-scheme`), visible on either background; a black dashed
+    line over a white halo was too heavy. Every colour contrasts at least 4.58:1
+    with black or white, so every dot stands out, whatever the palette, theme or override. Tried and
     dropped: two-tone diagonal stripes (hid the state colour), dots as a black core in a white ring (blurred to grey
     at 1:1). Considered and rejected: stripes in the text colour (vanish on fills close to it), per-state
     black/white picked in Go (needs both inks under `--svg-theme auto`), and `mix-blend-mode: difference` (worst
