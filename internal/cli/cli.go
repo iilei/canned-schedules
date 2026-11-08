@@ -239,7 +239,12 @@ func SVG(opts *Options, out *schedule.Output, src []byte, generator string) ([]b
 		source = &render.Source{Text: c, Generator: generator}
 	}
 
-	return render.SVG(out, cfg, opts.Preview.Downsample, opts.Preview.SVGTheme, source)
+	return render.SVG(out, cfg, opts.Preview.Downsample, svgOptions(opts, source))
+}
+
+// svgOptions collects the SVG settings of opts; Highlights uses them too, so its boxes match the SVG.
+func svgOptions(opts *Options, source *render.Source) render.SVGOptions {
+	return render.SVGOptions{Source: source, Theme: opts.Preview.SVGTheme, Annotations: opts.Preview.SVGAnnotations}
 }
 
 // Canonical writes the canonical form of a successfully evaluated document.

@@ -1,8 +1,8 @@
 {
   "schema-version": "2026-10-26",
   "name": "Schedule-Name",
-  "base": "Medium",
   "annotations": {},
+  "base": "Medium",
   "week": {
     "MON": [
       {

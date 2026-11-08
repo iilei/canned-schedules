@@ -47,7 +47,7 @@ func TestGoldenSchedulesRender(t *testing.T) {
 
 		out, cfg := evaluate(t, string(src))
 
-		svg, err := SVG(out, cfg, 15, ThemeAuto, nil)
+		svg, err := SVG(out, cfg, 15, SVGOptions{Theme: ThemeAuto})
 		if err != nil {
 			t.Fatalf("%s: %v", in, err)
 		}
@@ -99,7 +99,7 @@ func TestEscaping(t *testing.T) {
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE-STATE] Maximum\n> - `06:00` to `22:00` MON\n",
 		config.Override{Path: "states[3].display-name", Value: `"Max <b>&amp;</b> \"q\" \u0007"`})
 
-	svg, err := SVG(out, cfg, 15, ThemeAuto, nil)
+	svg, err := SVG(out, cfg, 15, SVGOptions{Theme: ThemeAuto})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestBucketTicks(t *testing.T) {
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n")
 
 	for size, minor := range map[int]bool{60: false, 30: true, 15: true, 5: false, 1: false} {
-		m := Build(out, cfg, Downsample(out, cfg, size), ThemeAuto)
+		m := Build(out, cfg, Downsample(out, cfg, size), SVGOptions{Theme: ThemeAuto})
 		if got := len(m.Ticks) > hoursPerDay+1; got != minor {
 			t.Errorf("bucket %d: minor ticks = %v, want %v", size, got, minor)
 		}
@@ -224,7 +224,7 @@ func TestTooltipsAndTable(t *testing.T) {
 
 	out, cfg := evaluate(t, "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n\n> [!SCHEDULE-STATE] Medium\n"+
 		"> - `06:00` to `22:00` MON-FRI\n> - `22:00` to `02:00` SAT,SUN\n")
-	m := Build(out, cfg, Downsample(out, cfg, 15), ThemeAuto)
+	m := Build(out, cfg, Downsample(out, cfg, 15), SVGOptions{Theme: ThemeAuto})
 
 	mon := m.Days[0].Runs
 	if len(mon) != 4 || !strings.Contains(mon[2].Tooltip, "Medium · MON 06:00–22:00\nstarts: posix 0 6 * * 1-5") {
@@ -277,7 +277,7 @@ func TestSVGThemes(t *testing.T) {
 		ThemeLight: {has: []string{light, "color-scheme: light"}, lacks: []string{dark, "prefers-color-scheme"}},
 		ThemeDark:  {has: []string{dark, "color-scheme: dark"}, lacks: []string{light, "prefers-color-scheme"}},
 	} {
-		svg, err := SVG(out, cfg, 15, theme, nil)
+		svg, err := SVG(out, cfg, 15, SVGOptions{Theme: theme})
 		if err != nil {
 			t.Fatal(err)
 		}

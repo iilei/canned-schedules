@@ -125,8 +125,8 @@ def output(base, ranges, annotations=None, name="Schedule-Name", summary=None, w
     week = paint_minutes(base, ranges)
     week_runs = paint(base, ranges)
     out.update({
-        "base": base,
         "annotations": annotations or {},
+        "base": base,
         "week": week_runs,
         "transitions": transitions(week),
         # Message text is not pinned: the golden runner replaces it with "…" before comparing. Positioned warnings

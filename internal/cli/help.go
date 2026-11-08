@@ -39,6 +39,7 @@ var flagGroups = []struct {
 		{"svg-output-file", argPath, ""},
 		{"svg-theme", "auto|light|dark", "`auto`"},
 		{"svg-embed-source", "", ""},
+		{"svg-annotations", "", ""},
 		{"ascii-output-file", argPath, ""},
 		{"text-output-file", argPath, ""},
 		{"color", "auto|always|never", "`auto`"},
