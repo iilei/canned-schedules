@@ -163,7 +163,7 @@ as well.
   and checks it against the SHA-256 digest GitHub records for the download and against its provenance attestation
   (not the GPG signature).
 
-Or build from a checkout (Go 1.25, tools pinned via [mise](https://mise.jdx.dev)):
+Or build from a checkout (Go 1.26 or newer, tools pinned via [mise](https://mise.jdx.dev)):
 
 ```sh
 mise install

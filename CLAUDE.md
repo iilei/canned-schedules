@@ -875,7 +875,8 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
 
 ## Working conventions
 
-- **Go boilerplate (`40d6d86`):** module `github.com/iilei/canned-schedules`, Go 1.25. `mise.toml` pins
+- **Go boilerplate (`40d6d86`):** module `github.com/iilei/canned-schedules`, `go 1.26.0` in `go.mod` (the oldest
+  supported Go release; raised from 1.25 on 2026-11-08, when 1.25 left security support). `mise.toml` pins
   `golangci-lint`, `go`, `node` (`test:wasm`, the editor bundle), `goreleaser`, `syft` (SBOMs) and `rumdl`. Tasks:
   `fmt`, `fmt:check`, `vet`, `lint`, `lint:md`, `fmt:md`, `test` (with `-race`), `coverage`, `build`, `tidy`,
   `check` (runs all non-mutating checks), `licenses`, `docs`, `golden:check`, `example:test`, `test:wasm`,
