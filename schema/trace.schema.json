@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-26/trace.schema.json",
+  "title": "canned-schedules paint trace",
+  "description": "Written by --trace-output-file: which minutes each range covers, where it wins and where later ranges paint over it. A debugging aid OUTSIDE the stability promise: its shape may change in any release without a new schema-version date, so it carries none. Build integrations on the canonical output, not on this. Times are exact (never preview buckets); spans are half-open, an end of 00:00 means the end of the day. Lines and columns are 1-based, columns count code points.",
+  "type": "object",
+  "required": ["base", "ranges"],
+  "properties": {
+    "base": {
+      "type": "object",
+      "required": ["state", "origin", "minutes", "effective"],
+      "properties": {
+        "state": { "type": "string" },
+        "origin": {
+          "description": "Where the base came from: the BASE block, --base, or the first configured state.",
+          "enum": ["document", "flag", "config"]
+        },
+        "line": { "$ref": "#/$defs/position" },
+        "column": { "$ref": "#/$defs/position" },
+        "minutes": {
+          "description": "Minutes of the week no range paints over.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "effective": { "$ref": "#/$defs/spans" }
+      }
+    },
+    "ranges": {
+      "description": "One entry per range item, in source order (painting order: later entries win).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["line", "column", "block", "state", "start", "end", "days", "minutes", "covers", "effective", "shadowed"],
+        "properties": {
+          "line": { "$ref": "#/$defs/position" },
+          "column": { "$ref": "#/$defs/position" },
+          "block": {
+            "description": "Lines of the STATE block the item belongs to, from its marker to its last item.",
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "$ref": "#/$defs/position" },
+              "to": { "$ref": "#/$defs/position" }
+            }
+          },
+          "state": { "type": "string" },
+          "start": { "$ref": "#/$defs/time" },
+          "end": { "$ref": "#/$defs/time" },
+          "days": {
+            "description": "Start days in the order written, wrap-around ranges expanded.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/day" }
+          },
+          "minutes": {
+            "description": "Minutes of the week the range covers.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "covers": { "$ref": "#/$defs/spans" },
+          "effective": {
+            "description": "Where this range paints last, so its state shows.",
+            "$ref": "#/$defs/spans"
+          },
+          "shadowed": {
+            "description": "Where the range covers the week but a later range paints over it; by is that range's line.",
+            "type": "array",
+            "items": {
+              "allOf": [{ "$ref": "#/$defs/span" }],
+              "required": ["by"],
+              "properties": { "by": { "$ref": "#/$defs/position" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "position": { "type": "integer", "minimum": 1 },
+    "time": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+    "day": { "enum": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] },
+    "span": {
+      "type": "object",
+      "required": ["day", "start", "end"],
+      "properties": {
+        "day": { "$ref": "#/$defs/day" },
+        "start": { "$ref": "#/$defs/time" },
+        "end": { "$ref": "#/$defs/time" }
+      }
+    },
+    "spans": { "type": "array", "items": { "$ref": "#/$defs/span" } }
+  }
+}

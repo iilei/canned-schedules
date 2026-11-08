@@ -371,3 +371,66 @@ func embedded(t *testing.T, path string) string {
 
 	return svg.Metadata.Source.Text
 }
+
+func TestVerboseAndTraceFile(t *testing.T) {
+	t.Parallel()
+
+	const src = "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n\n" +
+		"> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n\n" +
+		"> [!SCHEDULE-STATE] Maximum\n> - `20:00` to `02:00` FRI\n"
+
+	dir := t.TempDir()
+	input := filepath.Join(dir, "plan.md")
+	trace := filepath.Join(dir, "trace.json")
+
+	if err := os.WriteFile(input, []byte(src), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var plain, stdout, stderr bytes.Buffer
+
+	run([]string{input}, &plain, &stderr)
+
+	if code := run([]string{"--verbose", "--trace-output-file", trace, input}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("exit %d: %s", code, stderr.String())
+	}
+
+	if stdout.String() != plain.String() {
+		t.Error("--verbose must not change stdout")
+	}
+
+	// Positions and the code are what editors use; the wording is not contract.
+	lines := strings.Split(strings.TrimSpace(stderr.String()), "\n")
+	for i, want := range []string{":3:5: info[paint]: ", ":6:5: info[paint]: ", ":9:5: info[paint]: "} {
+		if i >= len(lines) || !strings.Contains(lines[i], want) {
+			t.Errorf("line %d = %q, want %q", i, lines, want)
+		}
+	}
+
+	if !strings.Contains(stderr.String(), "by line 9") {
+		t.Errorf("the shadowed part must name the overriding line: %s", stderr.String())
+	}
+
+	data, err := os.ReadFile(trace)
+	if err != nil || !strings.Contains(string(data), `"origin": "document"`) {
+		t.Errorf("trace file: %v %s", err, data)
+	}
+
+	// With errors: no trace lines, and the trace file stays as it was.
+	bad := filepath.Join(dir, "bad.md")
+	if err := os.WriteFile(bad, []byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"),
+		0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	stderr.Reset()
+
+	if code := run([]string{"--verbose", "--trace-output-file", trace, bad}, &stdout, &stderr); code != exitInvalid ||
+		strings.Contains(stderr.String(), "info[paint]") {
+		t.Errorf("exit %d, stderr %s", code, stderr.String())
+	}
+
+	if after, _ := os.ReadFile(trace); !bytes.Equal(after, data) {
+		t.Error("a failed run must leave the trace file alone")
+	}
+}

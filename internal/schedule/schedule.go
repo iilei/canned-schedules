@@ -72,10 +72,20 @@ type Run struct {
 	State string `json:"state"`
 }
 
-// stateRange is one parsed range item together with the state it paints.
+// stateRange is one parsed range item together with the state it paints, its position and its STATE block's lines.
 type stateRange struct {
 	state config.State
 	expr.Range
+	block Lines
+	pos   diag.Pos
+}
+
+// evaluation is what Evaluate and Explain share: the parsed document, its ranges in source order and the base.
+type evaluation struct {
+	doc    *document.Document
+	meta   meta
+	base   config.State
+	ranges []stateRange
 }
 
 // Warnings converts the warnings among diags, sorted by position (those without a position first).
@@ -105,6 +115,33 @@ func Warnings(src []byte, diags diag.List) []Warning {
 
 // Evaluate parses src and paints the week. The output is nil when there are errors.
 func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List) {
+	ev, diags := evaluate(src, cfg, opts)
+	if ev == nil {
+		return nil, diags
+	}
+
+	week := paint(ev.base, ev.ranges)
+	out := &Output{
+		SchemaVersion: ev.meta.schemaVersion,
+		Name:          ev.doc.Name.Value,
+		Summary:       ev.meta.summary,
+		Base:          ev.base.ID,
+		Annotations:   ev.meta.annotations,
+		Week:          weekRuns(week),
+		Transitions:   transitions(week),
+		Warnings:      Warnings(src, diags),
+	}
+
+	if err := out.Finish(); err != nil {
+		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
+			"internal error, please report it: the output fails its own schema: %v", err))
+	}
+
+	return out, diags
+}
+
+// evaluate parses src and resolves META, the ranges and the base. It returns nil when there are errors.
+func evaluate(src []byte, cfg *config.Config, opts Options) (*evaluation, diag.List) {
 	doc, diags := document.Parse(src, document.Options{AlertPattern: opts.AlertPattern})
 	if diags.HasErrors() {
 		return nil, diags
@@ -125,24 +162,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		return nil, diags
 	}
 
-	week := paint(base, ranges)
-	out := &Output{
-		SchemaVersion: m.schemaVersion,
-		Name:          doc.Name.Value,
-		Summary:       m.summary,
-		Base:          base.ID,
-		Annotations:   m.annotations,
-		Week:          weekRuns(week),
-		Transitions:   transitions(week),
-		Warnings:      Warnings(src, diags),
-	}
-
-	if err := out.Finish(); err != nil {
-		return nil, append(diags, diag.Errorf(diag.Pos{}, diag.CodeOutputSchema,
-			"internal error, please report it: the output fails its own schema: %v", err))
-	}
-
-	return out, diags
+	return &evaluation{doc: doc, meta: m, ranges: ranges, base: base}, diags
 }
 
 // resolveStates maps every STATE block to its config state and parses its range items, in source order.
@@ -152,7 +172,10 @@ func resolveStates(doc *document.Document, cfg *config.Config, sampleInterval in
 		diags  diag.List
 	)
 
-	for _, d := range doc.States {
+	for i := range doc.States {
+		d := &doc.States[i]
+		block := blockLines(d)
+
 		t, ok := cfg.State(d.Title.Value)
 		if !ok {
 			diags = append(diags, unknownState(cfg, d.Title))
@@ -163,7 +186,7 @@ func resolveStates(doc *document.Document, cfg *config.Config, sampleInterval in
 			diags = append(diags, rangeDiags...)
 
 			if ok && !rangeDiags.HasErrors() {
-				ranges = append(ranges, stateRange{state: t, Range: r})
+				ranges = append(ranges, stateRange{state: t, Range: r, block: block, pos: item.Pos})
 			}
 		}
 	}

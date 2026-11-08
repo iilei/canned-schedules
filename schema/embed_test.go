@@ -85,6 +85,19 @@ func TestVersionIsTheSingleSource(t *testing.T) {
 		}
 	}
 
+	// The trace has a versioned $id like the others but no schema-version: it is outside the stability promise.
+	var trace struct {
+		ID string `json:"$id"`
+	}
+
+	if err := json.Unmarshal(TraceSchema, &trace); err != nil {
+		t.Fatal(err)
+	}
+
+	if trace.ID != TraceSchemaURL {
+		t.Errorf("trace.schema.json: $id %q; want %q", trace.ID, TraceSchemaURL)
+	}
+
 	var cfg struct {
 		Schema        string `json:"$schema"`
 		SchemaVersion string `json:"schema-version"`

@@ -90,6 +90,14 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitUsage
 	}
 
+	if opts.Trace.Verbose {
+		if err := writeVerbose(&opts, display(file), src, stderr); err != nil {
+			fmt.Fprintln(stderr, diag.Sanitize(err.Error()))
+
+			return exitInvalid
+		}
+	}
+
 	var (
 		data []byte
 		err  error
@@ -132,8 +140,8 @@ func encodeJSON(out *schedule.Output) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// writeOutputs writes the requested output files: the JSON, SVG and ASCII previews, the text form, MyST and the
-// Sphinx kit. It only runs for documents without errors, so a failed run leaves earlier files untouched rather than
+// writeOutputs writes the requested output files: the JSON, SVG and ASCII previews, the text form, MyST, the
+// Sphinx kit and the paint trace. It only runs for documents without errors, so a failed run leaves earlier files untouched rather than
 // replacing them with broken ones. The ASCII and text files get colours only with --color always.
 func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
 	fileColor := opts.Preview.Color == cli.ColorAlways
@@ -162,6 +170,14 @@ func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
 		{flag: "--sphinx-kit-output-file", path: opts.Sphinx.KitFile, render: func() ([]byte, error) {
 			return cli.SphinxKit(opts, src, generator)
 		}},
+		{flag: "--trace-output-file", path: opts.Trace.File, render: func() ([]byte, error) {
+			tr, err := cli.Trace(opts, src)
+			if err != nil {
+				return nil, err
+			}
+
+			return tr.JSON()
+		}},
 	} {
 		if o.path == "" {
 			continue
@@ -174,6 +190,28 @@ func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
 
 		if err := files.WriteFile(o.path, display(o.path), data); err != nil {
 			return fmt.Errorf("%s %w", o.flag, err)
+		}
+	}
+
+	return nil
+}
+
+// writeVerbose prints the paint trace (--verbose) to stderr in the txt report's shape, so editors link the lines. It
+// follows the report; --error-output-file doesn't redirect it. The wording is not contract.
+func writeVerbose(opts *cli.Options, file string, src []byte, stderr io.Writer) error {
+	tr, err := cli.Trace(opts, src)
+	if err != nil {
+		return err
+	}
+
+	for _, l := range tr.Lines() {
+		prefix := file
+		if l.Pos.Line > 0 {
+			prefix = fmt.Sprintf("%s:%d:%d", file, l.Pos.Line, l.Pos.Col)
+		}
+
+		if _, err := fmt.Fprintln(stderr, diag.Sanitize(prefix+": info[paint]: "+l.Message)); err != nil {
+			return err
 		}
 	}
 

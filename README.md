@@ -95,7 +95,9 @@ give the CLI the same result, as a shell command or as lines for an args file. *
 by Grafana's (sequential for ordered states, categorical for rotations, and the colour-blind safe Okabe–Ito). Light and dark themes included;
 nothing is uploaded. **Copy link** gives a URL with the document and all settings to share; the document travels in
 the URL fragment, which browsers never send to the server. The page's SVG, shown and downloaded, always embeds the
-canonical request (like `--svg-embed-source`), so a downloaded picture stays traceable to its schedule. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
+canonical request (like `--svg-embed-source`), so a downloaded picture stays traceable to its schedule. With the
+cursor in a range, its STATE block or the BASE block, the week shows diagonal stripes where that line paints (dashed
+where a later range paints over it), with the [paint trace](#paint-trace) in a line below. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
 
 ```sh
 mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)
@@ -196,20 +198,21 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 
 **Outputs**
 
-| Flag                              | Default | Meaning                                                                                                                          |
-| --------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `--output json\|ascii\|text`      | `json`  | What stdout carries: the canonical JSON, the ASCII preview or the text form (the canonical request with the ASCII preview)       |
-| `--json-output-file <path>`       |         | Write the canonical JSON (only when the document has no errors)                                                                  |
-| `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                      |
-| `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                       |
-| `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata; needs `--svg-output-file`                                                     |
-| `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                    |
-| `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors) |
-| `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                           |
-| `--preview-downsample[=N]`        | `15`    | Preview buckets in minutes (must divide 60); `=N` needs the `=`                                                                  |
-| `--no-preview-downsample`         |         | Preview at 1-minute resolution (1440 columns per day)                                                                            |
-| `--myst-output-file <path>`       |         | Write the schedule as MyST for Sphinx (only when the document has no errors)                                                     |
-| `--sphinx-kit-output-file <path>` |         | Write the Sphinx kit zip (only when the document has no errors)                                                                  |
+| Flag                              | Default | Meaning                                                                                                                                                                                                 |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--output json\|ascii\|text`      | `json`  | What stdout carries: the canonical JSON, the ASCII preview or the text form (the canonical request with the ASCII preview)                                                                              |
+| `--json-output-file <path>`       |         | Write the canonical JSON (only when the document has no errors)                                                                                                                                         |
+| `--svg-output-file <path>`        |         | Write an SVG preview (only when the document has no errors)                                                                                                                                             |
+| `--svg-theme auto\|light\|dark`   | `auto`  | SVG colours: `auto` (follow the viewer), `light` or `dark`                                                                                                                                              |
+| `--svg-embed-source`              |         | Embed the canonical request in the SVG's metadata; needs `--svg-output-file`                                                                                                                            |
+| `--ascii-output-file <path>`      |         | Write an ASCII preview (only when the document has no errors)                                                                                                                                           |
+| `--text-output-file <path>`       |         | Write the text form: the canonical request with the ASCII preview, itself a valid request (only when the document has no errors)                                                                        |
+| `--color auto\|always\|never`     | `auto`  | Colours in the ASCII preview; `auto` means on a terminal only, and not with `NO_COLOR`                                                                                                                  |
+| `--preview-downsample[=N]`        | `15`    | Preview buckets in minutes (must divide 60); `=N` needs the `=`                                                                                                                                         |
+| `--no-preview-downsample`         |         | Preview at 1-minute resolution (1440 columns per day)                                                                                                                                                   |
+| `--myst-output-file <path>`       |         | Write the schedule as MyST for Sphinx (only when the document has no errors)                                                                                                                            |
+| `--sphinx-kit-output-file <path>` |         | Write the Sphinx kit zip (only when the document has no errors)                                                                                                                                         |
+| `--trace-output-file <path>`      |         | Write the paint trace as JSON: what each range covers, where it shows and where later ranges paint over it; a debugging aid, its shape may change in any release (only when the document has no errors) |
 
 **Error report**
 
@@ -221,10 +224,11 @@ request.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a ra
 
 **Other**
 
-| Flag        | Default | Meaning                    |
-| ----------- | ------- | -------------------------- |
-| `--help`    |         | Print this help and exit   |
-| `--version` |         | Print the version and exit |
+| Flag        | Default | Meaning                                                                                                                         |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `--verbose` |         | Print the paint trace to stderr, one `file:line:col` line per range and one for the base (only when the document has no errors) |
+| `--help`    |         | Print this help and exit                                                                                                        |
+| `--version` |         | Print the version and exit                                                                                                      |
 <!-- end generated -->
 
 ## Previews
@@ -310,6 +314,23 @@ source order. Prose, other alerts and links are dropped. Times are written `HH:M
 (`SAT, SUN` becomes `SAT,SUN`) and state names as the configuration spells them; grouping and order stay as written.
 The text form is itself a valid request that evaluates to the same output, because the parser reads a
 code block as prose.
+
+### Paint trace
+
+Later ranges paint over earlier ones, and a range that crosses midnight spills into the next day. To see what each
+line actually does, `--verbose` prints one line per range and one for the base to stderr, linked to the source
+like the error report:
+
+```text
+request.md:3:5: info[paint]: Minimum is the base (BASE block): 84 h not painted over
+request.md:6:5: info[paint]: Medium MON-FRI 06:00–22:00: covers 80 h, 78 h effective; shadowed: FRI 20:00–22:00 by line 9
+request.md:9:5: info[paint]: Maximum FRI 20:00–02:00: covers 6 h, all effective
+```
+
+`--trace-output-file <path>` writes the same trace as JSON (`trace.schema.json`): per range the minutes it covers,
+where its state shows and which line paints over the rest, in exact minutes. Both are debugging aids **outside the
+stability promise**: their wording and shape may change in any release, without a new `schema-version`. Build on
+the [output](#output), not on the trace. On the preflight page, the same trace drives the stripes on the week.
 
 ## Schedules in a repo
 
@@ -750,8 +771,9 @@ so a range such as `^0.1` or `~0.1` never picks up a breaking change.
   - `2026-10-26` (`v0.2.0`): `digests` removed from the output; compare or hash `base` and `week` yourself.
   - `2026-10-25` (`v0.0.1-pre.6`): the first date, replacing `schema-version` `1`; the output and report schemas
     allow additional properties.
-- **Not part of the contract:** diagnostic messages (their codes are), the layout of the previews, and the JSON's key
-  order (stable, but parse the JSON rather than matching its text).
+- **Not part of the contract:** diagnostic messages (their codes are), the layout of the previews, the
+  [paint trace](#paint-trace) (`--verbose` and `--trace-output-file`, although its schema is published too), and the
+  JSON's key order (stable, but parse the JSON rather than matching its text).
 
 ## Development
 

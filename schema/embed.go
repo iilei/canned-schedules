@@ -23,6 +23,8 @@ const (
 	OutputSchemaURL = BaseURL + "output.schema.json"
 	ReportSchemaURL = BaseURL + "report.schema.json"
 	MetaSchemaURL   = BaseURL + "meta.schema.json"
+	// TraceSchemaURL is published with the others, but the trace is outside the stability promise.
+	TraceSchemaURL = BaseURL + "trace.schema.json"
 )
 
 var (
@@ -50,6 +52,11 @@ var (
 	//
 	//go:embed report.schema.json
 	ReportSchema []byte
+
+	// TraceSchema describes the paint trace (--trace-output-file), a debugging aid outside the stability promise.
+	//
+	//go:embed trace.schema.json
+	TraceSchema []byte
 )
 
 // Compile compiles the embedded schema raw under its $id url. Nothing is fetched over the network.

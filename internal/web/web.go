@@ -12,6 +12,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/cli"
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/htmlpreview"
+	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/sphinxkit"
 )
@@ -23,7 +24,7 @@ const fileName = "request.md"
 var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid request")
 
 // Result is what the page shows. Previews of the Markdown are rendered even when the document has errors; the
-// canonical JSON, the schedule previews, the MyST and the text form only when it has none. States are the
+// canonical JSON, the schedule previews, the highlights, the MyST and the text form only when it has none. States are the
 // effective states after the config overrides (the page's states editor starts from them), absent when the config
 // doesn't load.
 type Result struct {
@@ -38,8 +39,11 @@ type Result struct {
 	SphinxHTML     string         `json:"sphinx-html"`
 	SphinxCSS      string         `json:"sphinx-css"`
 	States         []config.State `json:"states,omitempty"`
-	Errors         int            `json:"errors"`
-	Warnings       int            `json:"warnings"`
+	// Highlights are the SVG areas each source entry paints, in the preview's buckets; the page stripes the ones
+	// under the editor cursor. Absent when the document has errors.
+	Highlights []render.Highlight `json:"highlights,omitempty"`
+	Errors     int                `json:"errors"`
+	Warnings   int                `json:"warnings"`
 }
 
 // Evaluate runs the CLI pipeline on src with the given command-line flags (no file argument).
@@ -60,6 +64,7 @@ func Evaluate(src []byte, args []string) Result {
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
 			res.Text = string(must(cli.Text(&opts, out, src, false)))
+			res.Highlights, _ = cli.Highlights(&opts, out, src)
 		}
 	}
 
@@ -72,7 +77,7 @@ func Evaluate(src []byte, args []string) Result {
 
 	r := report.Build(fileName, src, diags)
 	res.Report = encode(r)
-	res.ReportMarkdown = string(must(render(r)))
+	res.ReportMarkdown = string(must(renderReport(r)))
 	res.Errors, res.Warnings = r.Summary.Errors, r.Summary.Warnings
 
 	return res
@@ -81,7 +86,7 @@ func Evaluate(src []byte, args []string) Result {
 // Encode returns the result as a JSON string for JavaScript.
 func (r *Result) Encode() string { return encode(r) }
 
-func render(r report.Report) ([]byte, error) {
+func renderReport(r report.Report) ([]byte, error) {
 	var buf bytes.Buffer
 	err := report.Render(&buf, r, "", report.TemplateMarkdownGFM)
 

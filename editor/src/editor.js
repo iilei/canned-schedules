@@ -102,7 +102,7 @@ function toDiagnostics(doc, list) {
   return { diags, lines: builder.finish() };
 }
 
-function createEditor(parent, { doc = "", label = "", onChange = () => {} } = {}) {
+function createEditor(parent, { doc = "", label = "", onChange = () => {}, onCursor = () => {} } = {}) {
   const view = new EditorView({
     parent,
     state: EditorState.create({
@@ -118,13 +118,18 @@ function createEditor(parent, { doc = "", label = "", onChange = () => {} } = {}
           { key: "Backspace", run: deleteMarkupBackward },
         ])), markerPlugin, diagnosticLines, theme,
         EditorView.contentAttributes.of({ "aria-label": label, spellcheck: "false", autocapitalize: "off" }),
-        EditorView.updateListener.of((u) => { if (u.docChanged) onChange(); }),
+        EditorView.updateListener.of((u) => {
+          if (u.docChanged) onChange();
+          // The 1-based line of the main cursor, for the SVG highlight; also after edits, which move lines.
+          if (u.selectionSet || u.docChanged) onCursor(u.state.doc.lineAt(u.state.selection.main.head).number);
+        }),
       ],
     }),
   });
 
   return {
     view,
+    get cursorLine() { return view.state.doc.lineAt(view.state.selection.main.head).number; },
     get value() { return view.state.doc.toString(); },
     set value(text) { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } }); },
     focus() { view.focus(); },
