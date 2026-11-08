@@ -20,7 +20,7 @@ jobs:
   check:
     # The issue template sets this label (.github/ISSUE_TEMPLATE/canned_schedule_request.md).
     if: contains(github.event.issue.labels.*.name, 'Schedule')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     # Job permissions replace the workflow's, so contents: read is repeated for the checkout.
     permissions:

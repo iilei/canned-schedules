@@ -848,13 +848,23 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **`.github/workflows/release.yml`** on `v*` tags: build (goreleaser, key from `crazy-max/ghaction-import-gpg`, then
   `actions/attest-build-provenance` with `subject-checksums: checksums.txt`, so every listed file gets a provenance
   attestation), smoke (`release:smoke` per archive on its runner: ubuntu x86_64 and arm64, macOS, windows amd64 and
-  arm64, and armv7 under `qemu-user-static` binfmt on ubuntu x86_64), publish (`gh attestation verify` for every
+  arm64, and armv7 under qemu user-mode emulation via `qemu-user-binfmt` on ubuntu x86_64), publish (`gh attestation verify` for every
   archive, a `.sha256` sidecar per archive, then the draft is published; tags with `-` stay pre-releases, never
   "latest"). mise's `github:` backend verifies the attestations on install. Secrets: `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, in the
   `release` environment (deployments limited to `v*` tags; the `build` job uses it), so branch workflows can't read
   the key. Release key: a dedicated ed25519 key, `B645234C9CB8175ECA5D78A5C8447A2252E9E7B6` (README and release
   notes print it). Tags: semver, **no build metadata** (`+…`): Go modules reject it and semver ignores it for
   ordering.
+  - **Release by pushing a signed tag** (`git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`), **never on the
+    Releases page** (decided 2026-11-08): the page tags and publishes in one step, so the release is public before
+    the smoke tests run. That happened to `v0.2.1` (published as "latest" before its armv7 smoke test, without the
+    `.sha256` sidecars, which were added by hand). The build job now stops first when the tag's release is already
+    published (the tags endpoint finds published releases only, a draft gives 404).
+- **Runner labels are pinned** to the newest explicit images (decided 2026-11-08): `ubuntu-26.04`,
+  `ubuntu-26.04-arm`, `macos-26`, `windows-2025`, `windows-11-arm`, in every workflow and the consumer example.
+  `ubuntu-latest` moved from 24.04 to 26.04 gradually, run by run, and 26.04 has `qemu-user-static` only as a
+  virtual package, which broke `v0.2.1`'s armv7 smoke test. Bump the labels by hand, like the mise tools, when a
+  newer image is stable.
 - **Versions (decided 2026-10-25):** `v0.0.1-pre.1` … `pre.6` were pre-releases (never "latest", skipped by
   `go install …@latest` and mise's `latest`). From `v0.1.0` on, regular releases. Until 1.0, a **breaking change**
   (new `schema-version` date) raises the **minor** (`0.1.x` → `0.2.0`), a compatible change the **patch** (`0.1.0` →

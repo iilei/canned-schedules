@@ -823,6 +823,10 @@ mise run fmt        # apply formatting
 mise run api:diff   # the Go library's API changes since the last release
 ```
 
+Releases come from a signed tag (`git tag -s vX.Y.Z -m vX.Y.Z`, then push it): the release workflow builds a draft,
+smoke-tests every binary and only then publishes it. Don't create releases on GitHub's Releases page; the workflow
+refuses a tag whose release is already published.
+
 The spec lives in [`testdata/golden`](testdata/golden): one directory per case with the input, optional CLI
 arguments, and the expected output or diagnostics. `python3 testdata/golden/gen.py` regenerates them from an
 independent reference implementation; review the diff like any other change. Never derive fixtures from the Go code.
