@@ -20,6 +20,7 @@ jobs:
       # Actions are pinned to commit SHAs; the comment names the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0 # api:diff compares with the last release tag.
           persist-credentials: false
 
       # Installs the tools pinned in mise.toml (Go, golangci-lint, Node) and caches them. Every step below is a mise
@@ -34,6 +35,12 @@ jobs:
 
       # fmt:check, vet, lint, test (race detector) and build.
       - run: mise run check
+
+      # The Go library's API changes since the last release, in the job summary. Informational: before 1.0 a break is
+      # allowed with a new minor version, and the release workflow enforces that (api:diff --release).
+      - name: API changes since the last release
+        run: |
+          { echo '```text'; mise run -q api:diff; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Coverage of every package (-coverpkg=./...) into coverage/coverage.out, uploaded to Codecov for the README
       # badge. Pull requests from forks get no secrets; Codecov accepts those uploads without a token for public repos.

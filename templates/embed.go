@@ -1,6 +1,10 @@
 // Package templates embeds the repo-baked templates: the Markdown error report, the SVG and ASCII previews, and the
 // Sphinx schedule stylesheet. They are plain text/template, gomplate-compatible, and run on JSON-shaped models
 // (Execute).
+//
+// Not part of the stable Go API: the package sits outside internal/ only because go:embed can't reach parent
+// directories, and it may change in any release. Import github.com/iilei/canned-schedules instead; api:diff checks
+// only that package.
 package templates
 
 import (

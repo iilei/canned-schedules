@@ -1,4 +1,8 @@
 // Package schema embeds the built-in configuration and the JSON Schemas that validate configs and document META.
+//
+// Not part of the stable Go API: the package sits outside internal/ only because go:embed can't reach parent
+// directories, and it may change in any release. Import github.com/iilei/canned-schedules instead; api:diff checks
+// only that package.
 package schema
 
 import (

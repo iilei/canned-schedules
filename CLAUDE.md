@@ -409,8 +409,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `release-key.asc` (no email in the user ID, on purpose) and published on `github.com/iilei.gpg`, keys.openpgp.org
   (findable by fingerprint only, since it has no email) and keyserver.ubuntu.com.
 - **CI calls mise tasks only:** a workflow prepares the environment and runs tasks, so every failure reproduces
-  locally with the same command. `check.yml` runs `golden:check`, `check`, `coverage`, `test:wasm`, `web:build` and
-  `example:test`; the release smoke job runs `release:smoke` with `install: false` and
+  locally with the same command. `check.yml` runs `golden:check`, `check`, `api:diff` (into the job summary),
+  `coverage`, `test:wasm`, `web:build` and `example:test`; the release build job runs `api:diff --release`; the release smoke job runs `release:smoke` with `install: false` and
   `MISE_TASK_RUN_AUTO_INSTALL=false`, so five runners don't install Go and Node. Publishing steps (`goreleaser
   release`, `gh release edit`, posting issue comments) stay in workflows: **tasks never talk to GitHub**, so a local
   run can't post anything. Issue bodies reach tasks only as files (written from an env var, never interpolated with
@@ -429,8 +429,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   else stays under `internal/`. The companion pins the module in its `go.mod`, the same tag as the binary release, so
   it is one binary on a runner: no download, no subprocess, typed diagnostics.
   - **What is contract:** the facade's exported API, under the module's semver (before 1.0 a breaking API change raises
-    the minor, like a new `schema-version`; after 1.0 it needs the `/v2` path). Checked by `apidiff` (or `gorelease`)
-    against the last tag in `mise run check`. The CLI's flags, exit codes and stdout stay a human interface and need
+    the minor, like a new `schema-version`; after 1.0 it needs the `/v2` path). Checked by `apidiff` (see
+    `api:diff` below). The CLI's flags, exit codes and stdout stay a human interface and need
     no contract of their own; the CLI becomes a user of the facade, so the two can't drift. `schema-version`, the
     JSON schemas and the output types are unchanged: the facade's output types mirror them.
   - **Keep it narrow:** only what a consumer needs, so refactoring `internal/` stays free. `internal/web.Evaluate`
@@ -463,9 +463,21 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
       options (flag-error fixtures skipped) and requires identical diagnostics, JSON, encoded `Output`, reports,
       canonical form, ASCII, text form, SVG and `RenderSVG`; `Example` tests are the godoc. The root package is in
       `test:wasm`.
-    - **Not done yet:** `apidiff` in `mise run check`; moving `cmd/canned-schedules` and `internal/web` onto the
-      facade. The `schema` and `templates` packages are importable too (they sit outside `internal/` because
-      `go:embed` can't reach parent directories) and count as API surface for `apidiff` unless declared otherwise.
+    - **`api:diff` (decided 2026-11-08):** `apidiff` (`golang.org/x/exp/cmd/apidiff`, pinned in `mise.toml` as a
+      pseudo-version at least two weeks old; x/exp has no tags, and Dependabot doesn't read mise) compares the root
+      package with the newest regular release (no pre-release suffix) the code contains, from that tag's export data
+      written in a throwaway worktree. Without flags it only prints the compatible and incompatible changes: a PR
+      can't know the next version, and before 1.0 a break is allowed with a new minor. `check.yml` puts the output
+      into the job summary (checkout with `fetch-depth: 0` for the tags). `--release <tag>` (the checked-out tag) is
+      the gate: incompatible changes need a new minor before 1.0 and a new major after; the release workflow's
+      build job runs it before goreleaser, so a too small bump fails before any draft exists (delete and re-tag, as
+      for any failed release run). `--base <ref>` overrides the base. Only the root package: gorelease was rejected
+      because it always takes the whole module. A base without the library (`v0.2.0`) reports everything as new.
+      An API break without a data break raises the minor but keeps `schema-version`.
+    - **`schema` and `templates` are not stable API:** they sit outside `internal/` only because `go:embed` can't
+      reach parent directories; their package docs say so, and `api:diff` ignores them.
+    - **Not done yet:** moving `cmd/canned-schedules` and `internal/web` onto the facade (optional: parity is
+      tested).
   - **Licence:** importers are bound by FSL-1.1-ALv2, like users of the binary.
 - **GitLab:** a catalog component needs a GitLab project with a top-level `templates/` directory (taken here by the
   Go templates), another reason for the separate project.
@@ -957,9 +969,9 @@ In priority order (agreed 2026-10-25). Items 1–3 are also the **criteria for 1
 
 - **Go boilerplate (`40d6d86`):** module `github.com/iilei/canned-schedules`, `go 1.26.0` in `go.mod` (the oldest
   supported Go release; raised from 1.25 on 2026-11-08, when 1.25 left security support). `mise.toml` pins
-  `golangci-lint`, `go`, `node` (`test:wasm`, the editor bundle), `goreleaser`, `syft` (SBOMs) and `rumdl`. Tasks:
+  `golangci-lint`, `go`, `node` (`test:wasm`, the editor bundle), `goreleaser`, `syft` (SBOMs), `rumdl` and `apidiff` (`api:diff`). Tasks:
   `fmt`, `fmt:check`, `vet`, `lint`, `lint:md`, `fmt:md`, `test` (with `-race`), `coverage`, `build`, `tidy`,
-  `check` (runs all non-mutating checks), `licenses`, `docs`, `golden:check`, `example:test`, `test:wasm`,
+  `check` (runs all non-mutating checks), `licenses`, `docs`, `golden:check`, `api:diff`, `example:test`, `test:wasm`,
   `web:build`, `web:serve`, `fonts:braille`, `release:snapshot`, `release:smoke`, `release:verify`. `.golangci.yml`
   is strict (`mnd`, `nonamedreturns`, `godot`, `testpackage` outside tests, …). `.goreleaser.yml` handles releases.
   - **The old pipeline's tools (cue, jq, yq, gomplate, markdown-tool, jsonschema) are gone** from mise; rumdl came

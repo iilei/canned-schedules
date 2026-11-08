@@ -820,6 +820,7 @@ mise run check      # format check, vet, lint, tests (race detector), build
 mise run test:wasm  # the same tests compiled to WebAssembly, run under Node
 mise run web:serve  # build and serve the preflight page
 mise run fmt        # apply formatting
+mise run api:diff   # the Go library's API changes since the last release
 ```
 
 The spec lives in [`testdata/golden`](testdata/golden): one directory per case with the input, optional CLI

@@ -46,6 +46,10 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
+      # Fails before any draft exists when the Go library's API broke but the tag doesn't raise the minor version
+      # (before 1.0) or the major version.
+      - run: mise run api:diff --release "$GITHUB_REF_NAME"
+
       - run: goreleaser release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
