@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     # The GPG secrets live in this environment, which only v* tags may deploy to.
     environment: release
@@ -45,6 +45,23 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      # goreleaser creates the release as a draft, and only the publish job, after every smoke test, publishes it. A
+      # release that is already published (the Releases page tags and publishes in one step) would bypass the smoke
+      # tests, so the build stops. The tags endpoint finds published releases only; a draft gives 404 and passes.
+      - name: Refuse a tag whose release is already published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if url=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq .html_url 2>&1); then
+            echo "::error::$TAG is already published ($url). Release by pushing a signed tag (git tag -s), not on the Releases page."
+            exit 1
+          elif ! printf '%s' "$url" | grep -q 'HTTP 404'; then
+            echo "$url" >&2
+            exit 1
+          fi
 
       # Fails before any draft exists when the Go library's API broke but the tag doesn't raise the minor version
       # (before 1.0) or the major version.
@@ -78,13 +95,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: ubuntu-latest, archive: linux_x86_64.tar.gz }
-          - { runner: ubuntu-24.04-arm, archive: linux_arm64.tar.gz }
-          - { runner: macos-latest, archive: darwin_universal2.tar.gz }
-          - { runner: windows-latest, archive: windows_amd64.zip }
+          - { runner: ubuntu-26.04, archive: linux_x86_64.tar.gz }
+          - { runner: ubuntu-26.04-arm, archive: linux_arm64.tar.gz }
+          - { runner: macos-26, archive: darwin_universal2.tar.gz }
+          - { runner: windows-2025, archive: windows_amd64.zip }
           - { runner: windows-11-arm, archive: windows_arm64.zip }
           # No armv7 runner: the static binary runs under qemu's user-mode emulation (binfmt) on x86_64.
-          - { runner: ubuntu-latest, archive: linux_armv7.tar.gz, qemu: true }
+          - { runner: ubuntu-26.04, archive: linux_armv7.tar.gz, qemu: true }
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     steps:
@@ -100,7 +117,9 @@ jobs:
       - if: matrix.qemu
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq qemu-user-static
+          # qemu-user-binfmt registers qemu-user with binfmt_misc (and pulls it in). Ubuntu 26.04 has
+          # qemu-user-static only as a virtual package, which apt-get install refuses.
+          sudo apt-get install -y -qq qemu-user-binfmt
 
       # mise only, no tools: the smoke test needs none, and five runners would otherwise install Go and Node.
       - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
@@ -117,7 +136,7 @@ jobs:
 
   publish:
     needs: smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write # Uploads the sidecars and publishes the draft.
