@@ -139,3 +139,49 @@ func equalTokens(a, b []Token) bool {
 
 	return true
 }
+
+// TestGluedBlockMessages checks the wording for a marker glued to the block above, which golden fixtures don't pin:
+// a plain question about the line that glued them, or about the missing blank line.
+func TestGluedBlockMessages(t *testing.T) {
+	t.Parallel()
+
+	const (
+		directlyAbove = `Did you mean to put a blank line above, or a line starting with "> " to continue the ` +
+			"previous block?"
+		noBlankLine = "Did you mean to put a blank line above? Without it, this block continues the previous one."
+	)
+
+	tests := []struct {
+		name, src, want string
+	}{
+		{
+			name: "stray line after BASE",
+			src:  "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n.\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n",
+			want: directlyAbove,
+		},
+		{
+			name: "glued to a plain alert",
+			src:  "# Plan\n\n> [!NOTE] Read me\nmore\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n",
+			want: directlyAbove,
+		},
+		{
+			name: "stray line further up",
+			src:  "# Plan\n\n> [!SCHEDULE-BASE] Minimum\n.\n> quoted\n> [!SCHEDULE-STATE] Medium\n",
+			want: `Did you mean a blank line at line 4, or a line starting with "> " there to continue the ` +
+				"previous block?",
+		},
+		{
+			name: "no empty line",
+			src:  "# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON\n> [!SCHEDULE-STATE] Maximum\n",
+			want: noBlankLine,
+		},
+	}
+
+	for _, tt := range tests {
+		_, diags := Parse([]byte(tt.src), Options{})
+		if len(diags) != 1 || diags[0].Code != diag.CodeMisplacedDirective || diags[0].Message != tt.want ||
+			diags[0].Example != "" {
+			t.Errorf("%s: got %+v\nwant one misplaced-directive: %s", tt.name, diags, tt.want)
+		}
+	}
+}

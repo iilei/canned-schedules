@@ -73,9 +73,15 @@ func (p *parser) blockquote(bq ast.Node) {
 		Title:   Text{Value: TrimSpace(rest), Pos: p.lines.pos(first.Start + m[1] + lead)},
 	}
 
+	p.cut = p.cutLine(bq)
+
 	hasBody := p.body(&d, para)
+	p.cut = 0
 	p.add(&d, hasBody)
 }
+
+// cutOff reports whether pos lies in the part of a blockquote that a glued marker split off (see glued.go).
+func (p *parser) cutOff(pos diag.Pos) bool { return p.cut > 0 && pos.Line >= p.cut }
 
 func (p *parser) kind(typ, kindName string, pos diag.Pos) (Kind, bool) {
 	if kindName == "" {
@@ -123,12 +129,19 @@ func (p *parser) body(d *Directive, para *ast.Paragraph) bool {
 		seg := para.Lines().At(i)
 		raw := string(seg.Value(p.src))
 		lead := len(raw) - len(TrimLeftSpace(raw))
-		p.unexpected(d, p.lines.pos(seg.Start+lead))
 
-		hasBody = true
+		if pos := p.lines.pos(seg.Start + lead); !p.cutOff(pos) {
+			p.unexpected(d, pos)
+
+			hasBody = true
+		}
 	}
 
 	for n := para.NextSibling(); n != nil; n = n.NextSibling() {
+		if p.cutOff(p.blockPos(n)) {
+			break
+		}
+
 		hasBody = true
 
 		list, ok := n.(*ast.List)
@@ -139,6 +152,10 @@ func (p *parser) body(d *Directive, para *ast.Paragraph) bool {
 		}
 
 		for li := list.FirstChild(); li != nil; li = li.NextSibling() {
+			if content := li.FirstChild(); content != nil && p.cutOff(p.blockPos(content)) {
+				break
+			}
+
 			p.item(d, li)
 		}
 	}
@@ -160,7 +177,9 @@ func (p *parser) item(d *Directive, li ast.Node) {
 	}
 
 	for extra := content.NextSibling(); extra != nil; extra = extra.NextSibling() {
-		p.unexpected(d, p.blockPos(extra))
+		if !p.cutOff(p.blockPos(extra)) {
+			p.unexpected(d, p.blockPos(extra))
+		}
 	}
 
 	d.Items = append(d.Items, Item{Pos: p.blockPos(content), Tokens: p.tokens(content)})

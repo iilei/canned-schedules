@@ -17,8 +17,8 @@ var Codes = []CodeDoc{
 	{CodeEmptyState, "A STATE block without ranges.", Error},
 	{
 		CodeMisplacedDirective,
-		"A directive that isn't a top-level quote starting with its marker, e.g. nested in a list " +
-			"or wrapped in bold.",
+		"A directive that isn't a top-level quote starting with its marker: nested in a list, wrapped in " +
+			"bold, or glued to the block above (no empty line between them, or a stray line without `>`).",
 		Error,
 	},
 	{CodeUnexpectedContent, "Content in a BASE block, which takes only a state name on the marker line.", Error},

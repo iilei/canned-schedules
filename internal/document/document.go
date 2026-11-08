@@ -89,6 +89,9 @@ type parser struct {
 	lines       lineIndex
 	diags       diag.List
 	doc         Document
+	// cut is where the directive being read stops when another block is glued to it (0 for none): nothing from
+	// that line on is reported against it (see glued.go).
+	cut int
 }
 
 // Parse parses src. Diagnostics are sorted by position, those without a position first.

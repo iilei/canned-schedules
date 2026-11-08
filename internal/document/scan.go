@@ -53,6 +53,16 @@ func (p *parser) scanBlock(n ast.Node) {
 
 		for _, m := range directiveLike.FindAllIndex(masked[seg.Start:seg.Stop], -1) {
 			pos := p.lines.pos(seg.Start + m[0] + len("[!"))
+
+			// A marker glued to the block above gets a message that says so and names the culprit line.
+			if top := topLevel(n); top.Kind() == ast.KindBlockquote {
+				if msg := p.gluedMessage(top, pos.Line); msg != "" {
+					p.errorf(pos, diag.CodeMisplacedDirective, "%s", msg)
+
+					continue
+				}
+			}
+
 			p.errorf(pos, diag.CodeMisplacedDirective,
 				"directives must be top-level blockquotes that start with the marker")
 			p.example("> [!SCHEDULE-STATE] Medium")

@@ -491,40 +491,40 @@ name sits inside a fenced block, where links, HTML, `@mentions` and `#references
 Every diagnostic carries one of these codes; the golden fixtures pin them, so they are part of the contract.
 
 <!-- generated: codes (mise run docs; from diag.Codes in internal/diag) -->
-| Code                      | Severity | Meaning                                                                                                                                 |
-| ------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `missing-name`            | error    | The document has no H1 heading; the H1 names the schedule.                                                                              |
-| `duplicate-name`          | error    | More than one H1 heading.                                                                                                               |
-| `invalid-name`            | error    | The name breaks the text rule: 1-80 ASCII letters, digits, spaces or hyphens, starting with a letter and ending with a letter or digit. |
-| `invalid-summary`         | error    | The summary after the META marker breaks the same text rule as the name.                                                                |
-| `invalid-marker`          | error    | A directive separates namespace and kind with `:` (`[!SCHEDULE:STATE]`); the separator is `-`.                                          |
-| `missing-kind`            | error    | A marker has the namespace but no kind (`[!SCHEDULE]`, `[!SCHEDULE-]`).                                                                 |
-| `unknown-kind`            | error    | A kind other than META, BASE or STATE.                                                                                                  |
-| `missing-title`           | error    | A BASE or STATE marker without a state name after it.                                                                                   |
-| `duplicate-block`         | error    | A second META or BASE block.                                                                                                            |
-| `empty-state`             | error    | A STATE block without ranges.                                                                                                           |
-| `misplaced-directive`     | error    | A directive that isn't a top-level quote starting with its marker, e.g. nested in a list or wrapped in bold.                            |
-| `unexpected-content`      | error    | Content in a BASE block, which takes only a state name on the marker line.                                                              |
-| `disallowed-alert`        | error    | An alert that doesn't match `--error-unless-alert-pattern`.                                                                             |
-| `invalid-range`           | error    | A STATE item that isn't `` `start` to `end` WEEKDAYS ``, or content other than a list in a STATE block.                                 |
-| `invalid-time`            | error    | A time that isn't `H:MM` or `HH:MM` from `00:00` to `23:59` (`24:00` is rejected).                                                      |
-| `sample-interval`         | error    | A time that isn't a multiple of `--sample-interval`.                                                                                    |
-| `invalid-weekday`         | error    | A weekday expression with an unknown or lowercase name, or a broken range or list.                                                      |
-| `duplicate-weekday`       | error    | The same weekday written twice in one item (`MON,MON`, `WED-WED`).                                                                      |
-| `repeated-weekday`        | warning  | A day that an earlier part of the same item already covers (`MON-WED,TUE`); the range still applies.                                    |
-| `meta-schema`             | error    | META content that isn't a list of ``key: `value` `` items, or a key or value the META schema rejects.                                   |
-| `unknown-state`           | error    | A state name the configuration doesn't define, in BASE, STATE or `--base`.                                                              |
-| `missing-base`            | error    | `--require-base true`, and the document has no BASE block.                                                                              |
-| `config-schema`           | error    | The configuration, after overrides, fails its JSON Schema.                                                                              |
-| `invalid-override`        | error    | A `--set-config-at` path that doesn't exist, or a `--set-config-value` that isn't JSON.                                                 |
-| `config-duplicate-state`  | error    | Two state ids in the configuration that are equal ignoring case.                                                                        |
-| `config-duplicate-symbol` | warning  | Two styles share a symbol, so the `styles` ASCII preset tells those states apart only by colour.                                        |
-| `style-reuse`             | warning  | Fewer styles than states: styles repeat round robin, so states become hard to tell apart.                                               |
-| `invalid-flag`            | error    | An unknown flag or an invalid flag value.                                                                                               |
-| `invalid-args`            | error    | No input file, several files, or flags after the file (exit code 2).                                                                    |
-| `input-file`              | error    | The input can't be read: missing, not a regular file, or larger than 256 KiB (exit code 2).                                             |
-| `preview-approximate`     | warning  | Preview buckets mix states, so the preview rounds; reported only when a preview is requested.                                           |
-| `output-schema`           | error    | The tool's own output failed its schema: a bug in canned-schedules, please report it.                                                   |
+| Code                      | Severity | Meaning                                                                                                                                                                                      |
+| ------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `missing-name`            | error    | The document has no H1 heading; the H1 names the schedule.                                                                                                                                   |
+| `duplicate-name`          | error    | More than one H1 heading.                                                                                                                                                                    |
+| `invalid-name`            | error    | The name breaks the text rule: 1-80 ASCII letters, digits, spaces or hyphens, starting with a letter and ending with a letter or digit.                                                      |
+| `invalid-summary`         | error    | The summary after the META marker breaks the same text rule as the name.                                                                                                                     |
+| `invalid-marker`          | error    | A directive separates namespace and kind with `:` (`[!SCHEDULE:STATE]`); the separator is `-`.                                                                                               |
+| `missing-kind`            | error    | A marker has the namespace but no kind (`[!SCHEDULE]`, `[!SCHEDULE-]`).                                                                                                                      |
+| `unknown-kind`            | error    | A kind other than META, BASE or STATE.                                                                                                                                                       |
+| `missing-title`           | error    | A BASE or STATE marker without a state name after it.                                                                                                                                        |
+| `duplicate-block`         | error    | A second META or BASE block.                                                                                                                                                                 |
+| `empty-state`             | error    | A STATE block without ranges.                                                                                                                                                                |
+| `misplaced-directive`     | error    | A directive that isn't a top-level quote starting with its marker: nested in a list, wrapped in bold, or glued to the block above (no empty line between them, or a stray line without `>`). |
+| `unexpected-content`      | error    | Content in a BASE block, which takes only a state name on the marker line.                                                                                                                   |
+| `disallowed-alert`        | error    | An alert that doesn't match `--error-unless-alert-pattern`.                                                                                                                                  |
+| `invalid-range`           | error    | A STATE item that isn't `` `start` to `end` WEEKDAYS ``, or content other than a list in a STATE block.                                                                                      |
+| `invalid-time`            | error    | A time that isn't `H:MM` or `HH:MM` from `00:00` to `23:59` (`24:00` is rejected).                                                                                                           |
+| `sample-interval`         | error    | A time that isn't a multiple of `--sample-interval`.                                                                                                                                         |
+| `invalid-weekday`         | error    | A weekday expression with an unknown or lowercase name, or a broken range or list.                                                                                                           |
+| `duplicate-weekday`       | error    | The same weekday written twice in one item (`MON,MON`, `WED-WED`).                                                                                                                           |
+| `repeated-weekday`        | warning  | A day that an earlier part of the same item already covers (`MON-WED,TUE`); the range still applies.                                                                                         |
+| `meta-schema`             | error    | META content that isn't a list of ``key: `value` `` items, or a key or value the META schema rejects.                                                                                        |
+| `unknown-state`           | error    | A state name the configuration doesn't define, in BASE, STATE or `--base`.                                                                                                                   |
+| `missing-base`            | error    | `--require-base true`, and the document has no BASE block.                                                                                                                                   |
+| `config-schema`           | error    | The configuration, after overrides, fails its JSON Schema.                                                                                                                                   |
+| `invalid-override`        | error    | A `--set-config-at` path that doesn't exist, or a `--set-config-value` that isn't JSON.                                                                                                      |
+| `config-duplicate-state`  | error    | Two state ids in the configuration that are equal ignoring case.                                                                                                                             |
+| `config-duplicate-symbol` | warning  | Two styles share a symbol, so the `styles` ASCII preset tells those states apart only by colour.                                                                                             |
+| `style-reuse`             | warning  | Fewer styles than states: styles repeat round robin, so states become hard to tell apart.                                                                                                    |
+| `invalid-flag`            | error    | An unknown flag or an invalid flag value.                                                                                                                                                    |
+| `invalid-args`            | error    | No input file, several files, or flags after the file (exit code 2).                                                                                                                         |
+| `input-file`              | error    | The input can't be read: missing, not a regular file, or larger than 256 KiB (exit code 2).                                                                                                  |
+| `preview-approximate`     | warning  | Preview buckets mix states, so the preview rounds; reported only when a preview is requested.                                                                                                |
+| `output-schema`           | error    | The tool's own output failed its schema: a bug in canned-schedules, please report it.                                                                                                        |
 <!-- end generated -->
 
 ## Output
