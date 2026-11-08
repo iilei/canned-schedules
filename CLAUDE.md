@@ -305,10 +305,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Glued blocks (decided 2026-11-08):** Markdown keeps a quote going through a line without `>` that follows it
   directly (a lazy continuation line, e.g. a stray `.`) and through quoted lines without an empty line, so the next
   marker sits inside the block above. That stays `misplaced-directive` (codes are contract), at the marker, but the
-  message is a plain question, without Markdown jargon (asked for by the user): "Did you mean to put a blank line
-  above, or a line starting with "> " to continue the previous block?" (stray line directly above), "Did you mean a
-  blank line at line N, or …" (stray line further up), "Did you mean to put a blank line above? Without it, this
-  block continues the previous one." (no stray line). No example, since the generic marker example misled. The block above stops at the culprit
+  message is plain, without Markdown jargon: "line N seems to be a stray line between two blocks; put a blank line
+  above and below it (or delete it), so this block starts on its own" when a stray line glued them (quoting that
+  line with "> " is never suggested: the block above would still swallow the marker), and "Did you mean to put a
+  blank line above? Without it, this block continues the previous one." when only the blank line is missing. No example, since the generic marker example misled. The block above stops at the culprit
   (or the marker), so its swallowed lines raise nothing else. `internal/document/glued.go`; fixtures
   `error/blocks-glued-by-lazy-line`, `error/blocks-glued-after-range`, `error/blocks-without-blank-line`.
 - **Suffix `*.canned-schedule.md`** for schedule requests tracked in a repo, e.g.
