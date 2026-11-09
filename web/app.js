@@ -286,10 +286,16 @@ function pressed(group, value) {
 // see internal/web/link.go) and puts them before the page's own, so the page's controls win on the same config path.
 let linkArgs = [];
 
+// The flags the checker gets ahead of the page's own: the selected preset's (presets/<id>.args), then the link's.
+// Both go through the same check, so a preset can only set what a link can.
+function linked() {
+  return [...(current?.args || []), ...linkArgs];
+}
+
 // The flags that shape the result, only where they differ from the CLI's defaults: the checker, the Sphinx kit and
 // the "Equivalent CLI flags" box all use these lists, so the box always shows what the page checked.
 function cliArgs() {
-  return [...linkArgs, ...pageArgs()];
+  return [...linked(), ...pageArgs()];
 }
 
 // The flags from the page's controls.
@@ -319,7 +325,7 @@ function evaluate() {
   renderFlags();
   let res;
   try {
-    res = JSON.parse(globalThis.cannedSchedules.evaluate(editor.value, args(), linkArgs));
+    res = JSON.parse(globalThis.cannedSchedules.evaluate(editor.value, args(), linked()));
   } catch (err) {
     showStatus("err", "Internal error: " + err);
     return;
@@ -434,16 +440,42 @@ function showStatus(kind, message) {
 
 // ---- presets ------------------------------------------------------------------------------------------------------
 
+// presets/index.json lists {id, label, category, args?, options?, hidden?}: the dropdown groups them by category in
+// the order of first appearance. With "args": true, presets/<id>.args holds flags for the checker, one argument per
+// line with blank lines and # comments skipped (the format of canned-schedules.args in the consumer example); they
+// take the same check as a link's ?arg=. "options" presets the page's own controls ({"symbols": "styles"}).
+const fetchText = (rel) => fetch(asset(rel)).then((r) => (r.ok ? r.text() : ""));
+
+const argLines = (text) => text.split(/\r?\n/).filter((l) => l.trim() !== "" && !l.startsWith("#"));
+
 async function loadPresets() {
   const list = await fetch(asset("presets/index.json")).then((r) => r.json());
-  const texts = await Promise.all(list.map((p) => fetch(asset("presets/" + p.id + ".md")).then((r) => (r.ok ? r.text() : ""))));
-  list.forEach((p, i) => presets.push({ ...p, text: texts[i] }));
+  const loaded = await Promise.all(list.map((p) => Promise.all([
+    fetchText("presets/" + p.id + ".md"),
+    p.args ? fetchText("presets/" + p.id + ".args").then(argLines) : [],
+  ])));
+  list.forEach((p, i) => presets.push({ ...p, text: loaded[i][0], args: loaded[i][1] }));
   for (const p of presets) if (!p.hidden) addPresetOption(p);
 }
 
 // Hidden presets (an easter egg: ?preset=yolo) stay out of the dropdown until they are opened by link.
 function addPresetOption(p) {
-  $("preset").append(Object.assign(document.createElement("option"), { value: p.id, textContent: p.label }));
+  const label = p.category || "Other";
+  let group = Array.from($("preset").children).find((g) => g.label === label);
+  if (!group) $("preset").append(group = Object.assign(document.createElement("optgroup"), { label }));
+  group.append(Object.assign(document.createElement("option"), { value: p.id, textContent: p.label }));
+}
+
+// A preset's options set the page's controls; a control the previous preset set goes back to its default, and the
+// others keep what the reader chose. Controls named in the URL (keep) stay as linked.
+function applyPresetOptions(prev, next, keep = new Set()) {
+  for (const id of CONTROLS) {
+    if (keep.has(id)) continue;
+    const sel = $(id);
+    const want = next?.options?.[id];
+    if (want !== undefined && Array.from(sel.options).some((o) => o.value === want)) sel.value = want;
+    else if (prev?.options?.[id] !== undefined) sel.value = Array.from(sel.options).find((o) => o.defaultSelected).value;
+  }
 }
 
 // Switching presets replaces the editor content; unsaved edits are only dropped after confirmation.
@@ -454,7 +486,14 @@ function choosePreset(id) {
     $("preset").value = current.id;
     return;
   }
+  const followed = !statesOverride();
+  const prev = current;
   current = next;
+  applyPresetOptions(prev, next);
+  // The preset's flags may set other states: the panel follows the new defaults unless the reader changed it.
+  loadDefaultStates();
+  if (followed) setStates(defaultStates);
+  renderLinkArgs();
   load(next.text);
 }
 
@@ -504,7 +543,7 @@ function download(name, type, content) {
 
 // The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current schedule as MyST.
 function downloadKit() {
-  const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linkArgs);
+  const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linked());
   if (typeof zip === "string") {
     showStatus("err", zip);
     return;
@@ -582,9 +621,10 @@ let stateRows = [];
 let queryStates = null; // ?states=… entries, applied once the defaults are known
 
 // Asks the checker for the built-in states: an empty document still loads the config, so the result names them, and
-// the defaults stay in schema/config.json only. A link's flags count: states it sets are the defaults then.
+// the defaults stay in schema/config.json only. The preset's and the link's flags count: states they set are the
+// defaults then.
 function loadDefaultStates() {
-  const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linkArgs));
+  const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linked()));
   defaultStates = (res.states || []).map((s) => ({ id: s.id, name: s["display-name"] }));
 }
 
@@ -665,7 +705,7 @@ function addState() {
 
 function updateStatesSummary() {
   const custom = !sameStates(stateRows, defaultStates);
-  $("states-summary").textContent = "· " + stateRows.length + (custom ? ", custom" : ", built-in");
+  $("states-summary").textContent = "· " + stateRows.length + ", " + (custom ? "custom" : defaultsSource("states", "built-in"));
   $("reset-states").disabled = !custom;
 }
 
@@ -745,10 +785,31 @@ function renderFlags() {
 }
 
 // The note under the options while the link sets flags of its own; they show in the "Equivalent CLI flags" box.
+// Whether a list of flags replaces the config at path (--set-config-at path, or --set-config-at=path).
+function setsPath(list, path) {
+  return list.some((a, i) => a === "--set-config-at=" + path || (a === "--set-config-at" && list[i + 1] === path));
+}
+
+// Where the defaults at a config path come from: the preset's flags, the link's, or the built-in config.
+function defaultsSource(path, builtIn) {
+  if (setsPath(current?.args || [], path)) return "the preset's";
+  if (setsPath(linkArgs, path)) return "the link's";
+  return builtIn;
+}
+
 function renderLinkArgs() {
-  const n = linkArgs.filter((a) => a.startsWith("-")).length;
+  updateStatesSummary();
+  // The first palette sends nothing, so it shows whatever colours the preset or the link set.
+  const first = $("palette").querySelector("option");
+  const source = defaultsSource("representation.styles.states", "");
+  if (first && palettes[0]) first.textContent = source ? source[0].toUpperCase() + source.slice(1) + " colours" : palettes[0].label;
+
+  const flags = (list) => list.filter((a) => a.startsWith("-")).length;
   $("link-args").hidden = linkArgs.length === 0;
-  $("link-args-count").textContent = plural(n, "flag");
+  $("link-args-count").textContent = plural(flags(linkArgs), "flag");
+  const own = current?.args || [];
+  $("preset-args").hidden = own.length === 0;
+  $("preset-args-count").textContent = plural(flags(own), "flag");
 }
 
 // Drops the link's flags. The states panel follows the defaults when it showed them.
@@ -875,6 +936,8 @@ function fromHash() {
 // Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
 // &palette=okabe-ito&states=Primary&states=Off&arg=--base&arg=Off (see permalink). Unknown values of the controls are
 // ignored; ?arg= goes to the checker as it is, which reports what it can't take.
+const queriedControls = new Set(); // controls set by the URL, which a preset's options leave alone
+
 function applyQuery() {
   const q = new URLSearchParams(location.search);
   const theme = q.get("theme");
@@ -890,7 +953,10 @@ function applyQuery() {
   if (preset) state.preset = preset;
   for (const id of CONTROLS) {
     const v = q.get(id);
-    if (v !== null && Array.from($(id).options).some((o) => o.value === v)) $(id).value = v;
+    if (v !== null && Array.from($(id).options).some((o) => o.value === v)) {
+      $(id).value = v;
+      queriedControls.add(id);
+    }
   }
   queryPalette = q.get("palette");
   if (q.has("states")) queryStates = parseStates(q.getAll("states"));
@@ -956,12 +1022,13 @@ async function start() {
       loadPalettes(),
     ]);
     go.run(instance);
+    current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
+    applyPresetOptions(null, current, queriedControls);
     loadDefaultStates();
     setStates(queryStates || defaultStates);
     renderLinkArgs();
     // A link with custom states opens the editor, so the reader sees why the schedule checks against them.
     if (queryStates) $("states-panel").open = true;
-    current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
     if (current.hidden) addPresetOption(current);
     $("preset").value = current.id;
     editor.value = fromHash() ?? current.text;

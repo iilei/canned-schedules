@@ -1,8 +1,11 @@
 [
-  {"id": "minimal", "label": "Minimal: Medium all week"},
-  {"id": "maintenance", "label": "Friday maintenance window"},
-  {"id": "office-hours", "label": "Office hours (issue template)"},
-  {"id": "weekday-peaks", "label": "Weekday peaks"},
-  {"id": "nightly-batch", "label": "Nightly batch"},
-  {"id": "yolo", "label": "YOLO", "hidden": true}
+  {"id": "minimal", "label": "Minimal: Medium all week", "category": "Capacity"},
+  {"id": "maintenance", "label": "Friday maintenance window", "category": "Capacity"},
+  {"id": "office-hours", "label": "Office hours (issue template)", "category": "Capacity"},
+  {"id": "weekday-peaks", "label": "Weekday peaks", "category": "Capacity"},
+  {"id": "nightly-batch", "label": "Nightly batch", "category": "Capacity"},
+  {"id": "support-desk", "label": "Support desk channels", "category": "Support hours", "args": true},
+  {"id": "on-call-roster", "label": "On-call roster of 30", "category": "On-call", "args": true,
+   "options": {"symbols": "styles"}},
+  {"id": "yolo", "label": "YOLO", "category": "Capacity", "hidden": true}
 ]

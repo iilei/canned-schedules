@@ -101,9 +101,12 @@
         <select id="symbols">
           <option value="ascii" selected>ASCII</option>
           <option value="braille">Braille</option>
+          <option value="styles" title="Each state's own symbol from the config's styles">Style symbols</option>
         </select>
       </label>
     </div>
+    <p class="config config-note link-args" id="preset-args" hidden>This preset sets <span id="preset-args-count"></span>
+      of its own, shown under Equivalent CLI flags.</p>
     <p class="config config-note link-args" id="link-args" hidden>This link sets <span id="link-args-count"></span>
       of its own, shown under Equivalent CLI flags.
       <button type="button" class="ghost" id="drop-link-args" title="Check without the link's flags">Drop them</button></p>

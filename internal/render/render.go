@@ -36,6 +36,7 @@ const (
 	dayH         = 32
 	blockH       = 24
 	legendH      = 44
+	legendRowH   = 24 // Each further legend row.
 	columnGap    = 28
 	lineH        = 18
 	charW        = 7.5 // Monospace advance at font-size 12.
@@ -279,9 +280,9 @@ func Build(out *schedule.Output, cfg *config.Config, p Preview, o SVGOptions) Mo
 	right = math.Max(right, m.annotationsRight())
 	right = math.Max(right, m.Summary.X+float64(len([]rune(m.Summary.Text)))*headerCharW)
 	bottom := math.Max(weekBottom, tableBottom)
-	right = m.legend(out, cfg, p, bottom, right)
+	right, rows := m.legend(out, cfg, p, bottom, right)
 	m.Width = math.Ceil(right + margin)
-	m.Height = bottom + legendH
+	m.Height = bottom + legendH + float64(rows-1)*legendRowH
 	m.Legend.Rule = Line{X1: labelW, Y1: bottom + margin, X2: m.Width - margin, Y2: bottom + margin}
 
 	if m.Annotations != nil {
@@ -398,10 +399,25 @@ func (m *Model) table(out *schedule.Output, cfg *config.Config, x, top float64) 
 	return top + float64(max(len(rows), 1)+1)*lineH + margin, colX - cellPadding
 }
 
-// legend adds one swatch per configured state, a note when the preview is approximate, and returns the new right
-// edge.
-func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top, right float64) float64 {
-	x := float64(labelW)
+// legend adds one swatch per configured state and a note when the preview is approximate. The entries wrap into
+// further rows at right, the edge of everything above (so a long list of states doesn't widen the picture), and an
+// entry wider than that gets a row of its own. It returns the new right edge and the number of rows.
+func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top, right float64) (float64, int) {
+	x, rows, widest := float64(labelW), 1, 0.0
+
+	place := func(w float64) float64 {
+		if x > labelW && x+w > right {
+			x = labelW
+			rows++
+		}
+
+		at := x
+		x += w + legendGap
+		widest = math.Max(widest, x-legendGap)
+
+		return at
+	}
+	rowY := func() float64 { return top + float64(rows-1)*legendRowH }
 
 	for i, t := range cfg.States {
 		label := diag.Sanitize(t.DisplayName)
@@ -409,22 +425,22 @@ func (m *Model) legend(out *schedule.Output, cfg *config.Config, p Preview, top,
 			label += " (base)"
 		}
 
+		at := place(swatchW + swatchGap + float64(len([]rune(label)))*charW)
 		m.Legend.Swatches = append(m.Legend.Swatches, Swatch{
 			Class: stateClass(i),
-			X:     x,
-			Y:     top + swatchY,
-			Text:  Text{Text: label, X: x + swatchW + swatchGap, Y: top + swatchTextY},
+			X:     at,
+			Y:     rowY() + swatchY,
+			Text:  Text{Text: label, X: at + swatchW + swatchGap, Y: rowY() + swatchTextY},
 		})
-		x += swatchW + swatchGap + float64(len([]rune(label)))*charW + legendGap
 	}
 
 	if p.Mixed > 0 {
 		note := approximateNote(p)
-		m.Legend.Note = &Text{Text: note, X: x, Y: top + swatchTextY}
-		x += float64(len([]rune(note)))*charW + legendGap
+		at := place(float64(len([]rune(note))) * charW)
+		m.Legend.Note = &Text{Text: note, X: at, Y: rowY() + swatchTextY}
 	}
 
-	return math.Max(right, x-legendGap)
+	return math.Max(right, widest), rows
 }
 
 // annotations adds the META section at x from top: a heading, the summary, one key/value row per annotation (sorted

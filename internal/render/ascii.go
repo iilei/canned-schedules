@@ -65,23 +65,55 @@ func BuildASCII(out *schedule.Output, cfg *config.Config, p Preview, color bool)
 		m.Rows = append(m.Rows, ASCIIRow{Label: name, Cells: cells.String()})
 	}
 
-	entries := make([]string, 0, len(cfg.States))
-	for i, t := range cfg.States {
-		entry := paint(i, cfg.Symbol(i)) + " " + diag.Sanitize(t.DisplayName)
-		if strings.EqualFold(t.ID, out.Base) {
-			entry += " (base)"
-		}
-
-		entries = append(entries, entry)
-	}
-
-	m.Legend = strings.Repeat(" ", asciiLabelW) + strings.Join(entries, "   ")
+	m.Legend = asciiLegend(out, cfg, paint, asciiLabelW+minutesPerDay/p.Size)
 
 	if p.Mixed > 0 {
 		m.Note = strings.Repeat(" ", asciiLabelW) + "~ " + approximateText(p)
 	}
 
 	return m
+}
+
+// asciiLegend lists the states, wrapped into lines of at most width columns (the rows' width), each line indented like
+// the rows; an entry wider than that gets a line of its own. Widths count runes, without the colour codes.
+func asciiLegend(out *schedule.Output, cfg *config.Config, paint func(int, string) string, width int) string {
+	const sep = "   "
+
+	indent := strings.Repeat(" ", asciiLabelW)
+
+	var (
+		lines []string
+		line  strings.Builder
+		col   int
+	)
+
+	for i, t := range cfg.States {
+		text := " " + diag.Sanitize(t.DisplayName)
+		if strings.EqualFold(t.ID, out.Base) {
+			text += " (base)"
+		}
+
+		w := len([]rune(cfg.Symbol(i))) + len([]rune(text))
+
+		switch {
+		case col == 0:
+			line.WriteString(indent)
+			col = asciiLabelW
+		case col+len(sep)+w > width:
+			lines = append(lines, line.String())
+			line.Reset()
+			line.WriteString(indent)
+			col = asciiLabelW
+		default:
+			line.WriteString(sep)
+			col += len(sep)
+		}
+
+		line.WriteString(paint(i, cfg.Symbol(i)) + text)
+		col += w
+	}
+
+	return strings.Join(append(lines, line.String()), "\n")
 }
 
 // asciiRuler returns the label line (every six hours) and the tick line: + every six hours, | every hour, : every

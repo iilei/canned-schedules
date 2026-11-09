@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -296,6 +297,52 @@ func TestSVGThemes(t *testing.T) {
 
 		if strings.Contains(string(svg), "\n    .background") {
 			t.Errorf("%s: rules must be scoped to .canned-schedule", theme)
+		}
+	}
+}
+
+// TestLegendWraps keeps a long list of states from widening the previews: the SVG legend wraps at the edge of
+// everything above it, the ASCII legend at the rows' width.
+func TestLegendWraps(t *testing.T) {
+	t.Parallel()
+
+	src := "# Roster\n\n> [!SCHEDULE-STATE] P1\n> - `08:00` to `16:00` MON\n"
+	few, fewCfg := evaluate(
+		t,
+		src,
+		config.Override{Path: "states", Value: `[{"id":"Off","display-name":"Off"},{"id":"P1","display-name":"P1"}]`},
+	)
+
+	// P1, the only state in the table, keeps its short name, so only the legend grows.
+	states := `[{"id":"Off","display-name":"Off"},{"id":"P1","display-name":"P1"}`
+	for i := 2; i <= 30; i++ {
+		states += fmt.Sprintf(`,{"id":"P%d","display-name":"Person number %d with a long name"}`, i, i)
+	}
+
+	many, manyCfg := evaluate(t, src, config.Override{Path: "states", Value: states + "]"})
+
+	a := Build(few, fewCfg, Downsample(few, fewCfg, 15), SVGOptions{})
+	b := Build(many, manyCfg, Downsample(many, manyCfg, 15), SVGOptions{})
+
+	if b.Width != a.Width {
+		t.Errorf("width with 31 states = %v, want %v as with two", b.Width, a.Width)
+	}
+
+	last := b.Legend.Swatches[len(b.Legend.Swatches)-1]
+	if b.Height <= a.Height || last.Y+20 > b.Height || last.Text.X >= b.Width {
+		t.Errorf("height %v (two states: %v), last swatch at %v,%v", b.Height, a.Height, last.Text.X, last.Y)
+	}
+
+	m := BuildASCII(many, manyCfg, Downsample(many, manyCfg, 15), false)
+	lines := strings.Split(m.Legend, "\n")
+
+	if len(lines) < 2 {
+		t.Fatalf("the ASCII legend must wrap:\n%s", m.Legend)
+	}
+
+	for _, l := range lines {
+		if n := len([]rune(l)); n > asciiLabelW+96 || !strings.HasPrefix(l, "    ") {
+			t.Errorf("legend line of %d runes: %q", n, l)
 		}
 	}
 }
