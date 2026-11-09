@@ -1083,6 +1083,18 @@ are also the **criteria for 1.0**.
   - Cost: the binary must be available where the docs are built.
   - The extension compares the tool version with the kit's `VERSION` and warns when they differ.
   - Until then, the README's "From schedule to docs page" recipe (a CI loop before `sphinx-build`) covers this.
+- **Antora output** (asked 2026-11-09, deferred until a team using Antora asks; about half a day to a day). The
+  same role as the Sphinx kit, for AsciiDoc sites:
+  - **An AsciiDoc writer** (`internal/asciidoc`, `--asciidoc-output-file`, a page download), walking the document
+    like `internal/myst.Render`. AsciiDoc has only the five built-in admonition types, so schedule blocks become
+    blocks with roles (`[.schedule.schedule-state.state-2]` on an example block, the state's display name as the
+    title), and the look comes from CSS only. Text through `diag.Sanitize`, as in MyST.
+  - **Styling:** a third target of `templates/sphinx-schedule.css.tmpl` next to `Page` and `Furo`, for the Antora
+    default UI's selectors and its dark mode, shipped through the playbook's `ui.supplemental_files`.
+  - **A kit** like `internal/sphinxkit.Kit`: a deterministic zip with the CSS, the fonts (UFL), an example page and a
+    README with the playbook snippet.
+  - **Verified with a real Antora build** in both themes, as the Sphinx kit was.
+  - Until then, the SVG (as an image) and the text form (as a literal block) embed in any AsciiDoc page.
 - **Offline page (service worker)** (asked 2026-10-25, deferred): after loading, the page already works offline in its
   tab, and repeat visits reuse the HTTP cache (Pages: 10 minutes fresh, then a cheap revalidation). Offline use is
   the CLI's job; the footer points to it. If ever built, avoid stale results, because syntax changes break documents:
