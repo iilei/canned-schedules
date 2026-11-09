@@ -922,6 +922,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - `internal/myst`: a valid schedule → MyST (H1, META always as a `Schedule: summary` admonition, BASE with
   `BaseText`, STATE items written as in the schedule). docutils requires admonition content, hence BaseText. Text goes
   through `diag.Sanitize`, so a newline in a display name can't inject directive options. Needs `colon_fence`.
+  **Blank lines around admonition bodies (decided 2026-11-09):** after the `:class:` option and before the closing
+  `:::`, so lists pass markdownlint's MD032 (VS Code flagged downloads); checked with sphinx 9.1.0, furo
+  2025.12.19, myst-parser 5.1.0 (`-W` clean, classes applied).
   - **META is always an admonition (decided 2026-10-25):** a META block without items gets `myst.EmptyBody`
     (`&nbsp;`) as its body, because docutils rejects an admonition without content, and the class `schedule-empty`.
     The shared stylesheet collapses such a box to its title bar (body hidden, no bottom padding). A class, not a
