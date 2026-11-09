@@ -52,6 +52,7 @@
     <div class="pane-head">
       <h2>Schedule</h2>
       <div class="actions">
+        <span class="lock-badge" id="preset-lock" hidden title="Locked by the link: the preset comes with its flags"><svg class="lock-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7H4a1.5 1.5 0 0 0-1.5 1.5v5A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 12 7h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 6V4.5a2 2 0 1 1 4 0V7H6Zm2 2.5a1.25 1.25 0 0 1 .75 2.25V13h-1.5v-1.25A1.25 1.25 0 0 1 8 9.5Z"/></svg></span>
         <label class="preset-pick"><span class="visually-hidden">Preset</span>
           <select id="preset" title="Start from a preset"></select>
         </label>
@@ -61,6 +62,10 @@
     </div>
     <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Schedule in Markdown"></textarea>
     <div class="source-status" id="highlight-status" aria-live="polite"></div>
+    <div class="settings" id="settings">
+    <p class="lock-banner" id="locked-note" hidden><svg class="lock-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7H4a1.5 1.5 0 0 0-1.5 1.5v5A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 12 7h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 6V4.5a2 2 0 1 1 4 0V7H6Zm2 2.5a1.25 1.25 0 0 1 .75 2.25V13h-1.5v-1.25A1.25 1.25 0 0 1 8 9.5Z"/></svg><span><strong>Locked by the link.</strong> Whoever
+      shared it set these options and flags; you can edit the schedule only. The flags are under Equivalent CLI
+      flags.</span></p>
     <fieldset class="options" id="options">
       <legend class="visually-hidden">Preview and check options</legend>
       <label>Preview buckets
@@ -106,8 +111,6 @@
         </select>
       </label>
     </fieldset>
-    <p class="config config-note locked-note" id="locked-note" hidden>This link locks the settings: only the schedule
-      can be edited. It is checked with the flags under Equivalent CLI flags.</p>
     <p class="config config-note link-args" id="preset-args" hidden>This preset sets <span id="preset-args-count"></span>
       of its own, shown under Equivalent CLI flags.</p>
     <p class="config config-note link-args" id="link-args" hidden>This link sets <span id="link-args-count"></span>
@@ -138,6 +141,7 @@
       </div>
       <pre class="code flags" id="flags"></pre>
     </details>
+    </div>
     <div class="status" id="status" role="status" aria-live="polite">Loading…</div>
   </section>
 

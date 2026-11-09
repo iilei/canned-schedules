@@ -705,7 +705,8 @@ function addState() {
 
 function updateStatesSummary() {
   const custom = !sameStates(stateRows, defaultStates);
-  $("states-summary").textContent = "· " + stateRows.length + ", " + (custom ? "custom" : defaultsSource("states", "built-in"));
+  $("states-summary").textContent = "· " + stateRows.length + ", " + (custom ? "custom" : defaultsSource("states", "built-in")) +
+    (locked ? ", locked" : "");
   $("reset-states").disabled = !custom;
 }
 
@@ -944,11 +945,16 @@ let locked = false;
 
 function applyLock() {
   $("locked-note").hidden = !locked;
+  $("preset-lock").hidden = !locked;
+  $("settings").classList.toggle("locked", locked);
   if (!locked) return;
   $("options").disabled = true;
   $("state-edit").disabled = true;
   $("preset").disabled = true;
   $("drop-link-args").hidden = true;
+  for (const el of $("settings").querySelectorAll("select, input")) el.title = "Locked by the link";
+  $("preset").title = "Locked by the link: the preset comes with its flags";
+  updateStatesSummary();
 }
 
 const queriedControls = new Set(); // controls set by the URL, which a preset's options leave alone

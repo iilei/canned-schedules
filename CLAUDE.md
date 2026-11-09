@@ -696,7 +696,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Locked links (decided 2026-11-09):** `?lock=1` (or `true`) locks every control that isn't Markdown: the preset
   dropdown, the options (buckets, sample interval, colours, ASCII symbols), the States panel (both are `<fieldset>`s,
   disabled as a whole) and **Drop them** (hidden). The reader edits the schedule only; the link's author owns the
-  flags it is checked with, so the split between the document and its flags shows on the page. Theme, view and tabs
+  flags it is checked with, so the split between the document and its flags shows on the page. **Visibly locked:**
+  the settings (options, notes, States and Equivalent CLI flags, in `#settings`) sit in a dashed accent frame under
+  a lock banner ("Locked by the link. Whoever shared it set these options and flags; …"), a lock badge stands before
+  the preset dropdown, the States summary ends in "locked", and every locked control's tooltip says "Locked by the
+  link". Theme, view and tabs
   stay free (they only change the look); Copy link keeps `lock=1`. Separation of concerns, not security: anyone can
   edit the address, and the logo leads to the unlocked page.
 - **ASCII symbols stay URL-only (decided 2026-11-09):** no page UI for single symbols (a power-user feature). A link
