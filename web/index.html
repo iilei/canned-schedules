@@ -61,7 +61,8 @@
     </div>
     <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Schedule in Markdown"></textarea>
     <div class="source-status" id="highlight-status" aria-live="polite"></div>
-    <div class="options">
+    <fieldset class="options" id="options">
+      <legend class="visually-hidden">Preview and check options</legend>
       <label>Preview buckets
         <select id="downsample">
           <option value="2">2 min</option>
@@ -104,7 +105,9 @@
           <option value="styles" title="Each state's own symbol from the config's styles">Style symbols</option>
         </select>
       </label>
-    </div>
+    </fieldset>
+    <p class="config config-note locked-note" id="locked-note" hidden>This link locks the settings: only the schedule
+      can be edited. It is checked with the flags under Equivalent CLI flags.</p>
     <p class="config config-note link-args" id="preset-args" hidden>This preset sets <span id="preset-args-count"></span>
       of its own, shown under Equivalent CLI flags.</p>
     <p class="config config-note link-args" id="link-args" hidden>This link sets <span id="link-args-count"></span>
@@ -114,11 +117,14 @@
       <summary>States <span class="muted" id="states-summary"></span></summary>
       <p class="config-note">The states your schedule may name, in order: the first is the default base, and colours
         go round robin. Sent as <code>--set-config-at states</code>, like on the CLI.</p>
-      <ol class="state-rows" id="state-rows"></ol>
-      <div class="actions">
-        <button type="button" class="ghost" id="add-state">Add state</button>
-        <button type="button" class="ghost" id="reset-states" disabled>Reset to defaults</button>
-      </div>
+      <fieldset class="state-edit" id="state-edit">
+        <legend class="visually-hidden">States</legend>
+        <ol class="state-rows" id="state-rows"></ol>
+        <div class="actions">
+          <button type="button" class="ghost" id="add-state">Add state</button>
+          <button type="button" class="ghost" id="reset-states" disabled>Reset to defaults</button>
+        </div>
+      </fieldset>
     </details>
     <details class="config" id="flags-panel">
       <summary>Equivalent CLI flags <span class="muted" id="flags-summary"></span></summary>
