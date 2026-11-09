@@ -1,0 +1,5 @@
+# The desk's own states instead of the capacity tiers: what customers can reach, in order (the first is the base).
+--set-config-at
+states
+--set-config-value
+[{"id":"Closed","display-name":"Closed"},{"id":"Email","display-name":"Email only"},{"id":"Chat","display-name":"Email and chat"},{"id":"Phone","display-name":"Email, chat and phone"}]

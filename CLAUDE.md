@@ -618,7 +618,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   6 h, faint guides, the transition table (POSIX + AWS cron), a legend with the base state marked, tooltips (state, range,
   starting cron). Days are drawn as merged bucket segments (see preview downsampling); minor ruler ticks appear at
   the bucket size when it is 15–30 minutes. An approximate preview shows a note in the legend line; the transition
-  table always stays exact.
+  table always stays exact. **The legend wraps (decided 2026-11-09)** into rows at the right edge of everything
+  above it, so a long list of states (the 30-person roster preset) doesn't widen the picture; an entry wider than
+  that gets a row of its own.
 - Colours: plain per-state `fill` rules, repeated in `@media (prefers-color-scheme: dark)`. **No CSS custom
   properties**: librsvg (and other converters / PDF pipelines) render them black.
 - **Templates must be gomplate-compatible:** builtins only, and Go executes them with the default strict
@@ -632,7 +634,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - `--output json|ascii`: what stdout carries (default `json`). `--ascii-output-file <path>`: saves the preview
   (atomic, only without errors, like the SVG). With `--output ascii` and errors, stdout stays empty.
 - Layout: title (`name - summary`), a ruler (labels every 6 h; `+` every 6 h, `|` every hour, `:` every half hour), one
-  row per day (`MON` + one symbol per bucket), a legend with the base state marked, and the `~` approximation note.
+  row per day (`MON` + one symbol per bucket), a legend with the base state marked (wrapped at the rows' width,
+  each line indented like the rows), and the `~` approximation note.
   Rendered through `templates/schedule-ascii.tmpl` on a model computed in `internal/render` (same gomplate rules).
 - **Pure ASCII by default (decided 2026-10-24):** block characters (`▒▓█`, lower blocks, `║`, `—`, `≈`) have East Asian
   Width "ambiguous" and turn double-width in CJK terminals, so the ruler and text are always ASCII and the symbols
@@ -799,9 +802,21 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - `app.js` talks to an adapter (`value`, `onChange`, `focus`, `selectAll`, `jumpTo`, `setDiagnostics`); without
     `editor.js` it wraps the plain textarea and `<pre>`, which stay in `index.html` as fallbacks.
   - Versions follow the two-week rule: installed with `npm install --before=<date two weeks back>`.
-- Presets: `web/presets/index.json` lists them (id, label), `web/presets/<id>.md` holds the text. `office-hours` is
+- Presets: `web/presets/index.json` lists them (id, label, category), `web/presets/<id>.md` holds the text. `office-hours` is
   the GitLab issue template, copied in by `web:build`, so it never drifts. `TestPresets` (internal/web) requires every
-  preset to evaluate without diagnostics and the index and files to match. **Easter egg:** `yolo` is marked
+  preset to evaluate without diagnostics (with its flags and options) and the index and files to match.
+  - **Categories and preset flags (decided 2026-11-09)** showcase use cases beyond capacity: the dropdown groups
+    presets by `category` (optgroups in order of first appearance: Capacity, Support hours, On-call). With
+    `"args": true`, `web/presets/<id>.args` holds flags in the format of the consumer example's
+    `canned-schedules.args` (one argument per line, blank lines and `#` comments skipped). They go to the checker
+    like a link's `?arg=` (same check, before the link's and the page's flags) and show under Equivalent CLI
+    flags, with a note "This preset sets N flags"; the permalink needs only `?preset=`. `"options"` presets the
+    page's controls (`{"symbols": "styles"}`); a control the previous preset set returns to its default on switching,
+    and controls named in the URL stay as linked. The States panel and the first palette entry name where their
+    defaults come from ("the preset's", "the link's", built-in). The symbols dropdown gained **Style symbols**
+    (`--ascii-symbols styles`). Presets: `support-desk` (four states of its own: which channels customers reach)
+    and `on-call-roster` (30 invented people plus `Unstaffed` as states, one colour and letter each, styles
+    symbols; one STATE block per shift). **Easter egg:** `yolo` is marked
   `"hidden": true`, so it stays out of the dropdown and only opens by link (`?preset=yolo`): the week spells YOLO in
   a 3×5 pixel font. Keep it; it is not dead code. The dropdown replaces the editor content
   (asking first when there are unsaved edits); Reset is disabled until the editor differs from the selected preset.
