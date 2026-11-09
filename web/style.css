@@ -534,6 +534,22 @@ button.ghost:disabled {
     color: inherit;
 }
 
+/* Fieldsets only group the controls a link can lock (?lock=1); they draw nothing themselves. */
+fieldset.options,
+fieldset.state-edit {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-inline-size: 0;
+}
+fieldset:disabled select,
+fieldset:disabled input {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.locked-note {
+    color: var(--text);
+}
 .options {
     display: flex;
     flex-wrap: wrap;

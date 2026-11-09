@@ -693,6 +693,15 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   them. The sample-interval and preview-bucket dropdowns list every divisor of 60, so every CLI value has a control
   (before, `?sample-interval=10` was dropped without a word). The companion's `--fiddle-link-base-uri` link carries
   its run's options this way.
+- **Locked links (decided 2026-11-09):** `?lock=1` (or `true`) locks every control that isn't Markdown: the preset
+  dropdown, the options (buckets, sample interval, colours, ASCII symbols), the States panel (both are `<fieldset>`s,
+  disabled as a whole) and **Drop them** (hidden). The reader edits the schedule only; the link's author owns the
+  flags it is checked with, so the split between the document and its flags shows on the page. Theme, view and tabs
+  stay free (they only change the look); Copy link keeps `lock=1`. Separation of concerns, not security: anyone can
+  edit the address, and the logo leads to the unlocked page.
+- **ASCII symbols stay URL-only (decided 2026-11-09):** no page UI for single symbols (a power-user feature). A link
+  sets them with `?symbols=styles` plus `?arg=` pairs such as `--set-config-at representation.styles.states[3].symbol`
+  / `--set-config-value "@"`; per-index paths apply after a palette's or a preset's full styles list, so they stack.
 - **Colour palettes (decided 2026-10-26, #40):** page only, no `--palette` CLI flag (no new contract; the CLI flags
   box shows the override). `web/palettes/index.json` lists them (`id`, `label`, `kind` sequential|categorical,
   `description`, `styles`); the dropdown groups them by kind, the choice goes out as `--set-config-at

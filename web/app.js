@@ -849,6 +849,7 @@ function permalink() {
   if ($("palette").value !== palettes[0]?.id) q.set("palette", $("palette").value);
   if (statesOverride()) for (const r of stateRows) q.append("states", r.name && r.name !== r.id ? r.id + ":" + r.name : r.id);
   for (const a of linkArgs) q.append("arg", a);
+  if (locked) q.set("lock", "1");
   const url = new URL(location.pathname, location.origin);
   url.search = q.toString();
   if (dirty()) url.hash = "doc=" + toBase64url(editor.value);
@@ -934,8 +935,22 @@ function fromHash() {
 }
 
 // Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
-// &palette=okabe-ito&states=Primary&states=Off&arg=--base&arg=Off (see permalink). Unknown values of the controls are
+// &palette=okabe-ito&states=Primary&states=Off&arg=--base&arg=Off&lock=1 (see permalink). Unknown values of the controls are
 // ignored; ?arg= goes to the checker as it is, which reports what it can't take.
+// ?lock=1 locks everything that isn't Markdown: the preset, the options, the states and dropping the link's flags.
+// The reader edits the schedule only, and the link's author owns the flags it is checked with (separation of
+// concerns, not security: anyone can edit the address). Theme, view and tabs only change how the page looks.
+let locked = false;
+
+function applyLock() {
+  $("locked-note").hidden = !locked;
+  if (!locked) return;
+  $("options").disabled = true;
+  $("state-edit").disabled = true;
+  $("preset").disabled = true;
+  $("drop-link-args").hidden = true;
+}
+
 const queriedControls = new Set(); // controls set by the URL, which a preset's options leave alone
 
 function applyQuery() {
@@ -961,6 +976,7 @@ function applyQuery() {
   queryPalette = q.get("palette");
   if (q.has("states")) queryStates = parseStates(q.getAll("states"));
   linkArgs = q.getAll("arg");
+  locked = ["1", "true"].includes(q.get("lock"));
   const tab = q.get("tab");
   if (["rendered", "diagnostics", "json", "ascii"].includes(tab)) selectTab(tab);
 }
@@ -1027,6 +1043,7 @@ async function start() {
     loadDefaultStates();
     setStates(queryStates || defaultStates);
     renderLinkArgs();
+    applyLock();
     // A link with custom states opens the editor, so the reader sees why the schedule checks against them.
     if (queryStates) $("states-panel").open = true;
     if (current.hidden) addPresetOption(current);
