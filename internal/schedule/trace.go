@@ -139,6 +139,21 @@ func Explain(src []byte, cfg *config.Config, opts Options) (*Trace, diag.List) {
 // Owner returns the index of the range that paints minute m of the week (0 = MON 00:00) last; -1 means base.
 func (t *Trace) Owner(m int) int { return t.owners[m] }
 
+// Switches reports whether owner (-1 = base) paints the minute at which t switches to its state on at least one of
+// t's days: the rule that ties a transition to a source entry, shared by the page's JSON marks and the SVG table rows.
+// On the other days another entry may cause the same switch.
+func (t *Trace) Switches(owner int, tr *Transition) bool {
+	at := clockMinutes(tr.Time)
+
+	for _, d := range tr.Days {
+		if i := slices.Index(expr.Weekdays, d); i >= 0 && t.Owner(i*minutesPerDay+at) == owner {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Covers reports whether range i covers minute m of the week, whether or not a later range paints over it.
 func (t *Trace) Covers(i, m int) bool { return t.ranges[i].covers(m) }
 

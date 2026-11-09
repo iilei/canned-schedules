@@ -178,13 +178,9 @@ func paintPaths(owner int, out *schedule.Output, tr *schedule.Trace) []string {
 		}
 	}
 
-	for i, t := range out.Transitions {
-		for _, day := range t.Days {
-			if tr.Owner(slices.Index(dayNames, day)*minutesPerDay+clock(t.Time)) == owner {
-				paths = append(paths, "/transitions/"+strconv.Itoa(i))
-
-				break
-			}
+	for i := range out.Transitions {
+		if tr.Switches(owner, &out.Transitions[i]) {
+			paths = append(paths, "/transitions/"+strconv.Itoa(i))
 		}
 	}
 

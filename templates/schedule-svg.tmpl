@@ -73,10 +73,12 @@
     {{- range .transitions.headers }}
     <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="14">{{ html .text }}</text>
     {{- end }}
-    {{- range .transitions.rows }}
-    {{- range . }}
-    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12">{{ html .text }}</text>
-    {{- end }}
+    {{- range $i, $row := .transitions.rows }}
+    <g class="transition-row transition-{{ $i }}">
+      {{- range $row }}
+      <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12">{{ html .text }}</text>
+      {{- end }}
+    </g>
     {{- end }}
     {{- with .transitions.empty }}
     <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12">{{ html .text }}</text>
@@ -85,8 +87,10 @@
   <g class="legend">
     <line class="divider" x1="{{ .legend.rule.x1 }}" y1="{{ .legend.rule.y1 }}" x2="{{ .legend.rule.x2 }}" y2="{{ .legend.rule.y2 }}"/>
     {{- range .legend.swatches }}
-    <rect class="state {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="20" height="16" rx="1"/>
-    <text class="label" x="{{ .text.x }}" y="{{ .text.y }}" font-size="12">{{ html .text.text }}</text>
+    <g class="legend-entry legend-{{ .class }}">
+      <rect class="state {{ .class }}" x="{{ .x }}" y="{{ .y }}" width="20" height="16" rx="1"/>
+      <text class="label" x="{{ .text.x }}" y="{{ .text.y }}" font-size="12">{{ html .text.text }}</text>
+    </g>
     {{- end }}
     {{- with .legend.note }}
     <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="12" font-style="italic">{{ html .text }}</text>

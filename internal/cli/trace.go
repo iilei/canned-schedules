@@ -39,5 +39,5 @@ func Highlights(opts *Options, out *schedule.Output, src []byte) ([]render.Highl
 	p := render.Downsample(out, cfg, opts.Preview.Downsample)
 	m := render.Build(out, cfg, p, svgOptions(opts, nil))
 
-	return render.Highlights(tr, cfg, p, &m), nil
+	return render.Highlights(tr, out, cfg, p, &m), nil
 }
