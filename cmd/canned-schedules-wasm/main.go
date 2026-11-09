@@ -1,7 +1,7 @@
 //go:build js && wasm
 
 // Command canned-schedules-wasm exposes the pipeline to the browser preflight page as
-// cannedSchedules.evaluate(markdown, args) → JSON string (see internal/web.Result).
+// cannedSchedules.evaluate(markdown, args, linkArgs) → JSON string (see internal/web.Result).
 package main
 
 import (
@@ -24,18 +24,18 @@ func evaluate(_ js.Value, argv []js.Value) any {
 		return ""
 	}
 
-	res := web.Evaluate([]byte(argv[0].String()), stringArgs(argv))
+	res := web.Evaluate([]byte(argv[0].String()), stringArgs(argv, 2), stringArgs(argv, 1))
 
 	return res.Encode()
 }
 
-// sphinxKit(markdown, args) → Uint8Array with the zip, or an error message string.
+// sphinxKit(markdown, args, linkArgs) → Uint8Array with the zip, or an error message string.
 func sphinxKit(_ js.Value, argv []js.Value) any {
 	if len(argv) == 0 {
 		return "missing document"
 	}
 
-	zip, err := web.SphinxKit([]byte(argv[0].String()), stringArgs(argv))
+	zip, err := web.SphinxKit([]byte(argv[0].String()), stringArgs(argv, 2), stringArgs(argv, 1))
 	if err != nil {
 		return err.Error()
 	}
@@ -46,12 +46,13 @@ func sphinxKit(_ js.Value, argv []js.Value) any {
 	return arr
 }
 
-func stringArgs(argv []js.Value) []string {
+// stringArgs reads argv[n] as a list of strings; absent or undefined means none.
+func stringArgs(argv []js.Value, n int) []string {
 	var args []string
 
-	if len(argv) > 1 {
-		for i := range argv[1].Length() {
-			args = append(args, argv[1].Index(i).String())
+	if len(argv) > n && argv[n].Truthy() {
+		for i := range argv[n].Length() {
+			args = append(args, argv[n].Index(i).String())
 		}
 	}
 

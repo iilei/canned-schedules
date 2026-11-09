@@ -281,9 +281,19 @@ function pressed(group, value) {
 
 // ---- evaluation ----------------------------------------------------------------------------------------------------
 
+// Flags from the link (?arg=, repeatable, one argument each): the ones the page has no control for, such as
+// --error-unless-alert-pattern, --base or a --set-config-at pair. The checker checks them first (only those flags,
+// see internal/web/link.go) and puts them before the page's own, so the page's controls win on the same config path.
+let linkArgs = [];
+
 // The flags that shape the result, only where they differ from the CLI's defaults: the checker, the Sphinx kit and
-// the "Equivalent CLI flags" box all use this one list, so the box always shows what the page checked.
+// the "Equivalent CLI flags" box all use these lists, so the box always shows what the page checked.
 function cliArgs() {
+  return [...linkArgs, ...pageArgs()];
+}
+
+// The flags from the page's controls.
+function pageArgs() {
   const a = [];
   const interval = $("sample-interval").value;
   if (interval !== "1") a.push("--sample-interval", interval);
@@ -299,9 +309,9 @@ function cliArgs() {
   return a;
 }
 
-// cliArgs plus what only the page needs: the SVG follows the page's theme.
+// pageArgs plus what only the page needs: the SVG follows the page's theme. The link's flags go separately.
 function args() {
-  return ["--svg-theme", state.theme === "system" ? "auto" : state.theme, ...cliArgs()];
+  return ["--svg-theme", state.theme === "system" ? "auto" : state.theme, ...pageArgs()];
 }
 
 function evaluate() {
@@ -309,7 +319,7 @@ function evaluate() {
   renderFlags();
   let res;
   try {
-    res = JSON.parse(globalThis.cannedSchedules.evaluate(editor.value, args()));
+    res = JSON.parse(globalThis.cannedSchedules.evaluate(editor.value, args(), linkArgs));
   } catch (err) {
     showStatus("err", "Internal error: " + err);
     return;
@@ -494,7 +504,7 @@ function download(name, type, content) {
 
 // The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current schedule as MyST.
 function downloadKit() {
-  const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args());
+  const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linkArgs);
   if (typeof zip === "string") {
     showStatus("err", zip);
     return;
@@ -572,9 +582,9 @@ let stateRows = [];
 let queryStates = null; // ?states=… entries, applied once the defaults are known
 
 // Asks the checker for the built-in states: an empty document still loads the config, so the result names them, and
-// the defaults stay in schema/config.json only.
+// the defaults stay in schema/config.json only. A link's flags count: states it sets are the defaults then.
 function loadDefaultStates() {
-  const res = JSON.parse(globalThis.cannedSchedules.evaluate("", []));
+  const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linkArgs));
   defaultStates = (res.states || []).map((s) => ({ id: s.id, name: s["display-name"] }));
 }
 
@@ -734,6 +744,23 @@ function renderFlags() {
   $("flags-summary").textContent = "· " + (none ? "none" : plural(n, "flag"));
 }
 
+// The note under the options while the link sets flags of its own; they show in the "Equivalent CLI flags" box.
+function renderLinkArgs() {
+  const n = linkArgs.filter((a) => a.startsWith("-")).length;
+  $("link-args").hidden = linkArgs.length === 0;
+  $("link-args-count").textContent = plural(n, "flag");
+}
+
+// Drops the link's flags. The states panel follows the defaults when it showed them.
+function dropLinkArgs() {
+  const followed = !statesOverride();
+  linkArgs = [];
+  loadDefaultStates();
+  if (followed) setStates(defaultStates);
+  renderLinkArgs();
+  evaluate();
+}
+
 async function copyFlags() {
   const b = $("copy-flags");
   try {
@@ -760,6 +787,7 @@ function permalink() {
   for (const id of CONTROLS) q.set(id, $(id).value);
   if ($("palette").value !== palettes[0]?.id) q.set("palette", $("palette").value);
   if (statesOverride()) for (const r of stateRows) q.append("states", r.name && r.name !== r.id ? r.id + ":" + r.name : r.id);
+  for (const a of linkArgs) q.append("arg", a);
   const url = new URL(location.pathname, location.origin);
   url.search = q.toString();
   if (dirty()) url.hash = "doc=" + toBase64url(editor.value);
@@ -811,6 +839,7 @@ function wire() {
     });
   }
   $("copy-flags").addEventListener("click", copyFlags);
+  $("drop-link-args").addEventListener("click", dropLinkArgs);
   editor.onChange(debounce(evaluate, 120));
   // Loading a document moves the cursor too; only a cursor in the focused editor is the user's.
   editor.onCursor((line) => { cursorUsed ||= editor.hasFocus; applyHighlight(line); });
@@ -844,7 +873,8 @@ function fromHash() {
 }
 
 // Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
-// &palette=okabe-ito&states=Primary&states=Off (see permalink). Unknown values are ignored.
+// &palette=okabe-ito&states=Primary&states=Off&arg=--base&arg=Off (see permalink). Unknown values of the controls are
+// ignored; ?arg= goes to the checker as it is, which reports what it can't take.
 function applyQuery() {
   const q = new URLSearchParams(location.search);
   const theme = q.get("theme");
@@ -864,6 +894,7 @@ function applyQuery() {
   }
   queryPalette = q.get("palette");
   if (q.has("states")) queryStates = parseStates(q.getAll("states"));
+  linkArgs = q.getAll("arg");
   const tab = q.get("tab");
   if (["rendered", "diagnostics", "json", "ascii"].includes(tab)) selectTab(tab);
 }
@@ -927,6 +958,7 @@ async function start() {
     go.run(instance);
     loadDefaultStates();
     setStates(queryStates || defaultStates);
+    renderLinkArgs();
     // A link with custom states opens the editor, so the reader sees why the schedule checks against them.
     if (queryStates) $("states-panel").open = true;
     current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];

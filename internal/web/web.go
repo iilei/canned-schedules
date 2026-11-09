@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"runtime/debug"
+	"slices"
 	"strings"
 
 	"github.com/iilei/canned-schedules/internal/cli"
 	"github.com/iilei/canned-schedules/internal/config"
+	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/internal/htmlpreview"
 	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
@@ -46,11 +48,13 @@ type Result struct {
 	Warnings   int                `json:"warnings"`
 }
 
-// Evaluate runs the CLI pipeline on src with the given command-line flags (no file argument).
-func Evaluate(src []byte, args []string) Result {
+// Evaluate runs the CLI pipeline on src with the flags from a link (?arg=, checked by checkLink) followed by the
+// page's own flags (no file argument). The page's flags come last, so its controls win over a link's config
+// overrides of the same path. A link with a flag the page can't take is reported and left out entirely.
+func Evaluate(src []byte, link, args []string) Result {
 	var res Result
 
-	opts, diags := cli.Parse(args)
+	opts, diags := parse(link, args)
 	if !diags.HasErrors() {
 		out, more := cli.Run(&opts, src)
 		diags = append(diags, more...)
@@ -87,6 +91,19 @@ func Evaluate(src []byte, args []string) Result {
 	res.Errors, res.Warnings = r.Summary.Errors, r.Summary.Warnings
 
 	return res
+}
+
+// parse checks the link's flags and parses them with the page's. When the link has flags the page can't take, only
+// the page's flags are parsed, so the report doesn't repeat them as unknown or misplaced.
+func parse(link, args []string) (cli.Options, diag.List) {
+	diags := checkLink(link)
+	if diags.HasErrors() {
+		opts, more := cli.Parse(args)
+
+		return opts, append(diags, more...)
+	}
+
+	return cli.Parse(append(slices.Clip(link), args...))
 }
 
 // Encode returns the result as a JSON string for JavaScript.
@@ -128,8 +145,8 @@ func generator() string {
 }
 
 // SphinxKit builds the Sphinx kit zip for src with the given flags. The page calls it on demand, not on every edit.
-func SphinxKit(src []byte, args []string) ([]byte, error) {
-	opts, diags := cli.Parse(args)
+func SphinxKit(src []byte, link, args []string) ([]byte, error) {
+	opts, diags := parse(link, args)
 	if diags.HasErrors() {
 		return nil, errInvalid
 	}

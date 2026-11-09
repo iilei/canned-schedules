@@ -37,7 +37,7 @@ func TestHighlightsCarryJSON(t *testing.T) {
 	src := "# Plan\n\n> [!SCHEDULE-META] Late Fridays\n> - x-owner: `team`\n\n> [!SCHEDULE-BASE] Minimum\n\n" +
 		"> [!SCHEDULE-STATE] Maximum\n> - `20:00` to `02:00` FRI\n"
 
-	res := Evaluate([]byte(src), nil)
+	res := Evaluate([]byte(src), nil, nil)
 	lines := strings.Split(res.JSON, "\n")
 	byKind := map[string][]string{}
 

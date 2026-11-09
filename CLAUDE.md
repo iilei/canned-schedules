@@ -675,6 +675,21 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   repeated `?states=<id>` or `?states=<id>:<display name>` (split at the first colon; ids can't contain one), written
   only for custom states; a link with them opens the panel. Still open: an add-phase form (#41), presets with their own
   states.
+- **Flags from a link (decided 2026-11-09):** `?arg=` (repeatable, one argument each, in order, e.g.
+  `?arg=--error-unless-alert-pattern&arg=(?i)NOTE|TIP`) carries the flags the page has no control for:
+  `--require-base`, `--base`, `--error-unless-alert-pattern` and `--set-config-at`/`--set-config-value` pairs, with
+  the value as the next `arg` or attached with `=`. Checked in Go (`internal/web/link.go`, `checkLink`): a flag with a
+  page control (`--sample-interval`, `--preview-downsample`, `--no-preview-downsample`, `--ascii-symbols`) is
+  `invalid-flag` naming its parameter (`?sample-interval=`, …), so the control shows the value and the reader can
+  change it; anything else (output files, `--svg-theme`, `--output`, `--verbose`, unknown flags, words that aren't
+  flags) is `invalid-flag` too, and the link's flags are then left out entirely while the page's still apply. Values
+  go through the CLI's parser. The link's flags come **before** the page's (`web.Evaluate(src, link, args)`, the
+  WASM's third argument), so the States panel and the palette win on the same config path; the panel's defaults are
+  the states after the link's overrides. They show in the **Equivalent CLI flags** box, a note under the options says
+  how many there are, with **Drop them**, and the permalink keeps them. Not "fixed": the reader can always drop
+  them. The sample-interval and preview-bucket dropdowns list every divisor of 60, so every CLI value has a control
+  (before, `?sample-interval=10` was dropped without a word). The companion's `--fiddle-link-base-uri` link carries
+  its run's options this way.
 - **Colour palettes (decided 2026-10-26, #40):** page only, no `--palette` CLI flag (no new contract; the CLI flags
   box shows the override). `web/palettes/index.json` lists them (`id`, `label`, `kind` sequential|categorical,
   `description`, `styles`); the dropdown groups them by kind, the choice goes out as `--set-config-at

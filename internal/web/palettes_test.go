@@ -60,7 +60,7 @@ func TestPalettes(t *testing.T) {
 		}
 
 		args := []string{"--set-config-at", "representation.styles.states", "--set-config-value", string(p.Styles)}
-		if res := Evaluate(src, args); res.Errors+res.Warnings != 0 {
+		if res := Evaluate(src, nil, args); res.Errors+res.Warnings != 0 {
 			t.Errorf("palette %q must apply cleanly, got report %s", p.ID, res.Report)
 		}
 	}

@@ -14,7 +14,7 @@ func TestEvaluateValid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res := Evaluate(src, []string{"--svg-theme", "dark"})
+	res := Evaluate(src, nil, []string{"--svg-theme", "dark"})
 	if res.Errors != 0 || res.JSON == "" || res.ASCII == "" || res.SphinxCSS == "" ||
 		!strings.Contains(res.MyST, ":::{admonition}") {
 		t.Fatalf("result = %+v", res)
@@ -62,7 +62,7 @@ func TestEvaluateValid(t *testing.T) {
 func TestEvaluateInvalid(t *testing.T) {
 	t.Parallel()
 
-	res := Evaluate([]byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"), nil)
+	res := Evaluate([]byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"), nil, nil)
 	if res.Errors != 1 || res.JSON != "" || res.SVG != "" || res.MyST != "" || res.Highlights != nil {
 		t.Fatalf("an invalid document has no output, got %+v", res)
 	}
@@ -79,7 +79,7 @@ func TestEvaluateInvalid(t *testing.T) {
 func TestEvaluateFlagError(t *testing.T) {
 	t.Parallel()
 
-	res := Evaluate([]byte("# Plan\n"), []string{"--svg-theme", "sepia"})
+	res := Evaluate([]byte("# Plan\n"), nil, []string{"--svg-theme", "sepia"})
 	if res.Errors != 1 || !strings.Contains(res.Report, "invalid-flag") {
 		t.Errorf("result = %+v", res)
 	}
@@ -93,13 +93,14 @@ func TestSphinxKit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zip, err := SphinxKit(src, []string{"--svg-theme", "dark"})
+	zip, err := SphinxKit(src, nil, []string{"--svg-theme", "dark"})
 	if err != nil || len(zip) < 1000 || string(zip[:2]) != "PK" {
 		t.Fatalf("kit: %d bytes, err %v", len(zip), err)
 	}
 
 	if _, err := SphinxKit(
 		[]byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `10:00` to `24:00` SAT\n"),
+		nil,
 		nil,
 	); err == nil {
 		t.Error("an invalid schedule must not produce a kit")
@@ -111,18 +112,22 @@ func TestEvaluateStates(t *testing.T) {
 
 	src := []byte("# Rota\n\n> [!SCHEDULE-STATE] Primary\n> - `08:00` to `16:00` MON-FRI\n")
 
-	if got := Evaluate(src, nil).States; len(got) != 4 || got[0].ID != "Off" {
+	if got := Evaluate(src, nil, nil).States; len(got) != 4 || got[0].ID != "Off" {
 		t.Errorf("without overrides, States = %v, want the built-in states", got)
 	}
 
 	set := func(value string) []string { return []string{"--set-config-at", "states", "--set-config-value", value} }
 
-	res := Evaluate(src, set(`[{"id":"Off","display-name":"Off"},{"id":"Primary","display-name":"Primary on-call"}]`))
+	res := Evaluate(
+		src,
+		nil,
+		set(`[{"id":"Off","display-name":"Off"},{"id":"Primary","display-name":"Primary on-call"}]`),
+	)
 	if res.Errors != 0 || len(res.States) != 2 || res.States[1].DisplayName != "Primary on-call" {
 		t.Errorf("with a states override: errors %d, States = %v", res.Errors, res.States)
 	}
 
-	res = Evaluate(src, set(`[{"id":"Off","display-name":"Off"},{"id":"OFF","display-name":"Off again"}]`))
+	res = Evaluate(src, nil, set(`[{"id":"Off","display-name":"Off"},{"id":"OFF","display-name":"Off again"}]`))
 	if res.States != nil || !strings.Contains(res.Report, `"code": "config-duplicate-state"`) {
 		t.Errorf("an invalid override: States = %v, report %s", res.States, res.Report)
 	}
