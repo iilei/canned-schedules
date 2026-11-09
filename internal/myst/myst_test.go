@@ -24,11 +24,11 @@ func TestRender(t *testing.T) {
 	}
 
 	want := "# Office Hours\n" +
-		"\n:::{admonition} Schedule: Weekdays\n:class: schedule schedule-meta\n- x-owner: `ops`\n:::\n" +
-		"\n:::{admonition} Base state: Minimum\n:class: schedule schedule-base state-1\n" + BaseText + "\n:::\n" +
-		"\n:::{admonition} Medium\n:class: schedule schedule-state state-2\n" +
+		"\n:::{admonition} Schedule: Weekdays\n:class: schedule schedule-meta\n\n- x-owner: `ops`\n\n:::\n" +
+		"\n:::{admonition} Base state: Minimum\n:class: schedule schedule-base state-1\n\n" + BaseText + "\n\n:::\n" +
+		"\n:::{admonition} Medium\n:class: schedule schedule-state state-2\n\n" +
 		"- `06:00` to `22:00` MON-FRI\n" +
-		"- `10:00` to `18:00` SAT\n:::\n"
+		"- `10:00` to `18:00` SAT\n\n:::\n"
 
 	if got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
@@ -72,8 +72,9 @@ func TestSummaryWithoutItemsIsAnAdmonition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "# Shop\n\n:::{admonition} Schedule: Weekend shop\n:class: schedule schedule-meta schedule-empty\n" + EmptyBody + "\n:::\n" +
-		"\n:::{admonition} Base state: Off\n:class: schedule schedule-base state-0\n" + BaseText + "\n:::\n"
+	want := "# Shop\n\n:::{admonition} Schedule: Weekend shop\n:class: schedule schedule-meta schedule-empty\n\n" +
+		EmptyBody + "\n\n:::\n" +
+		"\n:::{admonition} Base state: Off\n:class: schedule schedule-base state-0\n\n" + BaseText + "\n\n:::\n"
 	if got != want {
 		t.Errorf("got:\n%s\nwant:\n%s", got, want)
 	}

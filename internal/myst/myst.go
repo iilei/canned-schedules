@@ -66,9 +66,10 @@ func Render(src []byte, cfg *config.Config) (string, error) {
 
 // admonition writes one colon-fence admonition. Titles and text are sanitized, which turns newlines into a visible
 // \u000a escape: display names come from the config and may contain anything, and a newline would end the
-// directive argument or inject options.
+// directive argument or inject options. The body sits between blank lines (after the options, before the closing
+// fence), so a list in it is surrounded by blank lines as Markdown linters expect (markdownlint MD032).
 func admonition(b *strings.Builder, title, class string, items []document.Item, body string) {
-	fmt.Fprintf(b, "\n:::{admonition} %s\n:class: %s\n", strings.TrimSpace(diag.Sanitize(title)), class)
+	fmt.Fprintf(b, "\n:::{admonition} %s\n:class: %s\n\n", strings.TrimSpace(diag.Sanitize(title)), class)
 
 	if body != "" {
 		b.WriteString(body + "\n")
@@ -90,7 +91,7 @@ func admonition(b *strings.Builder, title, class string, items []document.Item, 
 		b.WriteString("\n")
 	}
 
-	b.WriteString(":::\n")
+	b.WriteString("\n:::\n")
 }
 
 // state returns the CSS class and display name of a state id; the schedule is valid, so the state exists.
