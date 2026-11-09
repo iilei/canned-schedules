@@ -226,24 +226,108 @@ function unmarkSegments(svg) {
   }
 }
 
+// The legend and the transition table drive the highlight too. Clicking a state's swatch or label (or Enter/Space on
+// it) pins that state: the highlight shows every entry that paints it (the base and all its ranges). Clicking a row of
+// the transition table pins that row: the highlight shows the entries that cause it (schedule.Trace.Switches, the
+// rule the row marks follow). Either replaces the cursor's entry in the stripes in the week, the source lines in the
+// editor, the lines in the JSON, the marks in the table and the labels in the status bar. It only drives the
+// highlight: the cursor, the selection and the focus stay where they are, and the document is never touched.
+// Clicking the same entry or row again, Escape or moving the cursor ends the pin; it survives re-evaluation while
+// the SVG still has that state or row. The toggles are wired in the page's DOM only (wireToggles): the downloaded SVG
+// is the checker's text.
+let pinned = null; // {state: "state-N"} from the legend, {row: N} from the transition table, or null.
+
+const painted = (h) => h.kind === "base" || h.kind === "range";
+const samePin = (a, b) => !!a && !!b && a.state === b.state && a.row === b.row;
+const ownLine = (h) => (h.line > 0 ? { from: h.line, to: h.line } : null); // A base from --base or the config has none.
+
+function pinnedHighlights() {
+  const all = (state.highlights || []).filter(painted);
+  if (pinned.state) {
+    // A range marks its whole STATE block, marker line included: the marker names the state, and every item of the
+    // block paints it.
+    return all.filter((h) => h.class === pinned.state)
+      .map((h) => ({ ...h, source: h.kind === "range" ? h.block : ownLine(h) }));
+  }
+  // A row marks only the lines that cause it: other items of their blocks may not.
+  return all.filter((h) => (h.transitions || []).some((t) => t.row === pinned.row)).map((h) => ({ ...h, source: ownLine(h) }));
+}
+
+// Whether the SVG still shows what is pinned.
+function pinShown(svg) {
+  if (!svg || !pinned) return false;
+  return !!svg.querySelector(pinned.state ? `.legend-${pinned.state}` : `.transition-row.transition-${pinned.row}`);
+}
+
+function pin(p) {
+  pinned = samePin(pinned, p) ? null : p;
+  if (pinned) cursorUsed = true; // A click is the user's, so the JSON tab may signal its marks.
+  applyHighlight(editor.cursorLine);
+}
+
+function unpin() {
+  if (!pinned) return false;
+  pinned = null;
+  return true;
+}
+
+// Makes the legend entries and the transition rows toggles: focusable, announced as pressed or unpressed buttons,
+// marked when pinned (cs-hl-pinned). A legend entry is also marked when it is the state of what the cursor
+// highlights (cs-hl-current, the `current` set of state classes).
+function wireToggles(svg, current) {
+  const toggle = (el, on, label) => {
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-pressed", String(on));
+    el.setAttribute("aria-label", label);
+    el.classList.toggle("cs-hl-pinned", on);
+  };
+  for (const entry of svg.querySelectorAll(".legend-entry")) {
+    const cls = legendState(entry);
+    entry.classList.toggle("cs-hl-current", current.has(cls));
+    toggle(entry, pinned?.state === cls, `Highlight everything that paints ${entry.textContent.trim()}`);
+  }
+  for (const row of svg.querySelectorAll(".transition-row")) {
+    const text = [...row.querySelectorAll("text")].map((t) => t.textContent).join(", ");
+    toggle(row, pinned?.row === transitionRow(row), `Highlight what causes the transition ${text}`);
+  }
+}
+
+const legendState = (entry) => [...entry.classList].find((c) => c.startsWith("legend-state-"))?.slice("legend-".length) || "";
+const transitionRow = (row) => Number([...row.classList].find((c) => /^transition-\d+$/.test(c))?.slice("transition-".length));
+
+// The pin a click or key on el asks for: a legend entry's state or a transition row, or null.
+function pinTarget(el) {
+  const entry = el.closest?.(".legend-entry");
+  if (entry) return { state: legendState(entry) };
+  const row = el.closest?.(".transition-row");
+  return row ? { row: transitionRow(row) } : null;
+}
+
 function applyHighlight(line) {
   const svg = $("svg").querySelector("svg");
-  const hs = svg ? highlightsAt(line) : [];
+  if (pinned && !pinShown(svg)) pinned = null; // The state or row is gone (states or document changed).
+  const hs = !svg ? [] : pinned ? pinnedHighlights() : highlightsAt(line);
+  if (svg) wireToggles(svg, new Set(hs.filter(painted).map((h) => h.class)));
   showSourceStatus(hs.map((h) => h.label));
-  editor.setHighlight(hs.map((h) => h.source));
+  editor.setHighlight(hs.map((h) => h.source).filter(Boolean)); // A base from --base or the config has no source line.
   const spans = hs.flatMap((h) => h.json || []).sort((a, b) => a.from - b.from);
   jsonView.setHighlight(spans);
   signalJsonMarks(spans);
   if (!svg) return;
   svg.querySelector(".cs-highlight")?.remove();
+  svg.querySelector(".cs-highlight-marks")?.remove();
   unmarkSegments(svg);
   if (!hs.length) return;
 
   const g = svgEl("g", { class: "cs-highlight", "aria-hidden": "true" },
     svgEl("defs", {}, ...INKS.map(fade), ...INKS.flatMap((ink) => [stripes("dense", ink, 7), stripes("sparse", ink, 13)])));
+  // Text gets a highlighter mark (--text-marker in style.css) in its own layer right above the SVG's background, so
+  // the text stays on top and readable: the name, the summary, the META rows, and the transition table's rows that
+  // a painted entry causes.
+  const marks = svgEl("g", { class: "cs-highlight-marks", "aria-hidden": "true" });
   const at = (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height });
-  // Painted areas get only the stripes, no outline. Text has no fill to stripe, so it gets a light frame: one dashed line
-  // whose dashes alternate between the light and the dark theme's text colour (style.css), visible on either.
+  // Painted areas get only the stripes, no outline.
   // Classes say what each rect is (for devtools): kind, source line, state, density and ink. The fill comes from
   // style.css by density and ink, so the stylesheet shows why a rect looks the way it does.
   const area = (r, h, density, ink) => {
@@ -252,17 +336,16 @@ function applyHighlight(line) {
     }));
     markSegments(svg, r, [`cs-hl-under-${density}`, `cs-hl-under-line-${h.line}`]);
   };
-  const frame = (r, h) => {
-    const what = `cs-hl-${h.kind} cs-hl-line-${h.line}${h.key ? ` cs-hl-key-${h.key}` : ""}`;
-    g.append(
-      svgEl("rect", { ...at(r), rx: 2, class: `cs-hl-frame cs-hl-frame-a ${what}` }),
-      svgEl("rect", { ...at(r), rx: 2, class: `cs-hl-frame cs-hl-frame-b ${what}` }));
-  };
-  const painted = (h) => h.kind === "base" || h.kind === "range";
+  const marker = (r, h, what = "") => marks.append(svgEl("rect", {
+    ...at(r), rx: 2, class: `cs-hl-marker cs-hl-${h.kind} cs-hl-line-${h.line}${h.key ? ` cs-hl-key-${h.key}` : ""}${what}`,
+  }));
   const inks = new Map(hs.filter(painted).map((h) => [h, contrastInk(svg, h.class)]));
   for (const h of hs.filter(painted)) for (const r of h.shadowed) area(r, h, "sparse", inks.get(h));
-  for (const h of hs) for (const r of h.rects) painted(h) ? area(r, h, "dense", inks.get(h)) : frame(r, h);
-  svg.append(g); // Last, so frames around text sit on top; pointer-events: none keeps the tooltips reachable.
+  for (const h of hs) for (const r of h.rects) painted(h) ? area(r, h, "dense", inks.get(h)) : marker(r, h);
+  for (const h of hs.filter(painted)) for (const r of h.transitions || []) marker(r, h, ` cs-hl-transition cs-hl-${h.class}`);
+  const bg = svg.querySelector(".background");
+  if (bg) bg.after(marks); else svg.prepend(marks);
+  svg.append(g); // Last, so the stripes sit on the week; pointer-events: none keeps the tooltips reachable.
 }
 
 // ---- theme ---------------------------------------------------------------------------------------------------------
@@ -907,7 +990,23 @@ function wire() {
   $("drop-link-args").addEventListener("click", dropLinkArgs);
   editor.onChange(debounce(evaluate, 120));
   // Loading a document moves the cursor too; only a cursor in the focused editor is the user's.
-  editor.onCursor((line) => { cursorUsed ||= editor.hasFocus; applyHighlight(line); });
+  editor.onCursor((line) => { cursorUsed ||= editor.hasFocus; unpin(); applyHighlight(line); });
+  // Legend entries and transition rows pin (see pin); the SVG is replaced on every evaluation, so the listeners sit
+  // on its frame.
+  $("svg").addEventListener("click", (e) => {
+    const p = pinTarget(e.target);
+    if (p) pin(p);
+  });
+  $("svg").addEventListener("keydown", (e) => {
+    const p = pinTarget(e.target);
+    if (p && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      pin(p);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && unpin()) applyHighlight(editor.cursorLine);
+  });
   editor.onChange(updateReset);
   $("preset").addEventListener("change", () => choosePreset($("preset").value));
   $("reset").addEventListener("click", () => { if (current) load(current.text); });

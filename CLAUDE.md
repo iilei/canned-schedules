@@ -745,6 +745,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (too invasive), and even a hover that only marks the source lines isn't needed: the week stays a pure output, and
   the way from the week back to the text is to put the cursor on a line. So no `data-` attributes on SVG segments,
   no per-cell stack of covered items, no document-version counter. #41 (the editing form) reads the cursor.
+  **The legend pins a state (decided 2026-11-09)**, which doesn't break that rule: a click on a legend swatch or
+  its label (Enter/Space when focused) only drives the highlight, never the cursor, the selection, the focus of the
+  editor or the document. The highlight then shows every entry that paints the state (the base and all its ranges:
+  stripes, source lines (whole STATE blocks, marker line included), JSON lines, status bar), e.g. all shifts of one person in the roster. Clicking again,
+  Escape or moving the cursor ends it; it survives re-evaluation while the legend has the state. The template
+  groups each swatch with its label (`<g class="legend-entry legend-state-N">`, preview layout, not contract);
+  `wireLegend` in `app.js` makes the groups toggle buttons in the page's DOM only (`tabindex`, `role`,
+  `aria-pressed`, `cs-hl-pinned` ringing the swatch), the listeners sit on the SVG's frame.
   - **Black-and-white ink, one per entry (decided 2026-11-08):** the overlay never uses a theme or state colour.
     An entry's areas get **diagonal stripes in one ink**, black or white, whichever contrasts more with the entry's
     own state colour (`contrastInk` in `app.js`): the page reads the browser's computed `fill` of an element with the
@@ -757,14 +765,28 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     dots on a 45° grid (both inks), hand-drawn noise phases, `feTurbulence` static and two-ink stripes pulsing as a
     standing wave; none of the animations ran reliably in Brave.
     **Classes, not inline fills (decided 2026-11-08, for debugging):** every overlay rect says what it is, e.g.
-    `cs-hl-area cs-hl-range cs-hl-line-20 cs-hl-state-2 cs-hl-dense cs-hl-ink-dark` (frames: `cs-hl-frame`, kind,
-    line, `cs-hl-key-<key>` for META items; pattern stripes: `cs-hl-stripe-<ink>`), and `style.css` assigns the
+    `cs-hl-area cs-hl-range cs-hl-line-20 cs-hl-state-2 cs-hl-dense cs-hl-ink-dark` (text marks: `cs-hl-marker`, kind,
+    line, `cs-hl-key-<key>` for META items, `cs-hl-transition` for table rows; pattern stripes: `cs-hl-stripe-<ink>`), and `style.css` assigns the
     fills by density and ink. The overlay sits on top in `<g class="cs-highlight">`, so the **segments under it are
     marked too** (`cs-hl-under cs-hl-under-dense cs-hl-under-line-20`, removed by the next highlight; DOM only, the
-    downloaded SVG is the checker's text). No outline around the areas (it confused more than it helped). Text frames
-    (name, summary, META rows) are light: one 1 px dashed line whose dashes alternate between the light and the dark
-    theme's text colour (`--text-light-scheme`, `--text-dark-scheme`), visible on either background; a black dashed
-    line over a white halo was too heavy. Every colour contrasts at least 4.58:1
+    downloaded SVG is the checker's text). No outline around the areas (it confused more than it helped).
+    **Text gets a highlighter mark (decided 2026-11-09)**, not a frame: the name, summary, META rows and the
+    transition rows get a tint behind the text, `--text-marker` in `style.css` (light: yellow at 55 %, dark: amber
+    at 30 %, about 6:1 for the dark theme's labels), in a layer (`cs-highlight-marks`) inserted right above the SVG
+    background, so the text stays on top. Replaced the dashed frames in both themes' text colours (outline clutter
+    on text; before that, a black dashed line over a white halo was too heavy).
+    **Transition rows (decided 2026-11-09):** base and ranges mark the table rows they cause:
+    `schedule.Trace.Switches` (the entry paints the switch minute on at least one of the row's days) is the one rule,
+    used for the JSON's `transitions` lines (`paintPaths`) and the SVG rows (`Highlight.Transitions`, boxes computed
+    in Go like the annotation rows). The template groups each row (`<g class="transition-row transition-N">`).
+    **The legend shows the cursor's state (decided 2026-11-09):** a dashed ring and a bold label (`cs-hl-current`) on
+    the state of the painted entries under the cursor, steady rather than a blink (readable whenever one looks, no
+    SVG animation); a pin's solid ring wins.
+    **Transition rows pin too (decided 2026-11-09):** clicking a row (Enter/Space when focused) pins it like a legend
+    entry: the highlight shows the entries that cause it (`Switches`) with all they produce, their own source lines
+    only (other items of their blocks may not cause the row), and the pinned row's text turns bold. Rows carry
+    their index (`RowBox.Row`, as in the output's `transitions`); `wireToggles` makes legend entries and rows
+    toggle buttons, and `pinned` is `{state}` or `{row}`. Every colour contrasts at least 4.58:1
     with black or white, so the picked ink always stands out, whatever the palette, theme or override. Tried and
     dropped: two-tone diagonal stripes (hid the state colour), dots as a black core in a white ring (blurred to grey
     at 1:1). Considered and rejected: stripes in the text colour (vanish on fills close to it), black/white picked
@@ -774,11 +796,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     `TestHighlightInkContrast` reads it and requires at least 4.5:1 for the better ink on every palette fill in
     both themes, blended over the theme background (worst today: 4.65:1, classic, dark).
   - **Header entries and the JSON tab (decided 2026-11-08):** the H1 (`name`) and each META item are highlight
-    entries too: a dashed frame around the title or the annotation row in the SVG, and in the JSON tab the lines of
+    entries too: a highlighter mark on the title or the annotation row in the SVG, and in the JSON tab the lines of
     `name`, `schema-version` or `annotations.<key>`. The **META marker line** is its own entry (`meta-block`) for
     everything the block produces: in the JSON, `summary`, the whole `annotations` object (braces included, when the
     block has `x-*` keys) and `schema-version` (when declared), one contiguous run thanks to the key order; in the
-    SVG, frames around the summary and the whole META section. Base and ranges mark the `week` runs they paint a
+    SVG, marks on the summary and the whole META section. Base and ranges mark the `week` runs they paint a
     minute of and the `transitions` that switch to them at a minute they paint. The JSON spans come from
     `internal/web/jsonmap.go` (`json.Decoder` offsets over the exact text the page shows); the viewer scrolls only
     its own box, never the page. Matching in `app.js`: the entries on the cursor line; on a line without one (a

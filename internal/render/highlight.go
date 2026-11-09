@@ -49,6 +49,9 @@ type Highlight struct { //nolint:govet // fieldalignment: field order is the JSO
 	// Rects are the buckets where this entry shows; Shadowed those it covers mostly but a later range paints over.
 	Rects    []Rect `json:"rects"`
 	Shadowed []Rect `json:"shadowed"`
+	// Transitions are the rows of the SVG's transition table that switch to the entry's state at a minute the entry
+	// paints (schedule.Trace.Switches), boxed like the annotation rows; empty for other kinds.
+	Transitions []RowBox `json:"transitions"`
 	// Label describes the entry (in exact minutes for base and ranges), for a status line.
 	Label string `json:"label"`
 	// JSON are the line spans of the output JSON (as the page shows it) that the entry produces; filled in by the
@@ -56,6 +59,13 @@ type Highlight struct { //nolint:govet // fieldalignment: field order is the JSO
 	JSON []schedule.Lines `json:"json"`
 	// Owner is the painting owner for base (-1) and ranges (their index); unused for other kinds.
 	Owner int `json:"-"`
+}
+
+// RowBox is one row of the transition table: its index (the same as in the output's transitions) and its box.
+type RowBox struct {
+	Rect
+
+	Row int `json:"row"`
 }
 
 // Rect is a rectangle in the SVG's user coordinates.
@@ -70,7 +80,7 @@ type Rect struct {
 // text in m, the model the SVG draws), then the base and the ranges in source order on the buckets of p. A bucket is an entry's when it shows the entry's state and, among the minutes of that
 // state, the entry paints the most (ties go to the later range, as in painting). A range's bucket is shadowed when the
 // range covers at least half of it but the bucket isn't the range's.
-func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []Highlight {
+func Highlights(tr *schedule.Trace, res *schedule.Output, cfg *config.Config, p Preview, m *Model) []Highlight {
 	out := headerHighlights(tr, m)
 	winners := bucketWinners(tr, p)
 
@@ -78,7 +88,7 @@ func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []H
 		i, _ := stateInfo(cfg, tr.State(o))
 		h := Highlight{
 			Kind: HighlightRange, State: tr.State(o), Class: stateClass(i), Rects: []Rect{},
-			Shadowed: []Rect{}, Owner: o,
+			Shadowed: []Rect{}, Transitions: []RowBox{}, Owner: o,
 		}
 
 		if o < 0 {
@@ -106,13 +116,15 @@ func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []H
 			h.Shadowed = append(h.Shadowed, bucketRects(shadowed, d, p.Size)...)
 		}
 
+		h.Transitions = transitionRows(tr, res, m, o)
+
 		h.Label = tr.Summary(o)
 		if h.Line > 0 {
 			h.Label = fmt.Sprintf("line %d: %s", h.Line, h.Label)
 		}
 
 		if partial && p.Size > 1 {
-			h.Label += fmt.Sprintf(" · dots in %d-min buckets", p.Size)
+			h.Label += fmt.Sprintf(" · stripes in %d-min buckets", p.Size)
 		}
 
 		out = append(out, h)
@@ -126,7 +138,8 @@ func Highlights(tr *schedule.Trace, cfg *config.Config, p Preview, m *Model) []H
 func headerHighlights(tr *schedule.Trace, m *Model) []Highlight {
 	line := func(n int) schedule.Lines { return schedule.Lines{From: n, To: n} }
 	h := Highlight{
-		Kind: HighlightName, Line: tr.Name.Line, Block: line(tr.Name.Line), Rects: []Rect{}, Shadowed: []Rect{},
+		Kind: HighlightName, Line: tr.Name.Line, Block: line(tr.Name.Line),
+		Rects: []Rect{}, Shadowed: []Rect{}, Transitions: []RowBox{},
 		Label: fmt.Sprintf("line %d: name %q", tr.Name.Line, tr.Name.Value),
 	}
 
@@ -144,7 +157,8 @@ func headerHighlights(tr *schedule.Trace, m *Model) []Highlight {
 
 	for _, e := range tr.Meta.Entries {
 		h := Highlight{
-			Kind: HighlightMeta, Line: e.Line, Block: tr.Meta.Block, Key: e.Key, Rects: []Rect{}, Shadowed: []Rect{},
+			Kind: HighlightMeta, Line: e.Line, Block: tr.Meta.Block, Key: e.Key,
+			Rects: []Rect{}, Shadowed: []Rect{}, Transitions: []RowBox{},
 			Label: fmt.Sprintf("line %d: %s %q", e.Line, e.Key, e.Value),
 		}
 
@@ -170,7 +184,8 @@ func headerHighlights(tr *schedule.Trace, m *Model) []Highlight {
 // schema-version.
 func metaBlock(meta *schedule.TraceMeta, m *Model) Highlight {
 	h := Highlight{
-		Kind: HighlightMetaBlock, Line: meta.Block.From, Block: meta.Block, Rects: []Rect{}, Shadowed: []Rect{},
+		Kind: HighlightMetaBlock, Line: meta.Block.From, Block: meta.Block,
+		Rects: []Rect{}, Shadowed: []Rect{}, Transitions: []RowBox{},
 	}
 
 	var parts []string
@@ -214,6 +229,31 @@ func metaBlock(meta *schedule.TraceMeta, m *Model) Highlight {
 }
 
 // textBox frames a label drawn at t with the given character advance and font size.
+// transitionRows boxes the rows of the transition table that owner causes (schedule.Trace.Switches).
+func transitionRows(tr *schedule.Trace, res *schedule.Output, m *Model, owner int) []RowBox {
+	rows := []RowBox{}
+
+	for i, row := range m.Transitions.Rows {
+		if i < len(res.Transitions) && tr.Switches(owner, &res.Transitions[i]) {
+			rows = append(rows, RowBox{Rect: rowBox(row), Row: i})
+		}
+	}
+
+	return rows
+}
+
+// rowBox boxes one row of the transition table, from its first cell to the end of its last, with the annotation
+// rows' height, so neighbouring rows' boxes don't touch.
+func rowBox(row []Text) Rect {
+	first, last := row[0], row[len(row)-1]
+
+	return Rect{
+		X: first.X - boxPad, Y: first.Y - bodyFont - rowBoxRaise,
+		Width:  last.X - first.X + float64(len([]rune(last.Text)))*charW + boxPad + boxPad,
+		Height: lineH - rowBoxGap,
+	}
+}
+
 func textBox(t Text, advance, size float64) Rect {
 	return Rect{
 		X: t.X - boxPad, Y: t.Y - size,

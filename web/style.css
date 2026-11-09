@@ -61,9 +61,6 @@
     --surface: #ffffff;
     --surface-2: #f0f2f5;
     --text: #1d2129;
-    /* Both themes' text colours, independent of the current theme (the SVG highlight's text frames). */
-    --text-light-scheme: #1d2129;
-    --text-dark-scheme: #e6e8ec;
     --muted: #5f6673;
     --border: #dde1e7;
     --accent: #0b7a68;
@@ -102,6 +99,7 @@
     --hl-punct: #6b7280;
     --hl-schedule: #8250df;
     --hl-active-line: rgba(11, 122, 104, 0.06);
+    --text-marker: rgba(255, 221, 0, 0.55); /* Highlighter behind SVG text (app.js, source highlight). */
     --hl-selection: rgba(11, 122, 104, 0.22);
     --hl-error-line: rgba(196, 49, 75, 0.1);
     --hl-warn-line: rgba(154, 103, 0, 0.1);
@@ -148,6 +146,7 @@
     --hl-punct: #8b93a1;
     --hl-schedule: #c4a5ff;
     --hl-active-line: rgba(90, 209, 184, 0.06);
+    --text-marker: rgba(255, 200, 40, 0.3);
     --hl-selection: rgba(90, 209, 184, 0.25);
     --hl-error-line: rgba(255, 123, 143, 0.14);
     --hl-warn-line: rgba(227, 179, 65, 0.12);
@@ -195,6 +194,7 @@
         --hl-punct: #8b93a1;
         --hl-schedule: #c4a5ff;
         --hl-active-line: rgba(90, 209, 184, 0.06);
+        --text-marker: rgba(255, 200, 40, 0.3);
         --hl-selection: rgba(90, 209, 184, 0.25);
         --hl-error-line: rgba(255, 123, 143, 0.14);
         --hl-warn-line: rgba(227, 179, 65, 0.12);
@@ -715,6 +715,44 @@ pre.flags {
 .svg-frame .cs-highlight {
     pointer-events: none; /* The runs' tooltips stay reachable. */
 }
+/* Legend entries pin their state's highlight (app.js, pin). The swatch gets a solid ring in the page's text colour
+   when pinned or focused by keyboard. */
+.svg-frame .legend-entry {
+    cursor: pointer;
+    outline: none;
+}
+/* Transition rows pin the entries that cause them (app.js, pin): the pinned row's text turns bold, a focused one is
+   underlined; the row's highlighter mark comes with the entries. */
+.svg-frame .transition-row {
+    cursor: pointer;
+    outline: none;
+}
+.svg-frame .transition-row.cs-hl-pinned text {
+    font-weight: 700;
+}
+.svg-frame .transition-row:focus-visible text {
+    text-decoration: underline;
+}
+/* The state of the cursor's entry: a dashed ring and a bold label (Ubuntu Mono keeps its width in bold). A pin's solid
+   ring wins over it. */
+.svg-frame .legend-entry.cs-hl-current rect {
+    stroke: var(--text);
+    stroke-width: 2;
+    stroke-dasharray: 3 2;
+}
+.svg-frame .legend-entry.cs-hl-current text,
+.svg-frame .legend-entry.cs-hl-pinned text {
+    font-weight: 700;
+}
+.svg-frame .legend-entry.cs-hl-pinned rect,
+.svg-frame .legend-entry:focus-visible rect {
+    stroke: var(--text);
+    stroke-width: 2;
+    stroke-dasharray: none;
+}
+.svg-frame .legend-entry:focus-visible text {
+    text-decoration: underline;
+}
 /* Painted areas (app.js): stripes by density and ink; the patterns live in the overlay's <defs>. */
 .svg-frame .cs-hl-dense.cs-hl-ink-dark { fill: url(#cs-hl-dense-dark); }
 .svg-frame .cs-hl-dense.cs-hl-ink-light { fill: url(#cs-hl-dense-light); }
@@ -723,18 +761,10 @@ pre.flags {
 /* One stripe of a pattern: solid in the middle, fading out at its edges. */
 .svg-frame .cs-hl-stripe-dark { fill: url(#cs-hl-fade-dark); }
 .svg-frame .cs-hl-stripe-light { fill: url(#cs-hl-fade-light); }
-/* Text frames: one 1 px dashed line, the dashes alternating between both themes' text colours. */
-.svg-frame .cs-hl-frame {
-    fill: none;
-    stroke-width: 1;
-    stroke-dasharray: 4 4;
-}
-.svg-frame .cs-hl-frame-a {
-    stroke: var(--text-light-scheme);
-}
-.svg-frame .cs-hl-frame-b {
-    stroke: var(--text-dark-scheme);
-    stroke-dashoffset: 4;
+/* Highlighted text (name, summary, META rows, transition rows): a highlighter-pen tint behind the text, one colour
+   per theme (--text-marker); the marks sit under the text (app.js inserts them above the SVG background). */
+.svg-frame .cs-hl-marker {
+    fill: var(--text-marker);
 }
 /* Status bar under the editor (app.js, showSourceStatus): two lines tall at all times, so it never shifts the page. */
 .source-status {

@@ -25,7 +25,7 @@ func highlights(t *testing.T, src string, size int) ([]Highlight, Preview) {
 	p := Downsample(out, cfg, size)
 	m := Build(out, cfg, p, SVGOptions{Theme: ThemeAuto, Annotations: true})
 
-	all := Highlights(tr, cfg, p, &m)
+	all := Highlights(tr, out, cfg, p, &m)
 
 	// The paint highlights (base, ranges) follow the header ones.
 	for i, h := range all {
@@ -158,7 +158,7 @@ func TestAnnotationsSectionIsOptIn(t *testing.T) {
 		t.Errorf("order must be heading, summary, rows: %+v", a)
 	}
 
-	hs := Highlights(tr, cfg, p, &m)
+	hs := Highlights(tr, out, cfg, p, &m)
 	// The META block entry frames the whole section, summary included.
 	if hs[0].Kind != HighlightName || len(hs[0].Rects) != 1 || hs[1].Kind != HighlightMetaBlock ||
 		hs[1].Line != 3 || hs[1].Block != (schedule.Lines{From: 3, To: 5}) || len(hs[1].Rects) != 1 ||
@@ -177,5 +177,37 @@ func TestAnnotationsSectionIsOptIn(t *testing.T) {
 	// The frame of x-zeta sits on its row, below x-alpha's.
 	if hs[2].Rects[0].Y <= hs[3].Rects[0].Y {
 		t.Errorf("x-zeta frame at y %v, x-alpha at %v", hs[2].Rects[0].Y, hs[3].Rects[0].Y)
+	}
+}
+
+// TestHighlightsTransitionRows ties the transition table's rows to the entries that cause them: overlap's table is
+// 06:10 → Medium, 22:00 → Minimum (MON-THU), 20:00 → Maximum (FRI), 02:00 → Minimum (SAT).
+func TestHighlightsTransitionRows(t *testing.T) {
+	t.Parallel()
+
+	hs, _ := highlights(t, overlap, 15)
+	base, medium, maximum := hs[0], hs[1], hs[2]
+
+	if len(base.Transitions) != 2 || len(medium.Transitions) != 1 || len(maximum.Transitions) != 1 {
+		t.Fatalf("rows: base %d, medium %d, maximum %d; want 2, 1, 1",
+			len(base.Transitions), len(medium.Transitions), len(maximum.Transitions))
+	}
+
+	// Rows are lineH apart: Medium's is the first, the base's the second and fourth, Maximum's the third.
+	first := medium.Transitions[0].Y
+	for i, y := range []float64{base.Transitions[0].Y, maximum.Transitions[0].Y, base.Transitions[1].Y} {
+		if want := first + float64(i+1)*lineH; y != want {
+			t.Errorf("row %d at y %v, want %v", i+1, y, want)
+		}
+	}
+
+	if medium.Transitions[0].Row != 0 || base.Transitions[0].Row != 1 || maximum.Transitions[0].Row != 2 ||
+		base.Transitions[1].Row != 3 {
+		t.Errorf("row indices: medium %d, base %d and %d, maximum %d; want 0, 1 and 3, 2", medium.Transitions[0].Row,
+			base.Transitions[0].Row, base.Transitions[1].Row, maximum.Transitions[0].Row)
+	}
+
+	if r := medium.Transitions[0]; r.Width <= 0 || r.Height != lineH-rowBoxGap {
+		t.Errorf("row box = %+v", r)
 	}
 }
