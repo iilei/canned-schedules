@@ -393,7 +393,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
-  - The example pins `0.2.1`, the first with the Go library (`0.2.0` was the first without `digests`, `0.1.0` the
+  - The example pins `0.2.2`, the first with `?arg=`, preset flags and locked links on the page (`0.2.1` was the first with
+    the Go library, `0.2.0` was the first without `digests`, `0.1.0` the
     first regular release, `0.0.1-pre.6` the first with the date as `schema-version`, `0.0.1-pre.4` the first with provenance attestations, which mise
     verifies on install). Bump it
     in the same PR that prepares a release, then tag right after the merge, so the release's own README and example
