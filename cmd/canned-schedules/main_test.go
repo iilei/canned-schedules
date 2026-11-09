@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
@@ -169,6 +170,59 @@ func TestSVGFile(t *testing.T) {
 
 	if b, _ := os.ReadFile(target); string(b) != "previous" {
 		t.Error("a document with errors must not replace the preview")
+	}
+}
+
+// TestSphinxKitFile covers --sphinx-kit-output-file, which the binary builds itself (the library never links the kit
+// and its fonts): a zip with the extension, the stylesheet, a font and the schedule as MyST, honouring config overrides.
+func TestSphinxKitFile(t *testing.T) {
+	t.Parallel()
+
+	target := filepath.Join(t.TempDir(), "kit.zip")
+
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{
+		"--set-config-at", "states[1].display-name", "--set-config-value", `"Low"`,
+		"--sphinx-kit-output-file", target, basic,
+	}, &stdout, &stderr); code != exitOK {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+
+	r, err := zip.OpenReader(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+
+	const dir = "canned-schedules-sphinx-kit/"
+
+	files := map[string]*zip.File{}
+	for _, f := range r.File {
+		files[strings.TrimPrefix(f.Name, dir)] = f
+	}
+
+	for _, want := range []string{"_ext/canned_schedules/__init__.py", "_ext/canned_schedules/static/fonts/UFL.txt"} {
+		if files[want] == nil {
+			t.Errorf("kit lacks %s%s", dir, want)
+		}
+	}
+
+	// The override reaches the kit: the BASE block's admonition carries the display name.
+	f := files["examples/schedule-name.md"]
+	if f == nil {
+		t.Fatalf("kit lacks the example")
+	}
+
+	rc, err := f.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rc.Close()
+
+	var md bytes.Buffer
+	if _, err := md.ReadFrom(rc); err != nil || !strings.Contains(md.String(), "Low") {
+		t.Errorf("the example must use the overridden display name:\n%s", md.String())
 	}
 }
 

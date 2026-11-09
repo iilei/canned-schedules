@@ -19,7 +19,6 @@ import (
 	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
-	"github.com/iilei/canned-schedules/internal/sphinxkit"
 )
 
 const minutesPerHour = 60
@@ -324,15 +323,9 @@ func MyST(opts *Options, src []byte) ([]byte, error) {
 	return []byte(out), err
 }
 
-// SphinxKit builds the Sphinx kit for a successfully evaluated document; version names the generating tool.
-func SphinxKit(opts *Options, src []byte, version string) ([]byte, error) {
-	cfg, err := previewConfig(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return sphinxkit.Kit(src, cfg, version)
-}
+// Config loads the config with the overrides in opts, for outputs built outside this package (the Sphinx kit, which
+// the CLI binary and the page build themselves, so the library never links the kit and its fonts).
+func Config(opts *Options) (*config.Config, error) { return previewConfig(opts) }
 
 // previewConfig reloads the config; Run already validated it, so this can't fail for a document that evaluated.
 func previewConfig(opts *Options) (*config.Config, error) {
