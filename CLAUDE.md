@@ -477,6 +477,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
       An API break without a data break raises the minor but keeps `schema-version`.
     - **`schema` and `templates` are not stable API:** they sit outside `internal/` only because `go:embed` can't
       reach parent directories; their package docs say so, and `api:diff` ignores them.
+    - **The library never links the Sphinx kit (decided 2026-11-09):** the kit (`internal/sphinxkit.Kit`, with the
+      embedded fonts in `assets`) is built by its only two users, the CLI binary (`--sphinx-kit-output-file`) and the
+      page (`web.SphinxKit`), from `cli.Config(opts)`; `internal/cli` doesn't import `internal/sphinxkit`. So the
+      root package doesn't depend on `assets` (`go list -deps .`), and an importer like the companion can render
+      SVG, ASCII and the text form without the kit, its fonts or their licences. The kit and MyST stay outside the
+      library's API.
     - **Not done yet:** moving `cmd/canned-schedules` and `internal/web` onto the facade (optional: parity is
       tested).
   - **Licence:** importers are bound by FSL-1.1-ALv2, like users of the binary.

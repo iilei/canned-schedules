@@ -28,6 +28,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/files"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
+	"github.com/iilei/canned-schedules/internal/sphinxkit"
 )
 
 // Exit codes: 1 means the document (or a flag value) has errors, 2 means the command line or the environment is
@@ -152,7 +153,12 @@ func writeOutputs(opts *cli.Options, out *schedule.Output, src []byte) error {
 			return cli.MyST(opts, src)
 		}},
 		{flag: "--sphinx-kit-output-file", path: opts.Sphinx.KitFile, render: func() ([]byte, error) {
-			return cli.SphinxKit(opts, src, generator)
+			cfg, err := cli.Config(opts)
+			if err != nil {
+				return nil, err
+			}
+
+			return sphinxkit.Kit(src, cfg, generator)
 		}},
 		{flag: "--trace-output-file", path: opts.Trace.File, render: func() ([]byte, error) {
 			tr, err := cli.Trace(opts, src)

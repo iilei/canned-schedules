@@ -155,5 +155,10 @@ func SphinxKit(src []byte, link, args []string) ([]byte, error) {
 		return nil, errInvalid
 	}
 
-	return cli.SphinxKit(&opts, src, "canned-schedules preflight page")
+	cfg, err := cli.Config(&opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return sphinxkit.Kit(src, cfg, "canned-schedules preflight page")
 }
