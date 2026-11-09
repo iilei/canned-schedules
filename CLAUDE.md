@@ -666,7 +666,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (system/light/dark, saved in localStorage); `?preset=`, `?theme=`, `?view=`, `?tab=`, `?downsample=`,
   `?sample-interval=` and `?symbols=` make views linkable, and `#doc=<base64url>` opens a document (a fragment, so it
   never reaches the server). **Copy link** builds that URL from the current state (`permalink()` in `app.js`: every
-  control explicitly, the theme only when not "system", `#doc=` only when the editor differs from the preset), copies
+  knob explicitly, defaults included since 2026-11-09 (`lock=false`, `theme=system`, `palette=built-in`), so whoever
+  edits the link sees what they can change; `states` only when custom, `arg` only when present, `#doc=` only when the
+  editor differs from the preset), copies
   it and puts it in the address bar.
 - **States editor and CLI flags (decided 2026-10-26, #39):** the options hold a "States" panel (rows of id and
   display name; add, remove, reorder, reset). The rows go to the checker as `--set-config-at states
@@ -694,7 +696,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   them. The sample-interval and preview-bucket dropdowns list every divisor of 60, so every CLI value has a control
   (before, `?sample-interval=10` was dropped without a word). The companion's `--fiddle-link-base-uri` link carries
   its run's options this way.
-- **Locked links (decided 2026-11-09):** `?lock=1` (or `true`) locks every control that isn't Markdown: the preset
+- **Locked links (decided 2026-11-09):** `?lock=true` (or `1`) locks every control that isn't Markdown: the preset
   dropdown, the options (buckets, sample interval, colours, ASCII symbols), the States panel (both are `<fieldset>`s,
   disabled as a whole) and **Drop them** (hidden). The reader edits the schedule only; the link's author owns the
   flags it is checked with, so the split between the document and its flags shows on the page. **Visibly locked:**
@@ -702,7 +704,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   a lock banner ("Locked by the link. Whoever shared it set these options and flags; …"), a lock badge stands before
   the preset dropdown, the States summary ends in "locked", and every locked control's tooltip says "Locked by the
   link". Theme, view and tabs
-  stay free (they only change the look); Copy link keeps `lock=1`. Separation of concerns, not security: anyone can
+  stay free (they only change the look); Copy link writes `lock=true` or `lock=false` (`1` and `0` are read too). Separation of concerns, not security: anyone can
   edit the address, and the logo leads to the unlocked page.
 - **ASCII symbols stay URL-only (decided 2026-11-09):** no page UI for single symbols (a power-user feature). A link
   sets them with `?symbols=styles` plus `?arg=` pairs such as `--set-config-at representation.styles.states[3].symbol`

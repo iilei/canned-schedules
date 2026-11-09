@@ -840,17 +840,19 @@ async function copyFlags() {
 // fragment as base64url, only when it differs from the preset. Fragments never reach the server.
 const CONTROLS = ["downsample", "sample-interval", "symbols"];
 
+// Every knob is written out, defaults included (lock=false, theme=system, palette=built-in), so whoever edits the
+// link sees what they can change. Only the states (written when custom) and the link's flags are left out when empty.
 function permalink() {
   const q = new URLSearchParams();
   if (current) q.set("preset", current.id);
-  if (state.theme !== "system") q.set("theme", state.theme);
+  q.set("lock", String(locked));
+  q.set("theme", state.theme);
   q.set("view", state.flavour);
   q.set("tab", state.tab);
   for (const id of CONTROLS) q.set(id, $(id).value);
-  if ($("palette").value !== palettes[0]?.id) q.set("palette", $("palette").value);
+  if ($("palette").value) q.set("palette", $("palette").value);
   if (statesOverride()) for (const r of stateRows) q.append("states", r.name && r.name !== r.id ? r.id + ":" + r.name : r.id);
   for (const a of linkArgs) q.append("arg", a);
-  if (locked) q.set("lock", "1");
   const url = new URL(location.pathname, location.origin);
   url.search = q.toString();
   if (dirty()) url.hash = "doc=" + toBase64url(editor.value);
@@ -936,7 +938,7 @@ function fromHash() {
 }
 
 // Views can be linked: ?preset=minimal&theme=dark&view=sphinx&tab=json&downsample=30&sample-interval=15&symbols=braille
-// &palette=okabe-ito&states=Primary&states=Off&arg=--base&arg=Off&lock=1 (see permalink). Unknown values of the controls are
+// &palette=okabe-ito&states=Primary&states=Off&arg=--base&arg=Off&lock=true (see permalink; lock=1 works too). Unknown values of the controls are
 // ignored; ?arg= goes to the checker as it is, which reports what it can't take.
 // ?lock=1 locks everything that isn't Markdown: the preset, the options, the states and dropping the link's flags.
 // The reader edits the schedule only, and the link's author owns the flags it is checked with (separation of
