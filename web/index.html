@@ -64,7 +64,15 @@
     <div class="options">
       <label>Preview buckets
         <select id="downsample">
+          <option value="2">2 min</option>
+          <option value="3">3 min</option>
+          <option value="4">4 min</option>
+          <option value="5">5 min</option>
+          <option value="6">6 min</option>
+          <option value="10">10 min</option>
+          <option value="12">12 min</option>
           <option value="15" selected>15 min</option>
+          <option value="20">20 min</option>
           <option value="30">30 min</option>
           <option value="60">60 min</option>
           <option value="1">1 min (exact)</option>
@@ -73,8 +81,15 @@
       <label>Sample interval
         <select id="sample-interval">
           <option value="1" selected>1 min</option>
+          <option value="2">2 min</option>
+          <option value="3">3 min</option>
+          <option value="4">4 min</option>
           <option value="5">5 min</option>
+          <option value="6">6 min</option>
+          <option value="10">10 min</option>
+          <option value="12">12 min</option>
           <option value="15">15 min</option>
+          <option value="20">20 min</option>
           <option value="30">30 min</option>
           <option value="60">60 min</option>
         </select>
@@ -89,6 +104,9 @@
         </select>
       </label>
     </div>
+    <p class="config config-note link-args" id="link-args" hidden>This link sets <span id="link-args-count"></span>
+      of its own, shown under Equivalent CLI flags.
+      <button type="button" class="ghost" id="drop-link-args" title="Check without the link's flags">Drop them</button></p>
     <details class="config" id="states-panel">
       <summary>States <span class="muted" id="states-summary"></span></summary>
       <p class="config-note">The states your schedule may name, in order: the first is the default base, and colours

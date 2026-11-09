@@ -57,7 +57,7 @@ func TestPresets(t *testing.T) {
 			continue
 		}
 
-		if res := Evaluate(src, nil); res.Errors+res.Warnings != 0 {
+		if res := Evaluate(src, nil, nil); res.Errors+res.Warnings != 0 {
 			t.Errorf("preset %q must evaluate cleanly, got report %s", p.ID, res.Report)
 		}
 	}
