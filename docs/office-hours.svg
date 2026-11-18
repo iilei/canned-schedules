@@ -20,8 +20,8 @@
     }
   </style>
   <rect class="background" width="100%" height="100%"/>
-  <text class="label" x="48" y="22" font-size="18" font-weight="bold">Office Hours</text>
-  <text class="label" x="198" y="22" font-size="14" font-style="italic">Weekdays with a late Friday</text>
+  <text class="label schedule-title" x="48" y="22" font-size="18" font-weight="bold">Office Hours</text>
+  <text class="label meta-summary" x="198" y="22" font-size="14" font-style="italic">Weekdays with a late Friday</text>
   <g class="ruler">
     <text class="label" x="48" y="51" font-size="12">00:00</text>
     <text class="label" x="192" y="51" font-size="12">06:00</text>

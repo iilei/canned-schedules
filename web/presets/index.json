@@ -5,7 +5,6 @@
   {"id": "weekday-peaks", "label": "Weekday peaks", "category": "Capacity"},
   {"id": "nightly-batch", "label": "Nightly batch", "category": "Capacity"},
   {"id": "support-desk", "label": "Support desk channels", "category": "Support hours", "args": true},
-  {"id": "on-call-roster", "label": "On-call roster of 30", "category": "On-call", "args": true,
-   "options": {"symbols": "styles"}},
+  {"id": "on-call-roster", "label": "On-call roster of 30", "category": "On-call", "args": true, "options": {"symbols": "styles"}},
   {"id": "yolo", "label": "YOLO", "category": "Capacity", "hidden": true}
 ]

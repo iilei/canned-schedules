@@ -733,6 +733,25 @@ pre.flags {
 .svg-frame .transition-row:focus-visible text {
     text-decoration: underline;
 }
+/* The title and the META section pin what produces them (app.js, pin), the same way. */
+.svg-frame .schedule-title,
+.svg-frame .meta-heading,
+.svg-frame .meta-summary,
+.svg-frame .annotation-row {
+    cursor: pointer;
+    outline: none;
+}
+.svg-frame .meta-heading.cs-hl-pinned,
+.svg-frame .meta-summary.cs-hl-pinned,
+.svg-frame .annotation-row.cs-hl-pinned text {
+    font-weight: 700;
+}
+.svg-frame .schedule-title:focus-visible,
+.svg-frame .meta-heading:focus-visible,
+.svg-frame .meta-summary:focus-visible,
+.svg-frame .annotation-row:focus-visible text {
+    text-decoration: underline;
+}
 /* The state of the cursor's entry: a dashed ring and a bold label (Ubuntu Mono keeps its width in bold). A pin's solid
    ring wins over it. */
 .svg-frame .legend-entry.cs-hl-current rect {

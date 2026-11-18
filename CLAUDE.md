@@ -786,7 +786,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     entry: the highlight shows the entries that cause it (`Switches`) with all they produce, their own source lines
     only (other items of their blocks may not cause the row), and the pinned row's text turns bold. Rows carry
     their index (`RowBox.Row`, as in the output's `transitions`); `wireToggles` makes legend entries and rows
-    toggle buttons, and `pinned` is `{state}` or `{row}`. Every colour contrasts at least 4.58:1
+    toggle buttons, and `pinned` is `{state}` or `{row}`.
+    **The title and the META section pin too (decided 2026-11-18):** the title pins the H1, the META heading and the
+    summary pin the whole META block, and a META row pins its item (`{kind}`, plus `key` for a row), with the marks,
+    source lines, JSON lines and status bar the cursor on that line shows. The template names the targets
+    (`schedule-title`, `meta-heading`, `meta-summary`, `<g class="annotation-row annotation-<key>">`; preview layout,
+    not contract). Every colour contrasts at least 4.58:1
     with black or white, so the picked ink always stands out, whatever the palette, theme or override. Tried and
     dropped: two-tone diagonal stripes (hid the state colour), dots as a black core in a white ring (blurred to grey
     at 1:1). Considered and rejected: stripes in the text colour (vanish on fills close to it), black/white picked
