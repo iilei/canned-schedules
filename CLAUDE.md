@@ -420,6 +420,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `MISE_DISABLE_TOOLS` skipping the pinned release). The release key's public half is committed as
   `release-key.asc` (no email in the user ID, on purpose) and published on `github.com/iilei.gpg`, keys.openpgp.org
   (findable by fingerprint only, since it has no email) and keyserver.ubuntu.com.
+- **AWS example (decided 2026-11-18):** `examples/aws` holds the README's AWS recipes as working files, and
+  `TestAWSRecipesMatchTheExample` keeps the two identical. `mise run example:aws` (`examples/test-aws.sh`, checks in
+  `examples/aws/test/verify.py`, standard library only) applies them to a local `aws-emulator`: on a free port, telemetry
+  off, schedules rendered by this checkout. It replays the stored crons against `week` and checks plans and CLI calls. It
+  isn't part of `check` or CI, because the emulator isn't on the runners, and it doesn't replace item 4 under "Open": the
+  emulator can't delete EC2 scheduled actions yet and doesn't run actions at their times. Terraform, the AWS CLI and jq
+  are pinned as tools of that task only, so regular runs don't install them. The AWS provider is pinned exactly in
+  `infrastructure.tf`, under the two-week rule.
 - **CI calls mise tasks only:** a workflow prepares the environment and runs tasks, so every failure reproduces
   locally with the same command. `check.yml` runs `golden:check`, `check`, `api:diff` (into the job summary),
   `coverage`, `test:wasm`, `web:build` and `example:test`; the release build job runs `api:diff --release`; the release smoke job runs `release:smoke` with `install: false` and
@@ -1051,7 +1059,7 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
    with 1.0; after that, breaking changes mean 2.0.
 4. **Verify the README's AWS recipes against AWS**, last (decided 2026-11-08): EC2 Auto Scaling via Terraform and
    via the CLI, ECS via Application Auto Scaling. They carry an "Unverified against AWS" warning: so far only
-   `terraform validate` and a stubbed `aws` CLI checked them. Remove the warning once a live test passes. Planned as `mise run aws:test` and
+   an AWS emulator (`mise run example:aws`) checked them. Remove the warning once a live test passes. Planned as `mise run aws:test` and
    `mise run aws:sweep`, never in regular CI, borrowing from `../convergenci-cli` (`testdata/aws-live/run.sh`):
    - **No cost even if teardown fails:** an ASG pinned to 0 and an ECS service at 0 tasks, with every capacity in
      the test's `capacity.json` at 0 (scheduled actions fire at their cron times). Groups, launch templates,
@@ -1170,7 +1178,7 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   supported Go release; raised from 1.25 on 2026-11-08, when 1.25 left security support). `mise.toml` pins
   `golangci-lint`, `go`, `node` (`test:wasm`, the editor bundle), `goreleaser`, `syft` (SBOMs), `rumdl` and `apidiff` (`api:diff`). Tasks:
   `fmt`, `fmt:check`, `vet`, `lint`, `lint:md`, `fmt:md`, `test` (with `-race`), `coverage`, `build`, `tidy`,
-  `check` (runs all non-mutating checks), `licenses`, `docs`, `golden:check`, `api:diff`, `example:test`, `test:wasm`,
+  `check` (runs all non-mutating checks), `licenses`, `docs`, `golden:check`, `api:diff`, `example:test`, `example:aws`, `test:wasm`,
   `web:build`, `web:serve`, `fonts:braille`, `release:snapshot`, `release:smoke`, `release:verify`. `.golangci.yml`
   is strict (`mnd`, `nonamedreturns`, `godot`, `testpackage` outside tests, …). `.goreleaser.yml` handles releases.
   - **The old pipeline's tools (cue, jq, yq, gomplate, markdown-tool, jsonschema) are gone** from mise; rumdl came
@@ -1190,6 +1198,7 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   - `internal/myst`, `internal/sphinxkit`, `assets/`: MyST output and the Sphinx kit (see "Sphinx kit").
   - `internal/canonical`: the canonical form and the text form (see "Schedule files and generated outputs").
   - `examples/consumer/`, `examples/test-consumer.sh`: the setup for repos that use the tool (same section).
+  - `examples/aws/`, `examples/test-aws.sh`: the AWS recipes as working files, tested against an emulator.
   - `templates/`: the repo-baked templates (`markdown-gfm.tmpl`, `schedule-svg.tmpl`, `schedule-ascii.tmpl`,
     `sphinx-schedule.css.tmpl`), embedded.
   - `schema/`: a Go package that embeds `config.json`, `config.schema.json`, `meta.schema.json` and

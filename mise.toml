@@ -297,6 +297,11 @@ env -i HOME="$HOME" \
   go test -exec="$wasm/go_js_wasm_exec" . ./internal/... ./schema/
 '''
 
+[tasks."example:aws"]
+description = "Test examples/aws against a local AWS emulator (needs aws-emulator on PATH; not part of CI)"
+tools = { terraform = "1.15.3", aws-cli = "2.36.49", jq = "1.8.2" }
+run = "sh examples/test-aws.sh"
+
 [tasks."example:test"]
 description = "Test examples/consumer: its tasks in a throwaway git repo, with the binary built from this checkout"
 run = "sh examples/test-consumer.sh"

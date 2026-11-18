@@ -1,0 +1,7 @@
+# Terraform's working files and the rendered schedule.
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.canned-schedule.json

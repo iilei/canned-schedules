@@ -615,10 +615,10 @@ Provider settings such as capacity numbers are out of scope: attach them to the 
 ### AWS Auto Scaling scheduled actions
 
 > [!WARNING]
-> Unverified against AWS. The Terraform below passes `terraform validate` with the AWS provider, and the CLI script
-> was run against a stubbed `aws`, but neither has created real scheduled actions yet.
+> Unverified against AWS. The recipes below are tested against an AWS emulator
+> ([`examples/aws`](examples/aws), `mise run example:aws`), but neither has created real scheduled actions yet.
 
-Each transition becomes one scheduled action: `cron.posix` is its recurrence, and the capacity comes from a map you
+[`examples/aws`](examples/aws) has these recipes as working files. Each transition becomes one scheduled action: `cron.posix` is its recurrence, and the capacity comes from a map you
 keep next to your infrastructure, keyed by state id:
 
 ```json
@@ -656,6 +656,8 @@ resource "aws_autoscaling_schedule" "office_hours" {
 With the AWS CLI (bash and jq), replace the schedule's actions in one go:
 
 ```bash
+set -euo pipefail
+
 asg=my-asg
 prefix=office-hours
 schedule=office-hours.canned-schedule.json
@@ -741,6 +743,9 @@ resource "aws_appautoscaling_scheduled_action" "office_hours" {
   }
 }
 ```
+
+Add `lifecycle { ignore_changes = [desired_count] }` to the `aws_ecs_service`: Application Auto Scaling owns that value
+once the service is a scalable target, and every apply would otherwise reset it.
 
 `local.transitions` and `local.capacity` are the ones from the EC2 example. With the AWS CLI, the same values go to
 `aws application-autoscaling put-scheduled-action` (`--schedule "cron(...)" --timezone Etc/UTC
