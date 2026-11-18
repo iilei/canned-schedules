@@ -49,7 +49,7 @@ Schedules are proposed as issues, kept in a catalog repo, published as versions,
 flowchart TB
   subgraph propose["1 · Propose"]
     direction LR
-    issue["Issue from the template:<br/>a Markdown request"] --> check["Issue workflow: schedule:check<br/>one comment with report and preview"]
+    issue["Issue from the template:<br/>a Markdown request"] --> check["Issue workflow: companion action<br/>one comment with report and preview"]
   end
   subgraph catalog["2 · Catalog repo"]
     direction LR
@@ -360,8 +360,9 @@ ready-to-copy setup, tested in this repo's CI:
   and let CI render and run `git diff --exit-code`.
 - **`mise run schedule:check <file> [out-dir]`** checks one request, for example an issue body, and writes
   `report.md`, `report.json`, `comment.md` (the comment to post) and, when valid, the JSON, the text form and the
-  SVG. The example's issue workflow runs it, uploads the files as workflow artifacts and posts the comment with
-  links to them; the task itself never talks to GitHub.
+  SVG. The task itself never talks to GitHub. The example's issue workflow runs the same check with the
+  [canned-schedules-companion](https://github.com/iilei/canned-schedules-companion) action, which uploads the files as
+  workflow artifacts and posts the comment with links to them.
 - **`mise run schedule:pre-commit`** checks what is staged, not the working tree. Install it as a git hook with
   `mise generate git-pre-commit --write --task schedule:pre-commit`.
 - **`canned-schedules.args`** holds flags for every call, one per line. The example makes alerts strict, so a typo
