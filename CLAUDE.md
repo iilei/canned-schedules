@@ -997,6 +997,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Dependabot** (`.github/dependabot.yml`): `github-actions` (the repo and `examples/consumer`), `gomod` and `npm`
   (`editor/`), weekly, one grouped PR per ecosystem, `cooldown: default-days: 14` (the two-week rule), commit prefix
   `chore(deps)`. The tools in `mise.toml` aren't covered (Dependabot doesn't read mise): bump those by hand.
+  - **Auto-merge (decided 2026-11-18):** on pull requests opened by Dependabot, `check.yml` adds the `binaries` job
+    (`release:snapshot`, every release archive) and the `automerge` job, which needs `check`, `test` and `binaries`
+    and then runs `gh pr merge --auto --rebase` with the job's `GITHUB_TOKEN`. `needs` is the gate, so `binaries`
+    isn't a required check in the ruleset. Merges made with that token start no `push` workflows, so `pages` and the
+    master run of `check` wait for the next regular push.
   - **mise itself is pinned in every `jdx/mise-action` step** (`version:`, decided 2026-11-08), also bumped by hand
     under the two-week rule. Without it the action looks up the newest release on every run; on 2026-11-08 that
     request hung for 8 minutes during a GitHub outage, although all tools came from the cache in 4 seconds. With a
@@ -1006,7 +1011,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Coverage (Codecov):** the `check` job runs `mise run coverage` and uploads `coverage/coverage.out` with
   `codecov/codecov-action` (secret `CODECOV_TOKEN`, a repo secret so pull requests get it; forks upload tokenless).
   `codecov.yml` makes the statuses informational and turns PR comments off: Codecov serves the README badge, it
-  doesn't gate merges.
+  doesn't gate merges. Pull requests opened by Dependabot skip both steps: their runs get no Actions secrets, and
+  Codecov refuses a tokenless upload ("Token required because branch is protected").
 - **CI matrix:** `check.yml` also builds and tests on ubuntu, macos and windows (Go only). `.gitattributes` forces LF
   so Windows checkouts don't break the golden fixtures; `assets/fonts` stays byte-identical. Tests avoid OS
   specifics: drive letters for absolute paths, no permission bits on Windows, diagnostic codes instead of OS error
