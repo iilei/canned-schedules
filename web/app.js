@@ -299,15 +299,23 @@ function unmarkSegments(svg) {
 // editor, the lines in the JSON, the marks in the table and the labels in the status bar. It only drives the
 // highlight: the cursor, the selection and the focus stay where they are, and the document is never touched.
 // Clicking the same entry or row again, Escape or moving the cursor ends the pin; it survives re-evaluation while
-// the SVG still has that state or row. The toggles are wired in the page's DOM only (wireToggles): the downloaded SVG
-// is the checker's text.
-let pinned = null; // {state: "state-N"} from the legend, {row: N} from the transition table, or null.
+// the SVG still has that state or row. The title, the META heading and summary, and a META row pin the same way: the
+// H1, the whole META block or that item. The toggles are wired in the page's DOM only (wireToggles): the downloaded
+// SVG is the checker's text.
+// {state: "state-N"} from the legend, {row: N} from the transition table, {kind: "name"} from the title,
+// {kind: "meta-block"} from the META heading or summary, {kind: "meta", key: "x-…"} from a META row, or null.
+let pinned = null;
 
 const painted = (h) => h.kind === "base" || h.kind === "range";
-const samePin = (a, b) => !!a && !!b && a.state === b.state && a.row === b.row;
+const samePin = (a, b) => !!a && !!b && a.state === b.state && a.row === b.row && a.kind === b.kind && a.key === b.key;
 const ownLine = (h) => (h.line > 0 ? { from: h.line, to: h.line } : null); // A base from --base or the config has none.
 
 function pinnedHighlights() {
+    if (pinned.kind) {
+        return (state.highlights || [])
+            .filter((h) => h.kind === pinned.kind && h.key === pinned.key)
+            .map((h) => ({ ...h, source: h.kind === "meta-block" ? h.block : ownLine(h) }));
+    }
     const all = (state.highlights || []).filter(painted);
     if (pinned.state) {
         // A range marks its whole STATE block, marker line included: the marker names the state, and every item of the
@@ -322,10 +330,18 @@ function pinnedHighlights() {
         .map((h) => ({ ...h, source: ownLine(h) }));
 }
 
+// What the SVG draws for a pin.
+function pinSelector(p) {
+    if (p.state) return `.legend-${p.state}`;
+    if (p.kind === "name") return ".schedule-title";
+    if (p.kind === "meta-block") return ".meta-heading, .meta-summary";
+    if (p.kind === "meta") return `.annotation-row.annotation-${CSS.escape(p.key)}`;
+    return `.transition-row.transition-${p.row}`;
+}
+
 // Whether the SVG still shows what is pinned.
 function pinShown(svg) {
-    if (!svg || !pinned) return false;
-    return !!svg.querySelector(pinned.state ? `.legend-${pinned.state}` : `.transition-row.transition-${pinned.row}`);
+    return !!svg && !!pinned && !!svg.querySelector(pinSelector(pinned));
 }
 
 function pin(p) {
@@ -340,9 +356,9 @@ function unpin() {
     return true;
 }
 
-// Makes the legend entries and the transition rows toggles: focusable, announced as pressed or unpressed buttons,
-// marked when pinned (cs-hl-pinned). A legend entry is also marked when it is the state of what the cursor
-// highlights (cs-hl-current, the `current` set of state classes).
+// Makes the legend entries, the transition rows, the title and the META section toggles: focusable, announced as
+// pressed or unpressed buttons, marked when pinned (cs-hl-pinned). A legend entry is also marked when it is the state
+// of what the cursor highlights (cs-hl-current, the `current` set of state classes).
 function wireToggles(svg, current) {
     const toggle = (el, on, label) => {
         el.setAttribute("tabindex", "0");
@@ -360,17 +376,32 @@ function wireToggles(svg, current) {
         const text = [...row.querySelectorAll("text")].map((t) => t.textContent).join(", ");
         toggle(row, pinned?.row === transitionRow(row), `Highlight what causes the transition ${text}`);
     }
+    for (const title of svg.querySelectorAll(".schedule-title")) {
+        toggle(title, pinned?.kind === "name", `Highlight the name ${title.textContent}`);
+    }
+    for (const el of svg.querySelectorAll(".meta-heading, .meta-summary")) {
+        toggle(el, pinned?.kind === "meta-block", "Highlight the META block");
+    }
+    for (const row of svg.querySelectorAll(".annotation-row")) {
+        const key = annotationKey(row);
+        toggle(row, pinned?.kind === "meta" && pinned.key === key, `Highlight the META item ${key}`);
+    }
 }
 
 const legendState = (entry) => [...entry.classList].find((c) => c.startsWith("legend-state-"))?.slice("legend-".length) || "";
 const transitionRow = (row) => Number([...row.classList].find((c) => /^transition-\d+$/.test(c))?.slice("transition-".length));
+const annotationKey = (row) => row.querySelector("text")?.textContent || "";
 
-// The pin a click or key on el asks for: a legend entry's state or a transition row, or null.
+// The pin a click or key on el asks for, or null.
 function pinTarget(el) {
     const entry = el.closest?.(".legend-entry");
     if (entry) return { state: legendState(entry) };
     const row = el.closest?.(".transition-row");
-    return row ? { row: transitionRow(row) } : null;
+    if (row) return { row: transitionRow(row) };
+    if (el.closest?.(".schedule-title")) return { kind: "name" };
+    if (el.closest?.(".meta-heading, .meta-summary")) return { kind: "meta-block" };
+    const annotation = el.closest?.(".annotation-row");
+    return annotation ? { kind: "meta", key: annotationKey(annotation) } : null;
 }
 
 function applyHighlight(line) {
@@ -1138,8 +1169,8 @@ function wire() {
         unpin();
         applyHighlight(line);
     });
-    // Legend entries and transition rows pin (see pin); the SVG is replaced on every evaluation, so the listeners sit
-    // on its frame.
+    // Legend entries, transition rows, the title and the META section pin (see pin); the SVG is replaced on every
+    // evaluation, so the listeners sit on its frame.
     $("svg").addEventListener("click", (e) => {
         const p = pinTarget(e.target);
         if (p) pin(p);

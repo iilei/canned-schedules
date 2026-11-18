@@ -45,9 +45,9 @@
     {{- end }}
   </style>
   <rect class="background" width="100%" height="100%"/>
-  <text class="label" x="{{ .title.x }}" y="{{ .title.y }}" font-size="18" font-weight="bold">{{ html .title.text }}</text>
+  <text class="label schedule-title" x="{{ .title.x }}" y="{{ .title.y }}" font-size="18" font-weight="bold">{{ html .title.text }}</text>
   {{- if .summary.text }}
-  <text class="label" x="{{ .summary.x }}" y="{{ .summary.y }}" font-size="14" font-style="italic">{{ html .summary.text }}</text>
+  <text class="label meta-summary" x="{{ .summary.x }}" y="{{ .summary.y }}" font-size="14" font-style="italic">{{ html .summary.text }}</text>
   {{- end }}
   <g class="ruler">
     {{- range .labels }}
@@ -99,13 +99,15 @@
   {{- with .annotations }}
   <g class="annotations">
     <line class="divider" x1="{{ .rule.x1 }}" y1="{{ .rule.y1 }}" x2="{{ .rule.x2 }}" y2="{{ .rule.y2 }}"/>
-    <text class="label" x="{{ .heading.x }}" y="{{ .heading.y }}" font-size="14">{{ html .heading.text }}</text>
+    <text class="label meta-heading" x="{{ .heading.x }}" y="{{ .heading.y }}" font-size="14">{{ html .heading.text }}</text>
     {{- with .summary }}
-    <text class="label" x="{{ .x }}" y="{{ .y }}" font-size="14" font-style="italic">{{ html .text }}</text>
+    <text class="label meta-summary" x="{{ .x }}" y="{{ .y }}" font-size="14" font-style="italic">{{ html .text }}</text>
     {{- end }}
     {{- range .rows }}
-    <text class="label" x="{{ .key.x }}" y="{{ .key.y }}" font-size="12">{{ html .key.text }}</text>
-    <text class="label" x="{{ .value.x }}" y="{{ .value.y }}" font-size="12">{{ html .value.text }}</text>
+    <g class="annotation-row annotation-{{ html .key.text }}">
+      <text class="label" x="{{ .key.x }}" y="{{ .key.y }}" font-size="12">{{ html .key.text }}</text>
+      <text class="label" x="{{ .value.x }}" y="{{ .value.y }}" font-size="12">{{ html .value.text }}</text>
+    </g>
     {{- end }}
   </g>
   {{- end }}
