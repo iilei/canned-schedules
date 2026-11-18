@@ -4,4 +4,5 @@
 *.tfstate
 *.tfstate.*
 *.tfplan
+*.plan.json
 *.canned-schedule.json

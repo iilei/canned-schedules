@@ -39,6 +39,16 @@ off, then checks that:
 - a second plan is clean, and a changed schedule replaces exactly the old actions;
 - the CLI recipe applies a schedule, deletes exactly the old actions and stops when a delete fails.
 
+Each run also writes its Terraform plans as readable JSON to `test/plans/`, which git ignores:
+
+| File                                 | The plan                                                     |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `1-create-friday-peak.plan.json`     | Creating the service and the first schedule                  |
+| `2-unchanged.plan.json`              | A second plan, which changes nothing                         |
+| `3-change-to-night-shift.plan.json`  | Replacing the old actions when the schedule changes          |
+
+To list what a plan does, use `jq -r '.resource_changes[] | "\(.change.actions | join("/")) \(.address)"' <file>`.
+
 **What this doesn't prove:** the emulator is not AWS. It doesn't run the actions at their times, so the week is replayed
 from the stored crons, and it can't delete EC2 scheduled actions yet, so that part is checked through the plan and the
 delete requests. Permissions and quotas stay untested.
