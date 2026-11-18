@@ -34,6 +34,9 @@ type Output struct {
 	Week Week `json:"week"`
 	// Transitions are the times the week switches state, with cron expressions.
 	Transitions []Transition `json:"transitions"`
+	// Occurrences are the same switches one weekday at a time, in the order of the week. It is nil only in an output
+	// stored before the field existed.
+	Occurrences []Occurrence `json:"occurrences,omitzero"`
 	// Warnings lists the warnings, sorted by position; they name no file.
 	Warnings []Warning `json:"warnings"`
 }
@@ -78,6 +81,14 @@ type Transition struct { //nolint:govet // fieldalignment: field order is the JS
 	Days  []string `json:"days"`
 	State string   `json:"state"`
 	Cron  Cron     `json:"cron"`
+}
+
+// Occurrence is a switch to State at Time (HH:MM) on one weekday, with a cron that fires on that day only.
+type Occurrence struct {
+	Dow   string `json:"dow"`
+	Time  string `json:"time"`
+	State string `json:"state"`
+	Cron  Cron   `json:"cron"`
 }
 
 // Cron holds a transition in two cron dialects, both without a time zone.

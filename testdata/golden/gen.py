@@ -118,6 +118,23 @@ def transitions(week):
     return out
 
 
+def occurrences(week):
+    """Every minute where the state changes (cyclic), one entry per weekday, in the order of the week."""
+    out = []
+    for m in range(WEEK):
+        if week[m] == week[m - 1]:
+            continue
+        day = DAYS[m // 1440]
+        h, mi = divmod(m % 1440, 60)
+        out.append({
+            "dow": day,
+            "time": hm(m % 1440),
+            "state": week[m],
+            "cron": {"posix": f"{mi} {h} * * {SUN_FIRST.index(day)}", "aws": f"{mi} {h} ? * {day} *"},
+        })
+    return out
+
+
 def output(base, ranges, annotations=None, name="Schedule-Name", summary=None, warnings=()):
     out = {"schema-version": VERSION, "name": name}
     if summary is not None:
@@ -129,6 +146,7 @@ def output(base, ranges, annotations=None, name="Schedule-Name", summary=None, w
         "base": base,
         "week": week_runs,
         "transitions": transitions(week),
+        "occurrences": occurrences(week),
         # Message text is not pinned: the golden runner replaces it with "…" before comparing. Positioned warnings
         # are given as (code, marker[, nth]) and get line, column and excerpt in write(), which knows the input.
         "warnings": [{"code": w, "message": "…"} if isinstance(w, str) else {"code": w[0], "at": w[1:]}

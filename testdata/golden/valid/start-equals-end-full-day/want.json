@@ -100,5 +100,25 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "MON",
+      "time": "08:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 8 * * 1",
+        "aws": "0 8 ? * MON *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "08:00",
+      "state": "Minimum",
+      "cron": {
+        "posix": "0 8 * * 2",
+        "aws": "0 8 ? * TUE *"
+      }
+    }
+  ],
   "warnings": []
 }

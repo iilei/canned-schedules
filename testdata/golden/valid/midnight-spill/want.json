@@ -100,5 +100,25 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "FRI",
+      "time": "22:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 22 * * 5",
+        "aws": "0 22 ? * FRI *"
+      }
+    },
+    {
+      "dow": "SAT",
+      "time": "02:00",
+      "state": "Minimum",
+      "cron": {
+        "posix": "0 2 * * 6",
+        "aws": "0 2 ? * SAT *"
+      }
+    }
+  ],
   "warnings": []
 }

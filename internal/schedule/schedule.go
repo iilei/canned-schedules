@@ -41,7 +41,9 @@ type Output struct {
 	Base          string            `json:"base"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
-	Warnings      []Warning         `json:"warnings"`
+	// Occurrences is absent only from outputs stored before the field existed.
+	Occurrences []Occurrence `json:"occurrences,omitzero"`
+	Warnings    []Warning    `json:"warnings"`
 }
 
 // Constraints are the rules the document was checked against: what the configuration and the flags allowed its author
@@ -146,6 +148,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		Base:          ev.base.ID,
 		Week:          weekRuns(week),
 		Transitions:   transitions(week),
+		Occurrences:   occurrences(week),
 		Warnings:      Warnings(src, diags),
 	}
 

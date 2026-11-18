@@ -172,5 +172,133 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "MON",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 1",
+        "aws": "15 8 ? * MON *"
+      }
+    },
+    {
+      "dow": "MON",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 1",
+        "aws": "45 17 ? * MON *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 2",
+        "aws": "15 8 ? * TUE *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 2",
+        "aws": "45 17 ? * TUE *"
+      }
+    },
+    {
+      "dow": "WED",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 3",
+        "aws": "15 8 ? * WED *"
+      }
+    },
+    {
+      "dow": "WED",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 3",
+        "aws": "45 17 ? * WED *"
+      }
+    },
+    {
+      "dow": "THU",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 4",
+        "aws": "15 8 ? * THU *"
+      }
+    },
+    {
+      "dow": "THU",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 4",
+        "aws": "45 17 ? * THU *"
+      }
+    },
+    {
+      "dow": "FRI",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 5",
+        "aws": "15 8 ? * FRI *"
+      }
+    },
+    {
+      "dow": "FRI",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 5",
+        "aws": "45 17 ? * FRI *"
+      }
+    },
+    {
+      "dow": "SAT",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 6",
+        "aws": "15 8 ? * SAT *"
+      }
+    },
+    {
+      "dow": "SAT",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 6",
+        "aws": "45 17 ? * SAT *"
+      }
+    },
+    {
+      "dow": "SUN",
+      "time": "08:15",
+      "state": "Medium",
+      "cron": {
+        "posix": "15 8 * * 0",
+        "aws": "15 8 ? * SUN *"
+      }
+    },
+    {
+      "dow": "SUN",
+      "time": "17:45",
+      "state": "Off",
+      "cron": {
+        "posix": "45 17 * * 0",
+        "aws": "45 17 ? * SUN *"
+      }
+    }
+  ],
   "warnings": []
 }
