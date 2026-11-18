@@ -30,10 +30,12 @@ fail() {
 run() { mise run -q "$@"; }
 schedules=schedules/office-hours.canned-schedule
 
-cmp -s "$schedules.md" "$root/.gitlab/issue_templates/canned_schedule_request.md" ||
-	fail "the example schedule must be the GitLab issue template"
-cmp -s .github/ISSUE_TEMPLATE/canned_schedule_request.md "$root/.github/ISSUE_TEMPLATE/canned_schedule_request.md" ||
-	fail "the example's issue template must be the repo's"
+grep -v '^/label ~Schedule$' "$root/.gitlab/issue_templates/canned_schedule_request.md" | cmp -s - "$schedules.md" ||
+	fail "the example schedule must be the GitLab issue template, without its label line"
+for template in "$root"/.github/ISSUE_TEMPLATE/canned_schedule_*.md; do
+	cmp -s ".github/ISSUE_TEMPLATE/${template##*/}" "$template" ||
+		fail "the example's issue template ${template##*/} must be the repo's"
+done
 
 # render: three outputs, gitignored, and the text form on stdout.
 run schedule:render >"$work/stdout"
@@ -68,7 +70,10 @@ grep -q '^~~~~~~~~text$' "$work/ok/comment.md" || fail "the comment must carry t
 for f in report.json schedule.json schedule.txt schedule.svg; do
 	[ -f "$work/ok/$f" ] || fail "check must write $f for a valid request"
 done
-sed 's/\[!NOTE\]/[!SCHEDUEL-STATE]/' "$schedules.md" >"$work/typo.md"
+{
+	cat "$schedules.md"
+	printf '\n> [!SCHEDUEL-STATE] Medium\n'
+} >"$work/typo.md"
 if run schedule:check "$work/typo.md" "$work/bad" 2>/dev/null; then fail "check must fail a namespace typo"; fi
 grep -q 'disallowed-alert' "$work/bad/comment.md" || fail "the args file must make alerts strict"
 [ ! -f "$work/bad/schedule.txt" ] && [ ! -f "$work/bad/schedule.svg" ] || fail "an invalid request has no previews"

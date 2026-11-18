@@ -248,8 +248,8 @@ node editor/build.mjs "$out"
 editor/node_modules/.bin/esbuild web/style.css --minify --log-level=warning --outfile="$out/style.css" --allow-overwrite
 GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o "$out/app.wasm" ./cmd/canned-schedules-wasm
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" "$out/"
-# The "office hours" preset is the issue template itself, so the two never drift apart.
-cp .gitlab/issue_templates/canned_schedule_request.md "$out/presets/office-hours.md"
+# The "office hours" preset is the issue template itself, so the two never drift apart. The label line is for GitLab.
+grep -v '^/label ~Schedule$' .gitlab/issue_templates/canned_schedule_request.md > "$out/presets/office-hours.md"
 git describe --always --dirty > "$out/version.txt" 2>/dev/null || true
 # The schemas at their $id URLs: schema/<date>/ for this version, plus frozen copies of earlier dates kept in
 # schema/archive/<date>/ (a breaking change moves the old files there), so published $ids never disappear.

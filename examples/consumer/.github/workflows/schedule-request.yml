@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   check:
-    # The issue template sets this label (.github/ISSUE_TEMPLATE/canned_schedule_request.md).
+    # The issue templates set this label (.github/ISSUE_TEMPLATE/canned_schedule_*.md).
     if: contains(github.event.issue.labels.*.name, 'Schedule')
     runs-on: ubuntu-26.04
     timeout-minutes: 10

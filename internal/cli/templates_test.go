@@ -1,41 +1,85 @@
 package cli
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
 
 const (
-	githubTemplate = "../../.github/ISSUE_TEMPLATE/canned_schedule_request.md"
-	gitlabTemplate = "../../.gitlab/issue_templates/canned_schedule_request.md"
-	docsPreview    = "../../docs/office-hours.svg"
+	githubTemplates = "../../.github/ISSUE_TEMPLATE/"
+	gitlabTemplates = "../../.gitlab/issue_templates/"
+	gitlabTemplate  = gitlabTemplates + "canned_schedule_request.md"
+	docsPreview     = "../../docs/office-hours.svg"
+	builtInConfig   = "../../schema/config.json"
+
+	// gitlabLabel sets the label on GitLab, whose templates have no frontmatter. GitLab removes the line when it
+	// stores the issue.
+	gitlabLabel = "/label ~Schedule\n"
+	syntaxLink  = "[Syntax reference](https://github.com/iilei/canned-schedules#syntax)"
 )
 
-// TestIssueTemplates keeps the issue templates valid and identical. Contributors start from them, so a template
+// TestIssueTemplates keeps the issue templates valid and in step. Contributors learn the syntax from them, so a template
 // that fails validation would greet every new request with errors.
 func TestIssueTemplates(t *testing.T) {
 	t.Parallel()
 
-	github := readFile(t, githubTemplate)
-	gitlab := readFile(t, gitlabTemplate)
+	statesHint := "<!-- States you can use: " + strings.Join(builtInStates(t), ", ") + " -->"
 
-	body, ok := stripFrontmatter(github)
-	if !ok {
-		t.Fatal("the GitHub template needs its frontmatter (name, about, title, labels)")
+	for _, name := range []string{
+		"canned_schedule_request.md", "canned_schedule_night_shift.md", "canned_schedule_friday_peak.md",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			body, ok := stripFrontmatter(readFile(t, githubTemplates+name))
+			if !ok {
+				t.Fatal("the GitHub template needs its frontmatter (name, about, title, labels)")
+			}
+
+			if readFile(t, gitlabTemplates+name) != body+gitlabLabel {
+				t.Error("the GitLab template must be the GitHub body followed by the label line")
+			}
+
+			if !strings.Contains(body, statesHint) {
+				t.Errorf("the template must name the built-in states: %s", statesHint)
+			}
+
+			if !strings.Contains(body, syntaxLink) {
+				t.Errorf("the template must link to the syntax: %s", syntaxLink)
+			}
+
+			out, diags := parseAndRun(nil, []byte(body))
+			for _, d := range diags {
+				t.Errorf("template: %s", d.Format("template"))
+			}
+
+			if out == nil {
+				t.Fatal("the template must produce output")
+			}
+		})
+	}
+}
+
+func builtInStates(t *testing.T) []string {
+	t.Helper()
+
+	var config struct {
+		States []struct {
+			ID string `json:"id"`
+		} `json:"states"`
 	}
 
-	if body != gitlab {
-		t.Error("the GitHub and GitLab templates must have the same body; GitHub only adds frontmatter")
+	if err := json.Unmarshal([]byte(readFile(t, builtInConfig)), &config); err != nil {
+		t.Fatal(err)
 	}
 
-	out, diags := parseAndRun(nil, []byte(body))
-	for _, d := range diags {
-		t.Errorf("template: %s", d.Format("template"))
+	ids := make([]string, 0, len(config.States))
+	for _, s := range config.States {
+		ids = append(ids, s.ID)
 	}
 
-	if out == nil {
-		t.Fatal("the template must produce output")
-	}
+	return ids
 }
 
 // TestDocsPreview keeps the README image in sync with the issue template and the SVG renderer. Regenerate with:

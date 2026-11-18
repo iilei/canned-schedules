@@ -25,8 +25,8 @@ column-align = "auto"
 [per-file-ignores]
 # The generated flag tables (mise run docs) label their groups in bold; headings would break the outline under Usage.
 "README.md" = ["MD036"]
-".github/ISSUE_TEMPLATE/canned_schedule_request.md" = ["MD025", "MD028", "MD032"]
+".github/ISSUE_TEMPLATE/canned_schedule_*.md" = ["MD025", "MD028", "MD032"]
 ".gitlab/issue_templates/*.md" = ["MD028", "MD032"]
 "web/presets/*.md" = ["MD028", "MD032"]
 "**/*.canned-schedule.md" = ["MD028", "MD032"]
-"examples/consumer/.github/ISSUE_TEMPLATE/canned_schedule_request.md" = ["MD025", "MD028", "MD032"]
+"examples/consumer/.github/ISSUE_TEMPLATE/canned_schedule_*.md" = ["MD025", "MD028", "MD032"]
