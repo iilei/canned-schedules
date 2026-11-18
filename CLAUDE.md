@@ -304,6 +304,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Grouped by (time of day, state); ordered by first minute in the week, then state. Cron day lists are Sunday-first and
   never wrap around the week. All seven days become `*`. No time zone in cron strings.
 - Implemented in `internal/schedule/transitions.go`, with an independent reference in `testdata/golden/gen.py`.
+- **`occurrences` (decided 2026-11-18):** the same switches one weekday per entry, in the order of the week: `dow`, `time`,
+  `state` and a `cron` for that day only. For consumers that need a different value per day (who comes before and after a
+  shift) without editing a cron. A compatible addition, so optional in the schema and no new `schema-version`; outputs stored
+  before it still validate.
 
 ### Document structure rules (decided 2026-10-24)
 
@@ -423,11 +427,21 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **AWS example (decided 2026-11-18):** `examples/aws` holds the README's AWS recipes as working files, and
   `TestAWSRecipesMatchTheExample` keeps the two identical. `mise run example:aws` (`examples/test-aws.sh`, checks in
   `examples/aws/test/verify.py`, standard library only) applies them to a local `aws-emulator`: on a free port, telemetry
-  off, schedules rendered by this checkout. It replays the stored crons against `week` and checks plans and CLI calls. It
+  off, schedules rendered by this checkout. **It can't reach a real account:** it drops every `AWS_*` variable and config
+  file of the caller, blocks non-loopback traffic through a dead proxy (after `terraform init`), and stops unless the
+  endpoint is loopback and the account is `000000000000`. It replays the stored crons against `week` and checks plans and CLI calls. It
   isn't part of `check` or CI, because the emulator isn't on the runners, and it doesn't replace item 4 under "Open": the
   emulator can't delete EC2 scheduled actions yet and doesn't run actions at their times. Terraform, the AWS CLI and jq
   are pinned as tools of that task only, so regular runs don't install them. The AWS provider is pinned exactly in
   `infrastructure.tf`, under the two-week rule.
+- **On-call example (decided 2026-11-18):** `examples/aws/on-call/main.tf` turns a schedule into one EventBridge Scheduler
+  schedule per shift start, each writing a ready-made JSON value to one SSM parameter (no Lambda):
+  `on_call_previous`, `on_call_current` and `on_call_next`, each `{id, dow, time}`, where `id` is the state id (display names aren't in the output). **Terraform
+  never builds or edits a cron:** each entry of `occurrences` is one schedule with its `cron.aws` unchanged, and the neighbours
+  are the entries before and after it. **The week repeats** (the tool's model: no dates),
+  so Sunday's last shift hands over to Monday's first; a different roster is a new deployment. `example:aws` runs the
+  page's `on-call-roster` preset and a rota with repeated shifts through it, and writes each schedule's input to the parameter itself,
+  because the emulator doesn't fire schedules.
 - **CI calls mise tasks only:** a workflow prepares the environment and runs tasks, so every failure reproduces
   locally with the same command. `check.yml` runs `golden:check`, `check`, `api:diff` (into the job summary),
   `coverage`, `test:wasm`, `web:build` and `example:test`; the release build job runs `api:diff --release`; the release smoke job runs `release:smoke` with `install: false` and
