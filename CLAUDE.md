@@ -383,13 +383,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     one is a shell-quoted string, unpacked with `eval "set -- ${usage_file:-}"` (checked with quotes, spaces and
     `$(…)` in names).
   - The issue workflow (step 1 of #38, see "Companion tooling") writes the body to a file from an env var, exactly
-    (`printf '%s'`, no added newline), runs `schedule:check`, uploads the SVG unzipped (`upload-artifact`
-    `archive: false`, valid requests only) and every file as one zip (both kept 30 days), appends their
-    `artifact-url` links to `comment.md`, then takes the comments with the marker by `github-actions[bot]`: updates
-    the oldest, deletes the rest, or comments when there is none. It runs only for issues with the template's
-    `Schedule` label, one run per issue (`concurrency` with `cancel-in-progress`), with `contents: read` and
-    `issues: write` only (job permissions replace the workflow's, so both are listed): it never writes to the
-    repository.
+    (`printf '%s'`, no added newline), reads `canned-schedules.args` and calls the companion's action, pinned to its
+    commit SHA. The action uploads the SVG unzipped (valid requests only) and every file as one zip, then keeps one
+    comment. The workflow runs only for issues with the template's `Schedule` label, one run per issue (`concurrency`
+    with `cancel-in-progress`), with `contents: read` and `issues: write` only (job permissions replace the workflow's,
+    so both are listed): it never writes to the repository. `schedule:check` stays as the local task.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
     then looks for GitHub artifact attestations and SLSA provenance. It doesn't check the GPG signatures. Adding
     `actions/attest-build-provenance` to the release workflow would make every consumer's mise verify provenance.
@@ -511,12 +509,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     core. Apache-2.0 only if outside contributions (adapters for Forgejo, Bitbucket, Azure DevOps) need it, since
     loosening later is easy and the reverse isn't. `THIRD_PARTY_LICENSES.md` lists the core with its licence; no
     CLA.
-  - `examples/consumer/scripts/canned-schedule` is the shell prototype of the local part; the example calls the
-    companion once it exists.
+  - `examples/consumer/scripts/canned-schedule` is the shell version of the local part, for repos without the
+    companion; the example's issue workflow calls the companion's action.
 - **GitLab:** a catalog component needs a GitLab project with a top-level `templates/` directory (taken here by the
   Go templates), another reason for the separate project.
 - **What stays here:** the forge-free parts (the library, `schedule:check` and its outputs) and `examples/consumer`,
-  whose workflow does step 1 with plain `gh api` calls until the action exists and then calls it.
+  whose workflow calls the companion's action for step 1.
 - **Step 1, issue feedback** (designed in the issue's comment): one comment per issue, found by the marker
   `<!-- canned-schedules:issue-preview -->` and the bot author, edited in place; on GitHub the text form inline and
   the SVG as a workflow artifact (GitHub strips inline SVG and `data:` URIs, and bots can't attach files); on GitLab
