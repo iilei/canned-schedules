@@ -7,6 +7,8 @@ set -eu
 root=$(pwd)
 image_id=ami-0123456789abcdef0
 resource=service/imaginary/imaginary-service
+# Every Terraform plan of the last run as readable JSON, to proof-read; gitignored.
+plans=$root/examples/aws/test/plans
 
 fail() {
 	echo "FAIL: $*" >&2
@@ -28,6 +30,12 @@ trap cleanup EXIT
 trap 'exit 1' INT TERM
 
 verify() { python3 "$root/examples/aws/test/verify.py" "$@"; }
+
+# save_plan <tfplan> <name> keeps a plan as $plans/<name>.plan.json.
+save_plan() { terraform -chdir="$tf" show -json "$1" | jq . >"$plans/$2.plan.json"; }
+
+rm -rf "$plans"
+mkdir -p "$plans"
 
 # The schedules, rendered by this checkout.
 go build -o "$work/canned-schedules" ./cmd/canned-schedules
@@ -69,14 +77,18 @@ cp examples/aws/test/provider_override.tf "$tf/"
 cp "$capacity" "$tf/capacity.json"
 cp "$work/friday-peak.json" "$tf/office-hours.canned-schedule.json"
 terraform -chdir="$tf" init -no-color >"$work/init.log" || fail "terraform init: $(tail -n 5 "$work/init.log")"
-terraform -chdir="$tf" apply -auto-approve -no-color >"$work/apply.log" 2>&1 ||
+terraform -chdir="$tf" plan -no-color -out=create.tfplan >"$work/plan.log" 2>&1 ||
+	fail "terraform plan: $(tail -n 8 "$work/plan.log")"
+save_plan create.tfplan 1-create-friday-peak
+terraform -chdir="$tf" apply -auto-approve -no-color create.tfplan >"$work/apply.log" 2>&1 ||
 	fail "terraform apply: $(tail -n 8 "$work/apply.log")"
 verify ec2 --group imaginary-service --schedule "$work/friday-peak.json" --capacity "$capacity"
 verify ecs --resource "$resource" --schedule "$work/friday-peak.json" --capacity "$capacity"
 
 rc=0
-terraform -chdir="$tf" plan -detailed-exitcode -no-color >"$work/plan.log" 2>&1 || rc=$?
+terraform -chdir="$tf" plan -detailed-exitcode -no-color -out=unchanged.tfplan >"$work/plan.log" 2>&1 || rc=$?
 [ "$rc" -eq 0 ] || fail "a second plan isn't clean: $(tail -n 12 "$work/plan.log")"
+save_plan unchanged.tfplan 2-unchanged
 echo "ok: a second plan shows no changes"
 
 # A changed schedule. The emulator can't delete EC2 scheduled actions yet, so the plan is checked for both services
@@ -85,8 +97,8 @@ cp "$work/night-shift.json" "$tf/office-hours.canned-schedule.json"
 rc=0
 terraform -chdir="$tf" plan -detailed-exitcode -no-color -out=change.tfplan >"$work/plan.log" 2>&1 || rc=$?
 [ "$rc" -eq 2 ] || fail "the changed schedule must show up in the plan: $(tail -n 12 "$work/plan.log")"
-terraform -chdir="$tf" show -json change.tfplan >"$work/plan.json"
-verify plan --plan "$work/plan.json" --old "$work/friday-peak.json" --new "$work/night-shift.json"
+save_plan change.tfplan 3-change-to-night-shift
+verify plan --plan "$plans/3-change-to-night-shift.plan.json" --old "$work/friday-peak.json" --new "$work/night-shift.json"
 terraform -chdir="$tf" apply -auto-approve -no-color -target=aws_appautoscaling_scheduled_action.office_hours \
 	>"$work/apply.log" 2>&1 || fail "terraform apply: $(tail -n 8 "$work/apply.log")"
 verify ecs --resource "$resource" --schedule "$work/night-shift.json" --capacity "$capacity"
@@ -129,4 +141,4 @@ if FAIL_DELETES=1 PATH=$work/bin:$PATH recipe friday-peak >/dev/null 2>&1; then
 fi
 echo "ok: the CLI recipe stops when a delete fails"
 
-echo "examples/aws: all checks passed"
+echo "examples/aws: all checks passed; the Terraform plans are in examples/aws/test/plans"
