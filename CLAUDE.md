@@ -979,6 +979,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     the smoke tests run. That happened to `v0.2.1` (published as "latest" before its armv7 smoke test, without the
     `.sha256` sidecars, which were added by hand). The build job now stops first when the tag's release is already
     published (the tags endpoint finds published releases only, a draft gives 404).
+- **Immutable releases are on (decided 2026-11-18),** here and in the companion: from the next release on, a published
+  release's assets and tag are locked, and its version number can't be reused, so a bad release is fixed by the next
+  patch. Drafts stay editable, so a run that fails before publishing can still be deleted and tagged again. Releases
+  published before that date aren't locked.
 - **Runner labels are pinned** to the newest explicit images (decided 2026-11-08): `ubuntu-26.04`,
   `ubuntu-26.04-arm`, `macos-26`, `windows-2025`, `windows-11-arm`, in every workflow and the consumer example.
   `ubuntu-latest` moved from 24.04 to 26.04 gradually, run by run, and 26.04 has `qemu-user-static` only as a
