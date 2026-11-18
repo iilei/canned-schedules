@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-26/trace.schema.json",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-11-18/trace.schema.json",
   "title": "canned-schedules paint trace",
   "description": "Written by --trace-output-file: which minutes each range covers, where it wins and where later ranges paint over it. A debugging aid OUTSIDE the stability promise: its shape may change in any release without a new schema-version date, so it carries none. Build integrations on the canonical output, not on this. Times are exact (never preview buckets); spans are half-open, an end of 00:00 means the end of the day. Lines and columns are 1-based, columns count code points.",
   "type": "object",

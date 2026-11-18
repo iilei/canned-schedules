@@ -558,10 +558,17 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 
 ```json
 {
-  "schema-version": "2026-10-26",
+  "schema-version": "2026-11-18",
   "name": "Office Hours",
   "summary": "Weekdays only",
   "annotations": {"x-owner": "team-xyz"},
+  "constraints": {
+    "states": ["Off", "Minimum", "Medium", "Maximum"],
+    "sample-interval": 1,
+    "require-base": false,
+    "default-base": "Off",
+    "alert-pattern": null
+  },
   "base": "Off",
   "week": {
     "MON": [
@@ -583,6 +590,10 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 }
 ```
 
+- `constraints` records the rules the document was checked against, as the configuration and the flags set them:
+  `states` it may use, the `sample-interval` in minutes, whether a BASE block is required (`require-base`), the state used
+  without one (`default-base`, `null` when it is required) and the `alert-pattern` other alerts must match (`null` allows
+  any). Consumers must accept every `sample-interval` the schema lists: the divisors of 60 and full hours up to 1440.
 - `week` covers every day from `00:00` to `00:00` in half-open runs; an `end` of `00:00` means the end of the day.
 - `transitions` lists every moment the state changes, grouped by time and state, so time and state together identify
   a transition within a schedule (there is no id field; see the AWS recipes for naming). `cron.posix` is five-field Unix cron
@@ -791,7 +802,7 @@ so a range such as `^0.1` or `~0.1` never picks up a breaking change.
 
 - **`schema-version` is a date:** the date of the last breaking change to any of the contracts, which are the document
   syntax with its META, the configuration, the JSON output and the error report. This version reads and writes
-  `2026-10-26`. Documents don't have to declare it; one that declares another version is rejected with a hint.
+  `2026-11-18`. Documents don't have to declare it; one that declares another version is rejected with a hint.
 - **The schemas** of each version are published at
   `https://iilei.github.io/canned-schedules/schema/<date>/` (`output`, `report`, `config` and `meta`, each
   `.schema.json`) and attached to every release, listed in its signed `checksums.txt`. The tool never fetches them;
@@ -805,6 +816,8 @@ so a range such as `^0.1` or `~0.1` never picks up a breaking change.
   means, which no schema can detect. A change of meaning comes as a new field instead; the old one goes at the next
   breaking change.
 - **History** (each date, what broke, the first release with it):
+  - `2026-11-18` (`v0.3.0`): `constraints` is required in the output. Documents that declare an earlier
+    `schema-version` have to update it or drop the line.
   - `2026-10-26` (`v0.2.0`): `digests` removed from the output; compare or hash `base` and `week` yourself.
   - `2026-10-25` (`v0.0.1-pre.6`): the first date, replacing `schema-version` `1`; the output and report schemas
     allow additional properties.

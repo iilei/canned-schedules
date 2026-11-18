@@ -26,6 +26,8 @@ type Output struct {
 	Summary string `json:"summary,omitempty"`
 	// Annotations holds the META block's x-* keys as written, uninterpreted.
 	Annotations map[string]string `json:"annotations"`
+	// Constraints are the rules the document was checked against.
+	Constraints Constraints `json:"constraints"`
 	// Base is the base state's id.
 	Base string `json:"base"`
 	// Week is the painted week: per day, its runs of one state.
@@ -34,6 +36,21 @@ type Output struct {
 	Transitions []Transition `json:"transitions"`
 	// Warnings lists the warnings, sorted by position; they name no file.
 	Warnings []Warning `json:"warnings"`
+}
+
+// Constraints are the rules a document was checked against: what the configuration and the options allowed its author
+// to write.
+type Constraints struct { //nolint:govet // fieldalignment: the order mirrors the output's keys.
+	// States lists the state ids in configuration order.
+	States []string `json:"states"`
+	// SampleInterval is the grid in minutes every time sits on.
+	SampleInterval int `json:"sample-interval"`
+	// RequireBase says whether the document must contain a BASE block.
+	RequireBase bool `json:"require-base"`
+	// DefaultBase is the state used without a BASE block; nil when the block is required.
+	DefaultBase *string `json:"default-base"`
+	// AlertPattern is what other alerts must match, as given; nil when any alert is allowed.
+	AlertPattern *string `json:"alert-pattern"`
 }
 
 // Week lists the runs of each day, Monday first.

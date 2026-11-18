@@ -1,0 +1,6 @@
+--sample-interval
+15
+--base
+medium
+--error-unless-alert-pattern
+NOTE|TIP

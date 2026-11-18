@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://iilei.github.io/canned-schedules/schema/2026-10-26/output.schema.json",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-11-18/output.schema.json",
   "title": "canned-schedules canonical output",
   "type": "object",
   "required": [
     "schema-version",
     "name",
     "annotations",
+    "constraints",
     "base",
     "week",
     "transitions",
@@ -14,7 +15,7 @@
   ],
   "properties": {
     "schema-version": {
-      "const": "2026-10-26"
+      "const": "2026-11-18"
     },
     "name": {
       "$ref": "#/$defs/text"
@@ -30,6 +31,62 @@
         "^x-[a-z0-9](?:-?[a-z0-9]){0,39}$": {
           "type": "string",
           "maxLength": 48
+        }
+      }
+    },
+    "constraints": {
+      "description": "The rules the document was checked against: what the configuration and the flags allowed its author to write.",
+      "type": "object",
+      "required": [
+        "states",
+        "sample-interval",
+        "require-base",
+        "default-base",
+        "alert-pattern"
+      ],
+      "properties": {
+        "states": {
+          "description": "The state ids a document may use, in configuration order.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/state-id"
+          }
+        },
+        "sample-interval": {
+          "description": "Minutes. Every time in the schedule is a multiple of it. Consumers must accept every value listed here, even those the current CLI doesn't produce yet.",
+          "type": "integer",
+          "anyOf": [
+            {
+              "enum": [1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30]
+            },
+            {
+              "multipleOf": 60,
+              "minimum": 60,
+              "maximum": 1440
+            }
+          ]
+        },
+        "require-base": {
+          "description": "Whether the document must contain a BASE block.",
+          "type": "boolean"
+        },
+        "default-base": {
+          "description": "The state used when the document has no BASE block; null when the block is required.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/state-id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "alert-pattern": {
+          "description": "What every alert other than a schedule directive must match, in Go regular expression syntax and against the whole alert type; null when any alert is allowed.",
+          "type": ["string", "null"]
         }
       }
     },

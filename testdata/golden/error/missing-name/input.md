@@ -1,5 +1,5 @@
 > [!SCHEDULE-META]
-> - schema-version: `2026-10-26`
+> - schema-version: `2026-11-18`
 
 > [!SCHEDULE-BASE] Minimum
 

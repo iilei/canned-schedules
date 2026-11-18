@@ -23,7 +23,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.abspath(__fi
 for group in ("valid", "warn", "error"):
     shutil.rmtree(os.path.join(OUT, group), ignore_errors=True)
 # The schema version: the date of the last breaking change to any contract (README "Stability").
-VERSION = "2026-10-26"
+VERSION = "2026-11-18"
 DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 STATES = ["Off", "Minimum", "Medium", "Maximum"]
 WEEK = 7 * 1440
@@ -168,6 +168,28 @@ def preview_rows(base, ranges, size=15, symbols="ascii"):
     return rows, mixed
 
 
+def constraints(args):
+    """The rules a run checks a document against, derived from its arguments and the built-in states."""
+    states, interval, require, base, pattern = ["Off", "Minimum", "Medium", "Maximum"], 1, False, None, None
+    args = list(args)
+    paths = [args[i + 1] for i, a in enumerate(args) if a == "--set-config-at"]
+    values = [args[i + 1] for i, a in enumerate(args) if a == "--set-config-value"]
+    for path, value in zip(paths, values):
+        if path == "states":
+            states = [s["id"] for s in json.loads(value)]
+    for flag, value in zip(args, args[1:]):
+        if flag == "--sample-interval":
+            interval = int(value)
+        elif flag == "--require-base":
+            require = value == "true"
+        elif flag == "--base":
+            base = next(s for s in states if s.upper() == value.upper())
+        elif flag == "--error-unless-alert-pattern":
+            pattern = value
+    return {"states": states, "sample-interval": interval, "require-base": require,
+            "default-base": None if require else base or states[0], "alert-pattern": pattern}
+
+
 def write(name, md, args=(), want=None, diag=(), preview=None):
     d = os.path.join(OUT, name)
     os.makedirs(d, exist_ok=True)
@@ -184,8 +206,13 @@ def write(name, md, args=(), want=None, diag=(), preview=None):
                 marker = "".join("\t" if ch == "\t" else " " for ch in text[:col - 1]) + "^"
                 want["warnings"][i] = {"code": w["code"], "line": line, "column": col, "message": "…",
                                        "excerpt": {"text": text, "marker": marker}}
+        ordered = {}
+        for key, value in want.items():
+            ordered[key] = value
+            if key == "annotations":
+                ordered["constraints"] = constraints(args)
         with open(os.path.join(d, "want.json"), "w") as f:
-            f.write(json.dumps(want, indent=2, ensure_ascii=False) + "\n")
+            f.write(json.dumps(ordered, indent=2, ensure_ascii=False) + "\n")
     if preview is not None:
         with open(os.path.join(d, "want.preview"), "w") as f:
             f.write("\n".join(preview) + "\n")
@@ -399,6 +426,13 @@ write(
     ),
     want=output("Minimum", [("06:00", "10:00", ["MON"], "Medium"), ("08:00", "09:00", ["MON"], "Maximum"),
                             ("18:00", "20:00", ["MON"], "Medium")]),
+)
+
+write(
+    "valid/constraints-from-flags",
+    doc("> [!SCHEDULE-STATE] Maximum\n> - `08:00` to `18:00` MON-FRI\n"),
+    args=["--sample-interval", "15", "--base", "medium", "--error-unless-alert-pattern", "NOTE|TIP"],
+    want=output("Medium", [("08:00", "18:00", WD, "Maximum")]),
 )
 
 write(
