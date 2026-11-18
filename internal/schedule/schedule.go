@@ -37,10 +37,26 @@ type Output struct {
 	Name          string            `json:"name"`
 	Summary       string            `json:"summary,omitempty"`
 	Annotations   map[string]string `json:"annotations"`
+	Constraints   Constraints       `json:"constraints"`
 	Base          string            `json:"base"`
 	Week          Week              `json:"week"`
 	Transitions   []Transition      `json:"transitions"`
 	Warnings      []Warning         `json:"warnings"`
+}
+
+// Constraints are the rules the document was checked against: what the configuration and the flags allowed its author
+// to write. They hold effective values only, so the same rules give the same output however they were set.
+type Constraints struct { //nolint:govet // fieldalignment: field order is the JSON key order people read.
+	// States lists the state ids in configuration order.
+	States []string `json:"states"`
+	// SampleInterval is the grid in minutes every time sits on.
+	SampleInterval int `json:"sample-interval"`
+	// RequireBase says whether the document must contain a BASE block.
+	RequireBase bool `json:"require-base"`
+	// DefaultBase is the state used without a BASE block; nil when the block is required.
+	DefaultBase *string `json:"default-base"`
+	// AlertPattern is what other alerts must match, as given; nil when any alert is allowed.
+	AlertPattern *string `json:"alert-pattern"`
 }
 
 // Warning is a non-fatal diagnostic carried in the canonical output. It names no file, so the output depends only on
@@ -126,6 +142,7 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 		Name:          ev.doc.Name.Value,
 		Summary:       ev.meta.summary,
 		Annotations:   ev.meta.annotations,
+		Constraints:   constraints(cfg, opts),
 		Base:          ev.base.ID,
 		Week:          weekRuns(week),
 		Transitions:   transitions(week),
@@ -138,6 +155,36 @@ func Evaluate(src []byte, cfg *config.Config, opts Options) (*Output, diag.List)
 	}
 
 	return out, diags
+}
+
+// constraints reports the rules of this run.
+func constraints(cfg *config.Config, opts Options) Constraints {
+	c := Constraints{
+		States:         make([]string, 0, len(cfg.States)),
+		SampleInterval: opts.SampleInterval,
+		RequireBase:    opts.RequireBase,
+	}
+
+	for _, s := range cfg.States {
+		c.States = append(c.States, s.ID)
+	}
+
+	if !opts.RequireBase {
+		id := cfg.States[0].ID
+		if t, ok := cfg.State(opts.Base); ok {
+			id = t.ID
+		}
+
+		c.DefaultBase = &id
+	}
+
+	if opts.AlertPattern != nil {
+		// The CLI and the library anchor the pattern as ^(?:…)$; the output shows it as given.
+		s := strings.TrimSuffix(strings.TrimPrefix(opts.AlertPattern.String(), "^(?:"), ")$")
+		c.AlertPattern = &s
+	}
+
+	return c
 }
 
 // evaluate parses src and resolves META, the ranges and the base. It returns nil when there are errors.

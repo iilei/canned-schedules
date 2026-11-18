@@ -1,7 +1,7 @@
 # Schedule-Name
 
 > [!schedule-meta]
-> - schema-version: `2026-10-26`
+> - schema-version: `2026-11-18`
 
 > [!Schedule-Base] MINIMUM
 

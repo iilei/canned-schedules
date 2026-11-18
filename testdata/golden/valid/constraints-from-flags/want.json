@@ -1,0 +1,152 @@
+{
+  "schema-version": "2026-11-18",
+  "name": "Schedule-Name",
+  "annotations": {},
+  "constraints": {
+    "states": [
+      "Off",
+      "Minimum",
+      "Medium",
+      "Maximum"
+    ],
+    "sample-interval": 15,
+    "require-base": false,
+    "default-base": "Medium",
+    "alert-pattern": "NOTE|TIP"
+  },
+  "base": "Medium",
+  "week": {
+    "MON": [
+      {
+        "start": "00:00",
+        "end": "08:00",
+        "state": "Medium"
+      },
+      {
+        "start": "08:00",
+        "end": "18:00",
+        "state": "Maximum"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ],
+    "TUE": [
+      {
+        "start": "00:00",
+        "end": "08:00",
+        "state": "Medium"
+      },
+      {
+        "start": "08:00",
+        "end": "18:00",
+        "state": "Maximum"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ],
+    "WED": [
+      {
+        "start": "00:00",
+        "end": "08:00",
+        "state": "Medium"
+      },
+      {
+        "start": "08:00",
+        "end": "18:00",
+        "state": "Maximum"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ],
+    "THU": [
+      {
+        "start": "00:00",
+        "end": "08:00",
+        "state": "Medium"
+      },
+      {
+        "start": "08:00",
+        "end": "18:00",
+        "state": "Maximum"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ],
+    "FRI": [
+      {
+        "start": "00:00",
+        "end": "08:00",
+        "state": "Medium"
+      },
+      {
+        "start": "08:00",
+        "end": "18:00",
+        "state": "Maximum"
+      },
+      {
+        "start": "18:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ],
+    "SAT": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ],
+    "SUN": [
+      {
+        "start": "00:00",
+        "end": "00:00",
+        "state": "Medium"
+      }
+    ]
+  },
+  "transitions": [
+    {
+      "time": "08:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 1-5",
+        "aws": "0 8 ? * MON-FRI *"
+      }
+    },
+    {
+      "time": "18:00",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 1-5",
+        "aws": "0 18 ? * MON-FRI *"
+      }
+    }
+  ],
+  "warnings": []
+}

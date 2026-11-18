@@ -15,7 +15,7 @@ import (
 
 // Version is the schema version: the date of the last breaking change to any of the contracts (document META,
 // config, output, error report). Compatible additions keep the date; see "Stability" in the README.
-const Version = "2026-10-26"
+const Version = "2026-11-18"
 
 // BaseURL is where the schemas of this version are published (GitHub Pages), and the prefix of their $ids. The tool
 // never fetches it: the schemas are embedded.

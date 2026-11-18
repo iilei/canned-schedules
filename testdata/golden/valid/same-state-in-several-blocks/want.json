@@ -1,7 +1,19 @@
 {
-  "schema-version": "2026-10-26",
+  "schema-version": "2026-11-18",
   "name": "Schedule-Name",
   "annotations": {},
+  "constraints": {
+    "states": [
+      "Off",
+      "Minimum",
+      "Medium",
+      "Maximum"
+    ],
+    "sample-interval": 1,
+    "require-base": false,
+    "default-base": "Off",
+    "alert-pattern": null
+  },
   "base": "Minimum",
   "week": {
     "MON": [

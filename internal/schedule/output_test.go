@@ -12,7 +12,8 @@ func TestFinishRejectsInvalidOutput(t *testing.T) {
 
 	good := &Output{
 		SchemaVersion: SchemaVersion, Name: "Plan", Base: "Off", Annotations: map[string]string{},
-		Week: week, Transitions: []Transition{}, Warnings: []Warning{},
+		Constraints: Constraints{States: []string{"Off"}, SampleInterval: 1},
+		Week:        week, Transitions: []Transition{}, Warnings: []Warning{},
 	}
 	if err := good.Finish(); err != nil {
 		t.Fatalf("valid output rejected: %v", err)
@@ -23,5 +24,12 @@ func TestFinishRejectsInvalidOutput(t *testing.T) {
 
 	if err := bad.Finish(); err == nil {
 		t.Error("an output with an invalid base must fail the output schema")
+	}
+
+	missing := *good
+	missing.Constraints = Constraints{}
+
+	if err := missing.Finish(); err == nil {
+		t.Error("an output without constraints must fail the output schema")
 	}
 }

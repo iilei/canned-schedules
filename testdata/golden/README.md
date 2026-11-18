@@ -49,7 +49,7 @@ A diagnostic points at the first character of the offending token:
 
 ```json
 {
-  "schema-version": "2026-10-26",
+  "schema-version": "2026-11-18",
   "name": "Schedule-Name",
   "summary": "Office hours only",
   "base": "Minimum",

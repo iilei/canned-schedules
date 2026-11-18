@@ -74,7 +74,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
 # Schedule-Name
 
 > [!SCHEDULE-META]
-> - schema-version: `2026-10-26`
+> - schema-version: `2026-11-18`
 > - x-owner: `team-xyz`
 
 > [!SCHEDULE-BASE] Minimum
@@ -118,7 +118,7 @@ No frontmatter. Everything uses one grammar: an alert whose type is the `SCHEDUL
     keys are user bookkeeping and never become standard. Keys without `x-` stay reserved for the spec. Old
     `x-custom-*` keys still validate as `x-` keys named `custom-*`.
   - **The META block and its `schema-version` are both optional.** Whenever `schema-version` is missing, whether the
-    block is absent or just lacks the key, the version built into the binary (currently `"2026-10-26"`) applies.
+    block is absent or just lacks the key, the version built into the binary (currently `"2026-11-18"`) applies.
   - **Text after the META marker is the schedule's summary** (`[!SCHEDULE-META] Office hours only`). It is trimmed, then
     validated with the same rule as the name (see below), and output as `summary`. A META block with a summary and no items is
     allowed.
@@ -221,7 +221,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Shape:** domain and representation are kept separate.
 
   ```text
-  schema-version            const "2026-10-26" (the stability date, see "Stability")
+  schema-version            const "2026-11-18" (the stability date, see "Stability")
   states[]                   {id, display-name}: ordered, index 0 = default base
   representation.theme      {light, dark} × {background, label}: page-level colours
   representation.ascii      {symbols}: ascii | braille | styles
@@ -245,7 +245,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **State id pattern:** `^[A-Za-z](?:-?[A-Za-z0-9])*$`, max 32 chars. It's the same rule as before, written in the same
   style as the namespace rule.
 - **Document META** (`schema/meta.schema.json`):
-  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"2026-10-26"`, because every META
+  - `schema-version` is optional, defaulting to the built-in version. It is the **string** `"2026-11-18"`, because every META
     value comes from a code span.
   - Otherwise only `x-<name>` keys, with `<name>` lowercase letters/digits and single hyphens, up to 40 chars.
   - At most 40 custom keys (`maxProperties: 41`). Each value is a string of at most 48 chars, so 40 × 48 = 1920 chars,
@@ -270,10 +270,22 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Out of scope:** capacity numbers and any other provider-specific settings (for example ASG `min`/`desired`/`max`).
   **State ids are the integration edge:** downstream tooling attaches provider config to state ids. Never add such fields
   to the config or the output.
-- **`schema-version` is a string date** (`"2026-10-26"`) everywhere: config, META, output and report. See "Stability".
+- **`schema-version` is a string date** (`"2026-11-18"`) everywhere: config, META, output and report. See "Stability".
 - **Schema `$id`s** are `https://iilei.github.io/canned-schedules/schema/<date>/<name>.schema.json`, built from
   `schema.Version` and `schema.BaseURL`; `config.json` references its schema through `$schema`.
   `TestVersionIsTheSingleSource` keeps the JSON files in step with the constant.
+
+### Constraints in the output (decided 2026-11-18)
+
+- `constraints` records what limited the author: `states`, `sample-interval`, `require-base`, `default-base` (`null` when
+  BASE is required) and `alert-pattern` (`null` allows any alert, while `""` rejects every other alert). Effective values
+  only, without saying whether a flag or a default set them, so the same rules give the same output. Visual settings,
+  output paths and the fixed grammar (identified by `schema-version`) stay out.
+- **Required, on purpose:** consumers can rely on the block being present, so it became a breaking change with the new
+  `schema-version` `2026-11-18` instead of an optional addition.
+- **The schema is deliberately wider than the CLI for `sample-interval`:** it also allows full hours up to 1440, so a more
+  permissive flag later can't surprise consumers. The CLI still accepts only divisors of 60, and a test requires each of
+  them to fit the schema.
 
 ### Transitions in the output (decided 2026-10-24)
 
@@ -566,7 +578,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `schema/archive/<date>/`, where a breaking change moves the previous files so published `$id`s never disappear);
   every release attaches the schemas and lists them in `checksums.txt` (signed, attested).
 - **History:** `2026-10-25` (`v0.0.1-pre.6`, replaced `"1"`), `2026-10-26` (`v0.2.0`, `digests` removed; the
-  first use of the archive: `schema/archive/2026-10-25/` keeps that date's schemas published). The README's
+  first use of the archive: `schema/archive/2026-10-25/` keeps that date's schemas published), `2026-11-18` (`v0.3.0`,
+  `constraints` required in the output; `schema/archive/2026-10-26/` keeps the previous schemas published). The README's
   "Stability" lists the dates for users.
 - **On the next breaking change:** move the current `schema/*.schema.json` to `schema/archive/<old date>/`, set
   `schema.Version`, the four `$id`s, the `const`s and `config.json` (the test fails until they agree), `VERSION` in
@@ -817,8 +830,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     entry's own line (range item, META item, BASE, H1). The marks follow edits until the next evaluation; on the
     cursor line they beat the active-line colour, so a block reads as one, and error and warning backgrounds beat
     both.
-  - **Output key order (decided 2026-11-08):** `schema-version, name, summary, annotations, base, week, transitions,
-    warnings`, so what H1 and META produce is one block and `base` sits next to `week`. Key order is not contract,
+  - **Output key order (decided 2026-11-08):** `schema-version, name, summary, annotations, constraints, base, week,
+    transitions, warnings`, so what H1 and META produce is one block and `base` sits next to `week`. Key order is not contract,
     so no new `schema-version`; `gen.py` and the fixtures were regenerated.
   - **`--svg-annotations` (decided 2026-11-08):** a META section in the right column above the transition table:
     the heading, the summary (italic; it then leaves its place beside the title, so it reads as part of META) and

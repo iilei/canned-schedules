@@ -243,6 +243,29 @@ func TestSVGOptions(t *testing.T) {
 	}
 }
 
+// TestConstraintsInTheOutput: the library reports the rules of the run, and the block is part of a valid output.
+func TestConstraintsInTheOutput(t *testing.T) {
+	t.Parallel()
+
+	r, err := cs.Evaluate([]byte(doc), &cs.Options{SampleInterval: 15, AlertPattern: "NOTE"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c := r.Output.Constraints
+	if c.SampleInterval != 15 || c.RequireBase || *c.DefaultBase != "Off" || *c.AlertPattern != "NOTE" ||
+		len(c.States) != 4 {
+		t.Fatalf("constraints = %+v", c)
+	}
+
+	stored := *r.Output
+	stored.Constraints = cs.Constraints{}
+
+	if _, err := cs.RenderSVG(&stored, nil, cs.SVGOptions{}); err == nil {
+		t.Error("an output without constraints must be refused")
+	}
+}
+
 func TestRenderSVGChecksTheOutput(t *testing.T) {
 	t.Parallel()
 
