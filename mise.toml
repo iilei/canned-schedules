@@ -12,6 +12,7 @@ syft = "1.55.0"
 rumdl = "0.3.0"
 # The Go library's API against the last release (api:diff). x/exp has no tags: a pseudo-version at least two weeks old.
 "go:golang.org/x/exp/cmd/apidiff" = "0.0.0-20261014143641-f0251eb4aa3e"
+python = "latest"
 
 [tasks.fmt]
 description = "Format Go code using the configured golangci-lint formatters"
@@ -35,6 +36,8 @@ run = "go test -race ./..."
 
 [tasks.coverage]
 description = "Run tests and report coverage"
+# Git for Windows' sh on Windows, as in web:build.
+shell = "sh -c"
 run = [
   "mkdir -p coverage",
   "go test -race -coverpkg=./... -coverprofile=coverage/coverage.out ./...",
@@ -63,6 +66,8 @@ depends = ["fmt:check", "vet", "lint", "lint:md", "test", "build"]
 
 [tasks.licenses]
 description = "Write THIRD_PARTY_LICENSES.md: the licences of everything compiled or embedded into the binary"
+# Git for Windows' sh on Windows, as in web:build.
+shell = "sh -c"
 # Raw block: mise renders task scripts as templates, and go list's format uses the same braces.
 run = '''
 {% raw %}
@@ -227,6 +232,8 @@ run = "UPDATE_DOCS=1 go test ./internal/cli -run TestReadmeReference -count=1"
 
 [tasks."web:build"]
 description = "Build the browser preflight page (WebAssembly) into dist/site"
+# Git for Windows' sh on Windows; mise would use cmd there otherwise. Not bash: that can resolve to the WSL launcher.
+shell = "sh -c"
 run = '''
 set -eu
 out=dist/site
@@ -261,6 +268,8 @@ depends = ["web:build"]
 usage = '''
 flag "-p --port <port>" env="PORT" default="8080" help="Port to listen on (localhost only)"
 '''
+# Git for Windows' sh on Windows, as in web:build.
+shell = "sh -c"
 # Bind to localhost: http.server listens on every interface by default, which would expose the page to the network.
 run = 'python3 -m http.server --bind 127.0.0.1 --directory dist/site "$usage_port"'
 
