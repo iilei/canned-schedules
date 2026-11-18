@@ -21,6 +21,14 @@ type Transition struct { //nolint:govet // fieldalignment: field order is the JS
 	Cron  Cron     `json:"cron"`
 }
 
+// Occurrence is one switch of the active state on one weekday, so every day has its own entry and its own cron.
+type Occurrence struct {
+	Dow   string `json:"dow"`
+	Time  string `json:"time"`
+	State string `json:"state"`
+	Cron  Cron   `json:"cron"`
+}
+
 // Cron holds the transition in two cron dialects. Neither carries a time zone: they are wall-clock times.
 type Cron struct {
 	// POSIX is five-field Unix cron with numeric weekdays (0 = SUN), as used by EC2 Auto Scaling scheduled actions.
@@ -77,6 +85,26 @@ func transitions(week []string) []Transition {
 	return out
 }
 
+// occurrences lists every minute where the state changes, in the order of the week (MON 00:00 first). The week is
+// cyclic, so the first entry follows the last one.
+func occurrences(week []string) []Occurrence {
+	out := []Occurrence{}
+
+	for m := range week {
+		if week[m] == week[(m-1+len(week))%len(week)] {
+			continue
+		}
+
+		day := expr.Weekdays[m/minutesPerDay]
+		out = append(out, Occurrence{
+			Dow: day, Time: clock(m % minutesPerDay), State: week[m],
+			Cron: cronAt(m%minutesPerDay, []int{slices.Index(sundayFirst, day)}),
+		})
+	}
+
+	return out
+}
+
 func (g transitionGroup) transition() Transition {
 	var days []int
 	for _, m := range g.minutes {
@@ -96,16 +124,16 @@ func (g transitionGroup) transition() Transition {
 
 	slices.Sort(sunFirst)
 
-	h, m := strconv.Itoa(g.time/minutesPerHour), strconv.Itoa(g.time%minutesPerHour)
+	return Transition{Time: clock(g.time), Days: names, State: g.state, Cron: cronAt(g.time, sunFirst)}
+}
 
-	return Transition{
-		Time:  clock(g.time),
-		Days:  names,
-		State: g.state,
-		Cron: Cron{
-			POSIX: m + " " + h + " * * " + compress(sunFirst, strconv.Itoa),
-			AWS:   m + " " + h + " ? * " + compress(sunFirst, func(i int) string { return sundayFirst[i] }) + " *",
-		},
+// cronAt renders a time of day on sorted Sunday-first day indexes in both dialects.
+func cronAt(time int, sunFirst []int) Cron {
+	h, m := strconv.Itoa(time/minutesPerHour), strconv.Itoa(time%minutesPerHour)
+
+	return Cron{
+		POSIX: m + " " + h + " * * " + compress(sunFirst, strconv.Itoa),
+		AWS:   m + " " + h + " ? * " + compress(sunFirst, func(i int) string { return sundayFirst[i] }) + " *",
 	}
 }
 

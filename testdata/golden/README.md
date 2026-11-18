@@ -88,6 +88,8 @@ A diagnostic points at the first character of the offending token:
       1 = SUN, so names avoid off-by-one mistakes. This is not Quartz, which has a leading seconds field.
     - Both list days Sunday-first and never wrap around the week (`FRI`–`MON` becomes `0-1,5-6` /
       `SUN-MON,FRI-SAT`). All seven days become `*`.
+- `occurrences` lists the same moments one weekday at a time, in the order of the week (MON 00:00 first): `dow`, `time`,
+  `state` and a `cron` that fires on that day only. The week is cyclic, so the first entry follows the last.
 - `base` is always present, also when `transitions` is `[]`. It is the resolved base state (document BASE, then
   `--base`, then config state 0).
 - `warnings` lists every warning (`code`, `message`, and `line`/`column`/`excerpt` when positioned). Fixtures don't pin

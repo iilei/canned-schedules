@@ -152,8 +152,8 @@ func metaBlockPaths(tr *schedule.Trace) []string {
 	return paths
 }
 
-// paintPaths lists the week runs owner paints at least one minute of, and the transitions that switch to its state
-// at a minute it paints.
+// paintPaths lists the week runs owner paints at least one minute of, and the transitions and occurrences that switch
+// to its state at a minute it paints.
 func paintPaths(owner int, out *schedule.Output, tr *schedule.Trace) []string {
 	var paths []string
 
@@ -181,6 +181,12 @@ func paintPaths(owner int, out *schedule.Output, tr *schedule.Trace) []string {
 	for i := range out.Transitions {
 		if tr.Switches(owner, &out.Transitions[i]) {
 			paths = append(paths, "/transitions/"+strconv.Itoa(i))
+		}
+	}
+
+	for i, o := range out.Occurrences {
+		if tr.Switches(owner, &schedule.Transition{Time: o.Time, Days: []string{o.Dow}}) {
+			paths = append(paths, "/occurrences/"+strconv.Itoa(i))
 		}
 	}
 

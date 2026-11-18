@@ -136,6 +136,13 @@
         "$ref": "#/$defs/transition"
       }
     },
+    "occurrences": {
+      "description": "Every switch of the state, one weekday per entry, in the order of the week (MON 00:00 first). The week repeats, so the first entry follows the last.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/occurrence"
+      }
+    },
     "warnings": {
       "description": "Non-fatal diagnostics. No file names: the output depends only on the document and the flags.",
       "type": "array",
@@ -221,23 +228,49 @@
           "$ref": "#/$defs/state-id"
         },
         "cron": {
-          "type": "object",
-          "required": [
-            "posix",
-            "aws"
-          ],
-          "properties": {
-            "posix": {
-              "description": "Five-field Unix cron, numeric weekdays (0 = SUN).",
-              "type": "string",
-              "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\* \\* (?:\\*|[0-6](?:-[0-6])?(?:,[0-6](?:-[0-6])?)*)$"
-            },
-            "aws": {
-              "description": "Six-field EventBridge cron, weekday names.",
-              "type": "string",
-              "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\? \\* (?:\\*|(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?(?:,(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?)*) \\*$"
-            }
-          }
+          "$ref": "#/$defs/cron"
+        }
+      }
+    },
+    "cron": {
+      "type": "object",
+      "required": [
+        "posix",
+        "aws"
+      ],
+      "properties": {
+        "posix": {
+          "description": "Five-field Unix cron, numeric weekdays (0 = SUN).",
+          "type": "string",
+          "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\* \\* (?:\\*|[0-6](?:-[0-6])?(?:,[0-6](?:-[0-6])?)*)$"
+        },
+        "aws": {
+          "description": "Six-field EventBridge cron, weekday names.",
+          "type": "string",
+          "pattern": "^[0-5]?\\d (?:1?\\d|2[0-3]) \\? \\* (?:\\*|(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?(?:,(?:SUN|MON|TUE|WED|THU|FRI|SAT)(?:-(?:SUN|MON|TUE|WED|THU|FRI|SAT))?)*) \\*$"
+        }
+      }
+    },
+    "occurrence": {
+      "type": "object",
+      "required": [
+        "dow",
+        "time",
+        "state",
+        "cron"
+      ],
+      "properties": {
+        "dow": {
+          "$ref": "#/$defs/weekday"
+        },
+        "time": {
+          "$ref": "#/$defs/hhmm"
+        },
+        "state": {
+          "$ref": "#/$defs/state-id"
+        },
+        "cron": {
+          "$ref": "#/$defs/cron"
         }
       }
     },

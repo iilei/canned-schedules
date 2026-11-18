@@ -180,6 +180,116 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "MON",
+      "time": "01:30",
+      "state": "Off",
+      "cron": {
+        "posix": "30 1 * * 1",
+        "aws": "30 1 ? * MON *"
+      }
+    },
+    {
+      "dow": "MON",
+      "time": "21:30",
+      "state": "Medium",
+      "cron": {
+        "posix": "30 21 * * 1",
+        "aws": "30 21 ? * MON *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "05:30",
+      "state": "Off",
+      "cron": {
+        "posix": "30 5 * * 2",
+        "aws": "30 5 ? * TUE *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "21:30",
+      "state": "Medium",
+      "cron": {
+        "posix": "30 21 * * 2",
+        "aws": "30 21 ? * TUE *"
+      }
+    },
+    {
+      "dow": "WED",
+      "time": "05:30",
+      "state": "Off",
+      "cron": {
+        "posix": "30 5 * * 3",
+        "aws": "30 5 ? * WED *"
+      }
+    },
+    {
+      "dow": "WED",
+      "time": "21:30",
+      "state": "Medium",
+      "cron": {
+        "posix": "30 21 * * 3",
+        "aws": "30 21 ? * WED *"
+      }
+    },
+    {
+      "dow": "THU",
+      "time": "05:30",
+      "state": "Off",
+      "cron": {
+        "posix": "30 5 * * 4",
+        "aws": "30 5 ? * THU *"
+      }
+    },
+    {
+      "dow": "THU",
+      "time": "21:30",
+      "state": "Medium",
+      "cron": {
+        "posix": "30 21 * * 4",
+        "aws": "30 21 ? * THU *"
+      }
+    },
+    {
+      "dow": "FRI",
+      "time": "05:30",
+      "state": "Off",
+      "cron": {
+        "posix": "30 5 * * 5",
+        "aws": "30 5 ? * FRI *"
+      }
+    },
+    {
+      "dow": "FRI",
+      "time": "21:30",
+      "state": "Medium",
+      "cron": {
+        "posix": "30 21 * * 5",
+        "aws": "30 21 ? * FRI *"
+      }
+    },
+    {
+      "dow": "SAT",
+      "time": "05:30",
+      "state": "Off",
+      "cron": {
+        "posix": "30 5 * * 6",
+        "aws": "30 5 ? * SAT *"
+      }
+    },
+    {
+      "dow": "SUN",
+      "time": "23:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 23 * * 0",
+        "aws": "0 23 ? * SUN *"
+      }
+    }
+  ],
   "warnings": [
     {
       "code": "preview-approximate",

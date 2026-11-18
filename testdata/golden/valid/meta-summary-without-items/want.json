@@ -113,5 +113,43 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "SAT",
+      "time": "10:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 10 * * 6",
+        "aws": "0 10 ? * SAT *"
+      }
+    },
+    {
+      "dow": "SAT",
+      "time": "18:00",
+      "state": "Off",
+      "cron": {
+        "posix": "0 18 * * 6",
+        "aws": "0 18 ? * SAT *"
+      }
+    },
+    {
+      "dow": "SUN",
+      "time": "10:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 10 * * 0",
+        "aws": "0 10 ? * SUN *"
+      }
+    },
+    {
+      "dow": "SUN",
+      "time": "18:00",
+      "state": "Off",
+      "cron": {
+        "posix": "0 18 * * 0",
+        "aws": "0 18 ? * SUN *"
+      }
+    }
+  ],
   "warnings": []
 }

@@ -100,6 +100,26 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "MON",
+      "time": "06:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 6 * * 1",
+        "aws": "0 6 ? * MON *"
+      }
+    },
+    {
+      "dow": "MON",
+      "time": "22:00",
+      "state": "Minimum",
+      "cron": {
+        "posix": "0 22 * * 1",
+        "aws": "0 22 ? * MON *"
+      }
+    }
+  ],
   "warnings": [
     {
       "code": "config-duplicate-symbol",

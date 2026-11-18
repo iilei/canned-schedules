@@ -148,5 +148,97 @@
       }
     }
   ],
+  "occurrences": [
+    {
+      "dow": "MON",
+      "time": "08:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 1",
+        "aws": "0 8 ? * MON *"
+      }
+    },
+    {
+      "dow": "MON",
+      "time": "18:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 1",
+        "aws": "0 18 ? * MON *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "08:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 2",
+        "aws": "0 8 ? * TUE *"
+      }
+    },
+    {
+      "dow": "TUE",
+      "time": "18:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 2",
+        "aws": "0 18 ? * TUE *"
+      }
+    },
+    {
+      "dow": "WED",
+      "time": "08:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 3",
+        "aws": "0 8 ? * WED *"
+      }
+    },
+    {
+      "dow": "WED",
+      "time": "18:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 3",
+        "aws": "0 18 ? * WED *"
+      }
+    },
+    {
+      "dow": "THU",
+      "time": "08:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 4",
+        "aws": "0 8 ? * THU *"
+      }
+    },
+    {
+      "dow": "THU",
+      "time": "18:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 4",
+        "aws": "0 18 ? * THU *"
+      }
+    },
+    {
+      "dow": "FRI",
+      "time": "08:00",
+      "state": "Maximum",
+      "cron": {
+        "posix": "0 8 * * 5",
+        "aws": "0 8 ? * FRI *"
+      }
+    },
+    {
+      "dow": "FRI",
+      "time": "18:00",
+      "state": "Medium",
+      "cron": {
+        "posix": "0 18 * * 5",
+        "aws": "0 18 ? * FRI *"
+      }
+    }
+  ],
   "warnings": []
 }

@@ -586,6 +586,10 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
       "cron": {"posix": "0 8 * * 1-5", "aws": "0 8 ? * MON-FRI *"}
     }
   ],
+  "occurrences": [
+    {"dow": "MON", "time": "08:00", "state": "Medium", "cron": {"posix": "0 8 * * 1", "aws": "0 8 ? * MON *"}},
+    "…"
+  ],
   "warnings": []
 }
 ```
@@ -600,6 +604,9 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
   (as EC2 Auto Scaling scheduled actions use), `cron.aws` the six-field format of EventBridge and Application Auto
   Scaling. Neither carries a time
   zone: set it where you schedule them.
+- `occurrences` lists the same moments one weekday at a time, in the order of the week, each with a cron for that day only.
+  Use it when each day needs its own value, such as who comes before and after a shift: the week repeats, so the first entry
+  follows the last.
 - `warnings` lists warnings (e.g. `style-reuse`, `preview-approximate`) with code, message and, when positioned,
   line, column and excerpt. No file names: the output depends only on the document and the flags.
 - **No id, hash or digest:** `base` and `week` are what a consumer acts on, and they are canonical (fixed day order,
