@@ -19,27 +19,28 @@ the moments the state changes, with ready-made cron expressions.
 ```markdown
 # Office Hours
 
-> [!SCHEDULE-META] Weekdays with a late Friday
+> [!SCHEDULE-META] Weekdays only
 > - x-owner: `team-xyz`
 
-> [!SCHEDULE-BASE] Minimum
+> [!SCHEDULE-BASE] Off
 
 > [!SCHEDULE-STATE] Medium
-> - `06:00` to `22:00` MON-FRI
-> - `10:00` to `18:00` SAT
-
-> [!SCHEDULE-STATE] Maximum
-> - `16:00` to `00:00` FRI
+> - `08:00` to `18:00` MON-FRI
 ```
 
 ![Preview of the Office Hours schedule](docs/office-hours.svg)
 
-Read it as: the base state is `Minimum`. `Medium` applies on weekdays from 06:00 to 22:00 and on Saturdays from 10:00
-to 18:00. `Maximum` applies on Fridays from 16:00 until midnight; it comes later, so it wins where it overlaps the
-Friday `Medium` range.
+Read it as: the base state is `Off`, and `Medium` applies on weekdays from 08:00 to 18:00.
 
-Start a request from the issue template: [GitHub](.github/ISSUE_TEMPLATE/canned_schedule_request.md),
-[GitLab](.gitlab/issue_templates/canned_schedule_request.md).
+Start a request from one of three short issue templates, each showing one idea:
+
+| Template     | Shows                                  | GitHub                                                            | GitLab                                                             |
+| ------------ | -------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Office hours | A base state and one range             | [template](.github/ISSUE_TEMPLATE/canned_schedule_request.md)     | [template](.gitlab/issue_templates/canned_schedule_request.md)     |
+| Night shift  | A range that crosses midnight          | [template](.github/ISSUE_TEMPLATE/canned_schedule_night_shift.md) | [template](.gitlab/issue_templates/canned_schedule_night_shift.md) |
+| Friday peak  | Two states, where the later range wins | [template](.github/ISSUE_TEMPLATE/canned_schedule_friday_peak.md) | [template](.gitlab/issue_templates/canned_schedule_friday_peak.md) |
+
+The templates label a request `Schedule`, so on GitLab that label has to exist in the project.
 
 ## How it fits together
 
@@ -243,18 +244,17 @@ schedule.md:9:17: error[invalid-time]: 24:00 is not a valid time: the end of a r
 ```
 
 ```text
-Office Hours - Weekdays with a late Friday
+Office Hours - Weekdays only
 
     00:00                   06:00                   12:00                   18:00
     + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | :
-MON ::::::::::::::::::::::::================================================================::::::::
-FRI ::::::::::::::::::::::::========================================################################
-SAT ::::::::::::::::::::::::::::::::::::::::================================::::::::::::::::::::::::
+MON ................................========================================........................
+SAT ................................................................................................
 
-    . Off   : Minimum (base)   = Medium   # Maximum
+    . Off (base)   : Minimum   = Medium   # Maximum
 ```
 
-(Rows for TUE–THU and SUN omitted here.) On a terminal each cell gets the dark theme's state colour as its background;
+(Rows for TUE–FRI and SUN omitted here.) On a terminal each cell gets the dark theme's state colour as its background;
 `--color never` turns that off, `--color always` forces it (also into files).
 
 **Symbols.** By default the preview is pure ASCII (`.` `:` `=` `#` by state order), so it lines up in every terminal,
@@ -303,20 +303,21 @@ fenced block after the name:
 # Office Hours
 
 ~~~text
-Office Hours - Weekdays with a late Friday
+Office Hours - Weekdays only
 
     00:00                   06:00                   12:00                   18:00
     + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | : + : | : | : | : | : | :
-MON ::::::::::::::::::::::::================================================================::::::::
+MON ................................========================================........................
 ...
 ~~~
 
-> [!SCHEDULE-META] Weekdays with a late Friday
+> [!SCHEDULE-META] Weekdays only
+> - x-owner: `team-xyz`
 
-> [!SCHEDULE-BASE] Minimum
+> [!SCHEDULE-BASE] Off
 
 > [!SCHEDULE-STATE] Medium
-> - `06:00` to `22:00` MON-FRI
+> - `08:00` to `18:00` MON-FRI
 ````
 
 The canonical form keeps only what the syntax defines: the name, META, BASE and the STATE blocks with their ranges, in
@@ -559,23 +560,23 @@ Every diagnostic carries one of these codes; the golden fixtures pin them, so th
 {
   "schema-version": "2026-10-26",
   "name": "Office Hours",
-  "summary": "Weekdays with a late Friday",
+  "summary": "Weekdays only",
   "annotations": {"x-owner": "team-xyz"},
-  "base": "Minimum",
+  "base": "Off",
   "week": {
     "MON": [
-      {"start": "00:00", "end": "06:00", "state": "Minimum"},
-      {"start": "06:00", "end": "22:00", "state": "Medium"},
-      {"start": "22:00", "end": "00:00", "state": "Minimum"}
+      {"start": "00:00", "end": "08:00", "state": "Off"},
+      {"start": "08:00", "end": "18:00", "state": "Medium"},
+      {"start": "18:00", "end": "00:00", "state": "Off"}
     ],
     "TUE": ["…"]
   },
   "transitions": [
     {
-      "time": "06:00",
+      "time": "08:00",
       "days": ["MON", "TUE", "WED", "THU", "FRI"],
       "state": "Medium",
-      "cron": {"posix": "0 6 * * 1-5", "aws": "0 6 ? * MON-FRI *"}
+      "cron": {"posix": "0 8 * * 1-5", "aws": "0 8 ? * MON-FRI *"}
     }
   ],
   "warnings": []
