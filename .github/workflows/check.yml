@@ -44,9 +44,14 @@ jobs:
 
       # Coverage of every package (-coverpkg=./...) into coverage/coverage.out, uploaded to Codecov for the README
       # badge. Pull requests from forks get no secrets; Codecov accepts those uploads without a token for public repos.
-      - run: mise run coverage
+      # Dependabot's pull requests skip both steps: their runs get no Actions secrets, and Codecov refuses the upload
+      # without a token ("Token required because branch is protected"). Asks for the author, not the actor, so a
+      # re-run or rebase by a maintainer behaves the same.
+      - if: github.event.pull_request.user.login != 'dependabot[bot]'
+        run: mise run coverage
 
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+      - if: github.event.pull_request.user.login != 'dependabot[bot]'
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/coverage.out
@@ -88,4 +93,38 @@ jobs:
       - run: go build ./...
 
       - run: go test ./...
+
+  # Every release archive, cross-compiled as the release would (no signing, no publishing): a dependency update merges
+  # without a human, so it has to prove that all release targets still build.
+  binaries:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # goreleaser needs the tags for the version.
+          persist-credentials: false
+
+      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: 2026.10.19 # mise itself; pinned, see CLAUDE.md ("Dependabot")
+
+      - run: mise run release:snapshot
+
+  # Merges Dependabot's pull requests once everything above is green. "needs" is the gate: binaries isn't a required
+  # check in the ruleset, so auto-merge is only switched on after it passed. Rebase is the only merge method allowed.
+  automerge:
+    needs: [check, test, binaries]
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: write # Merges the pull request.
+      pull-requests: write # Switches auto-merge on.
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --rebase "$PR_URL"
 
