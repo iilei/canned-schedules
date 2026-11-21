@@ -1106,7 +1106,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   (`-trimpath`, commit timestamps). It writes an SPDX SBOM per archive (`<archive>.sbom.json`, syft pinned in
   `mise.toml`; listed in `checksums.txt`, so the signature and the attestation cover them; not byte-reproducible,
   because syft puts a random UUID into the document namespace), GPG-signs every archive and `checksums.txt`, attaches
-  `release-key.asc`, and creates the release as a **draft**. `mise run release:snapshot` builds locally without
+  `release-key.asc`, and creates the release as a **draft**. **The preflight page ships as
+  `canned-schedules-site_<version>.zip` (decided and built 2026-11-21):** a goreleaser hook runs `mise run site:zip
+  <version>` (`web:build`, then `internal/tools/sitezip`: deterministic, sorted entries, fixed times, `index.html` at
+  the root) into `dist/site-zip`, and the zip is in `checksums.txt` (signature, attestation) and among the release
+  assets, like the schemas. A team hosts exactly the page of the version it pins, adding its own `site.json`. `mise run release:snapshot` builds locally without
   signing or publishing. The changelog skips `chore(…)` commits, so Dependabot's don't show.
 - **`.github/workflows/release.yml`** on `v*` tags: build (goreleaser, key from `crazy-max/ghaction-import-gpg`, then
   `actions/attest-build-provenance` with `subject-checksums: checksums.txt`, so every listed file gets a provenance
