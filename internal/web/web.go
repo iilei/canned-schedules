@@ -14,6 +14,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
 	"github.com/iilei/canned-schedules/internal/htmlpreview"
+	"github.com/iilei/canned-schedules/internal/linkargs"
 	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
@@ -52,13 +53,18 @@ type Result struct {
 	Warnings   int                `json:"warnings"`
 }
 
-// Evaluate runs the CLI pipeline on src with the flags from a link (?arg=, checked by checkLink) followed by the
+// Evaluate runs the CLI pipeline on src with the flags from a link (?arg=, checked by linkargs.Check) followed by the
 // page's own flags (no file argument). The page's flags come last, so its controls win over a link's config
 // overrides of the same path. A link with a flag the page can't take is reported and left out entirely.
-func Evaluate(src []byte, link, args []string) Result {
+func Evaluate(src []byte, link, args []string) Result { return EvaluateSite(src, nil, link, args) }
+
+// EvaluateSite is Evaluate on a self-hosted playground: site holds its site.json's flags, which come last, so neither
+// a link, a preset nor the page's controls can loosen the check the team set up; a link or preset flag the site sets
+// is reported (linkargs.Conflicts) and the link's flags are left out.
+func EvaluateSite(src []byte, site, link, args []string) Result {
 	var res Result
 
-	opts, diags := parse(link, args)
+	opts, diags := parse(site, link, args)
 	if !diags.HasErrors() {
 		out, more := cli.Run(&opts, src)
 		diags = append(diags, more...)
@@ -98,17 +104,27 @@ func Evaluate(src []byte, link, args []string) Result {
 	return res
 }
 
-// parse checks the link's flags and parses them with the page's. When the link has flags the page can't take, only
-// the page's flags are parsed, so the report doesn't repeat them as unknown or misplaced.
-func parse(link, args []string) (cli.Options, diag.List) {
-	diags := checkLink(link)
+// parse checks the link's flags (a preset's come with them) and parses them with the page's and the site's. When the
+// link has flags the page can't take or that the site sets, only the page's and the site's flags are parsed, so the
+// report doesn't repeat them as unknown or misplaced. The site's flags come last: later flags win.
+func parse(site, link, args []string) (cli.Options, diag.List) {
+	diags := linkargs.CheckSite(site)
 	if diags.HasErrors() {
-		opts, more := cli.Parse(args)
-
-		return opts, append(diags, more...)
+		site = nil // The page checked site.json before passing it; this is a safety net.
 	}
 
-	return cli.Parse(append(slices.Clip(link), args...))
+	more := linkargs.Check(link)
+	if !more.HasErrors() {
+		more = linkargs.Conflicts(site, link)
+	}
+
+	if diags = append(diags, more...); more.HasErrors() {
+		link = nil
+	}
+
+	opts, parsed := cli.Parse(slices.Concat(link, args, site))
+
+	return opts, append(diags, parsed...)
 }
 
 // Encode returns the result as a JSON string for JavaScript.
@@ -151,7 +167,12 @@ func generator() string {
 
 // SphinxKit builds the Sphinx kit zip for src with the given flags. The page calls it on demand, not on every edit.
 func SphinxKit(src []byte, link, args []string) ([]byte, error) {
-	opts, diags := parse(link, args)
+	return SphinxKitSite(src, nil, link, args)
+}
+
+// SphinxKitSite is SphinxKit with a self-hosted playground's flags, as in EvaluateSite.
+func SphinxKitSite(src []byte, site, link, args []string) ([]byte, error) {
+	opts, diags := parse(site, link, args)
 	if diags.HasErrors() {
 		return nil, errInvalid
 	}

@@ -81,3 +81,19 @@ func ExampleResult_HasDirectives() {
 	// true false
 	// true true
 }
+
+// A tool that writes a self-hosted playground's site.json checks it first: the page would ignore a broken one.
+func ExampleCheckSite() {
+	good := `{"args": ["--require-base", "true"], "propose": {"issue": "https://gitlab.example.com/acme/catalog/-/issues/new?issue[description]={content}"}}`
+	bad := `{"propose": {"issue": "http://gitlab.example.com/acme/catalog/-/issues/new"}}`
+
+	fmt.Println(len(cs.CheckSite([]byte(good))))
+
+	for _, p := range cs.CheckSite([]byte(bad)) {
+		fmt.Println(p)
+	}
+	// Output:
+	// 0
+	// propose.issue: needs {content}
+	// propose.issue: must be an https URL with a host
+}

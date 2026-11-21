@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -396,5 +397,30 @@ func TestHasDirectives(t *testing.T) {
 				t.Errorf("HasDirectives() = %v, want %v", got, c.want)
 			}
 		})
+	}
+}
+
+// TestLibraryDependencies keeps the library free of the Sphinx kit and its fonts (CLAUDE.md, "The library never links
+// the Sphinx kit"): an importer renders without them, their size or their licences. Skipped where go isn't on the
+// path, as in the WebAssembly runner.
+func TestLibraryDependencies(t *testing.T) {
+	t.Parallel()
+
+	gobin, err := exec.LookPath("go")
+	if err != nil {
+		t.Skip("go is not on the path")
+	}
+
+	out, err := exec.CommandContext(t.Context(), gobin, "list", "-deps", ".").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for pkg := range strings.FieldsSeq(string(out)) {
+		switch pkg {
+		case "github.com/iilei/canned-schedules/internal/sphinxkit", "github.com/iilei/canned-schedules/assets",
+			"github.com/iilei/canned-schedules/internal/web", "github.com/iilei/canned-schedules/internal/htmlpreview":
+			t.Errorf("the library depends on %s", pkg)
+		}
 	}
 }

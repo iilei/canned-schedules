@@ -484,6 +484,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
       and `Preview *PreviewOptions{Downsample}`. **A preview is planned up front**, as with the CLI's preview flags:
       only then does the output carry `preview-approximate`, and the preview renderers return `ErrNoPreview`
       without it, so a library user never gets different warnings than a CLI run with the same previews.
+    - `CheckSite(siteJSON) []string`: the problems of a self-hosted playground's `site.json`, empty when the page
+      will use it (for tools that write one, such as the companion's `playground build`).
     - `Result`: `Output *Output` (nil on errors), `Diagnostics`, `Valid()`, `HasDirectives()` (whether the text
       holds any schedule marker, for bots that check every issue), `JSON()` (the CLI's exact bytes),
       `Canonical()` (for promotion), `Text(color)`, `ASCII(color)`, `SVG(SVGOptions)`, `Report(file)`. Renderers of
@@ -605,8 +607,27 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     check, later `canned-schedules fmt`). The compact form's conversions (an update keeps the file's form, a new file
     takes `catalog.form`) are the only exception, and only when the target needs the other form. Checked in Chrome
     against the GitHub demo (change: edit page plus clipboard; new: new-file page prefilled with the canonical form;
-    issue) and with an http `site.json` (refused, page runs without it). Still to build: the site zip as a release
-    asset, the companion's `playground build`.
+    issue) and with an http `site.json` (refused, page runs without it). The site zip ships with
+    every release (see "Licence and releases").
+  - **The library checks site.json too (2026-11-21):** `cannedschedules.CheckSite(siteJSON) []string` (a compatible
+    addition). The check moved to `internal/site`, and the flag rules links, presets and sites share to
+    `internal/linkargs`, because `internal/web` links the Sphinx kit, which the library must not
+    (`TestLibraryDependencies` runs `go list -deps .`; skipped where `go` isn't on the path, as in `test:wasm`).
+  - **The site's flags win (decided 2026-11-21):** the page passes them separately (`evaluate(markdown, args,
+    linkArgs, siteArgs)`, `web.EvaluateSite`), and they come last, after the link's, the preset's and the page's
+    own, so nothing loosens the team's check. A link or preset flag the site sets (same flag; for `--set-config-at`
+    the same or an overlapping path, `linkargs.Conflicts`) is an `invalid-flag` error and the link's flags are left
+    out, as for a disallowed link flag. A site may set `--sample-interval` (`linkargs.CheckSite`), which changes
+    what is valid; the page shows the value in the control and locks it, and locks the States panel when the site
+    sets the states. The palette stays free (look only). Before this, a link could loosen a site's
+    `--error-unless-alert-pattern` or `--require-base`, and the page would offer to propose what CI then rejects.
+  - **Companion `playground build` (planned 2026-11-21):** the binary writes `site.json` only (the local part:
+    flags from `canned-schedules.args`, `catalog.names` from the catalog folder, URL templates from forge, server,
+    project and branch, optionally `name` and `fork`), checked with `CheckSite` before writing. The wrappers download
+    and verify the zip (signature on `checksums.txt`, then the hash), unzip it and publish: a GitLab `pages` job with
+    `public/`, GitHub's `upload-pages-artifact` and `deploy-pages`. Run on every merge to the default branch, so
+    `catalog.names` stays current. The docs say `site.json` is as public as the Pages site (for private catalogs:
+    restrict GitLab Pages to members; GitHub depends on the plan).
   - **The page stays in this repo**, not a playground repo of its own. It wraps `internal/web` (trace, highlights,
     `jsonmap`, `htmlpreview`, MyST, the Sphinx kit), which another repo can't import, and its tests (`TestPresets`,
     `TestPalettes`, `TestHighlightInkContrast`, `test:wasm`) check Go and page together. A split would turn the
