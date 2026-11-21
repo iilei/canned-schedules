@@ -1,5 +1,5 @@
 ---
-name: Schedule request: office hours
+name: "Schedule request: office hours"
 about: A daytime schedule on weekdays, the simplest starting point
 title: "[schedule-contrib]: "
 labels: ["Schedule", "triage"]

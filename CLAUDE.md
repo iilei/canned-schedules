@@ -338,7 +338,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `on: schedule`, shift plans), because globbing tools (hook, render task, rumdl ignores, the Sphinx idea) would trip
   over unrelated files; `.canned.md` and `.cs.md` don't explain themselves. Issue templates and golden inputs don't
   match the glob. The CLI itself never looks at file names; a check that the file name matches the H1 belongs in a
-  task, if anywhere.
+  task or a pipeline. Since the playground's proposals derive the name from the H1 (see "Self-hosted playground and
+  proposals"), that check is worth building.
 - **Generated files sit next to the source** and are **gitignored by default**, with the pattern limited to the catalog
   folder (`/schedules/*.canned-schedule.json`, `.svg`, `.txt`), so unrelated files are never caught. Exception: an
   SVG that should show on GitHub (README) is committed, with a drift check in CI (render, then `git diff
@@ -401,7 +402,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - The issue workflow (step 1 of #38, see "Companion tooling") writes the body to a file from an env var, exactly
     (`printf '%s'`, no added newline), reads `canned-schedules.args` and calls the companion's action, pinned to its
     commit SHA. The action uploads the SVG unzipped (valid requests only) and every file as one zip, then keeps one
-    comment. The workflow runs only for issues with the template's `Schedule` label, one run per issue (`concurrency`
+    comment. The workflow runs only for issues with the template's `Schedule` label (until the change in "Issue
+    trigger and label"), one run per issue (`concurrency`
     with `cancel-in-progress`), with `contents: read` and `issues: write` only (job permissions replace the workflow's,
     so both are listed): it never writes to the repository. `schedule:check` stays as the local task.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
@@ -555,8 +557,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   the SVG as a workflow artifact (GitHub strips inline SVG and `data:` URIs, and bots can't attach files); on GitLab
   an issue webhook calls the pipeline trigger URL (`TRIGGER_PAYLOAD`), the SVG goes through the uploads API and
   shows inline in a note (a project access token; `CI_JOB_TOKEN` can do neither). Steps that write to a forge say
-  so in their names and support a dry run. Left for later: a body hash and `run=`/`tool=` in the marker, `source.md`
-  in the artifact.
+  so in their names and support a dry run. Left for later: `source.md` in the artifact (the body hash and the tool
+  version in the marker are decided, see "Issue trigger and label").
   - **Built in the companion (2026-11-08):** `preview render` (the files and comment of `schedule:check`, byte for
     byte) and `preview post --forge github` (canned-schedules-companion #2, #3).
 - **Previews are CI's job; the playground link is opt-in (decided 2026-11-08).** By default the comment carries the
@@ -572,8 +574,85 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **Considered and rejected:** the public page as a default link target (data would leave the forge without the
     team deciding it), and an image URL from the page (Pages is static: an `<img>` or GitHub's image proxy never
     runs the WebAssembly, so it can't return an SVG).
-  - **Open:** the page as a release asset (`canned-schedules-site_<version>.zip`, signed and in `checksums.txt`), so
-    a team hosts exactly the version it pins instead of building it from a checkout.
+  - The page as a release asset is decided, see "Self-hosted playground and proposals".
+- **Self-hosted playground and proposals (decided 2026-11-21).** A team hosts the page itself, set up for its catalog,
+  and a valid schedule goes from the editor straight to the forge as a merge request (or an issue). Nothing is built
+  yet.
+  - **The page stays in this repo**, not a playground repo of its own. It wraps `internal/web` (trace, highlights,
+    `jsonmap`, `htmlpreview`, MyST, the Sphinx kit), which another repo can't import, and its tests (`TestPresets`,
+    `TestPalettes`, `TestHighlightInkContrast`, `test:wasm`) check Go and page together. A split would turn the
+    evaluate result into a contract between two repos. The boundary that matters is forge-free versus forge-facing:
+    the page is forge-free; deploying it and knowing forge URLs are the companion's.
+  - **Core:** the built site as a release asset, `canned-schedules-site_<version>.zip`, signed and listed in
+    `checksums.txt`, so a team hosts exactly the version its companion pins. The page reads an optional `site.json`
+    next to `index.html` at startup, validated by its own schema. It is a separate file, so the zip stays
+    byte-identical to the signed asset. Keys:
+    - `args`: the site's flags in the format of `canned-schedules.args`, the same file the bot uses, so a schedule
+      valid in the playground is valid in CI. Checked like `?arg=`, applied like a locked link the reader can't drop.
+    - `catalog`: `dir` (default `schedules`) and `names` (the existing schedules' file names), to choose between a
+      new file and a change.
+    - `propose`: URL templates `create`, `update` and `issue`, https only, with the placeholders `{path}`, `{content}`
+      (the canonical form) and `{name}`, filled with `encodeURIComponent`. `update` may be `{"url": …, "prefill":
+      false}`: copy the schedule to the clipboard, then open the page. Above `max-length` (default 8000) the page
+      copies and opens the empty form instead.
+    - optionally a name and footer, so a team's instance doesn't pass itself off as the public page.
+  - **The core knows no forge URL shapes:** it only fills placeholders; the companion writes the templates. The
+    proposal buttons show only while the document has no errors.
+  - **Targets come from `site.json` only, never from `?` parameters,** or a crafted link could send a schedule to any
+    URL. The public Pages site ships without `site.json`, so it has no proposal buttons; the bot still never links
+    to it.
+  - **The file name comes from the H1,** derived once in Go and returned as `file` in the evaluate result: lower case,
+    spaces become `-`, then `.canned-schedule.md` (`Night Shift` → `night-shift.canned-schedule.md`). The name rule
+    already rules out `/`, `..` and everything else. A schedule whose name exists in `catalog.names` gets the `update`
+    link, otherwise `create`; a stale list only means the forge reports that the file exists.
+  - **Companion:** `playground build --forge gitlab|github --project … --branch … --catalog-dir … --args …` (a local
+    verb, values passed explicitly as everywhere) fetches the pinned core's site zip, checks it against the signed
+    checksums and writes `site.json`. An Action subfolder and a GitLab component deploy it to Pages. Redeploy on every
+    merge to the default branch, so `catalog.names` stays fresh. Self-hosting without the companion: download the
+    zip, verify the signature, write `site.json` by hand, serve it from any static host.
+  - **GitLab first, merge requests as well as issues.** Verified 2026-11-21 on GitLab CE 19.4.1 (the local instance)
+    and on github.com as a collaborator (the demo repo):
+    - New file: GitLab `/-/new/<branch>?file_name=<dir/file>&content=…` and GitHub
+      `/new/<branch>?filename=<dir/file>&value=…` (not officially documented) both prefill folder, name and content.
+    - Change a file: GitLab `/-/edit/<branch>/<path>?content=…` replaces the stored text in the editor; GitHub ignores
+      `value` on `/edit/…`, so the page copies and opens instead.
+    - Issue: GitLab `/-/issues/new?issue[title]=…&issue[description]=…`, GitHub `/issues/new?title=…&body=…`
+      (documented).
+    - Non-members on GitLab: 404 on new, the read-only view on edit (content lost) until they have a fork; then
+      commits go to `patch-N` in the fork and end on the prefilled new merge request form. Not tested on GitHub.
+    - URL length: about 8 KB on GitLab, then 414; GitHub documents 414 for URLs that are too long.
+    - Not settable from a URL on GitLab: branch name, commit message, merge request title.
+  - **The merge request route skips the issue.** The MR pipeline recognises a request by the changed
+    `*.canned-schedule.md` files, checks them, posts the report, sets the label and renames the MR from the H1.
+    Whether to merge stays the repo's setting. The setup docs recommend a protected default branch: members with push
+    rights could otherwise commit straight to it from these pages.
+  - **Non-members on GitLab need a fork first:** the page shows a hint with a fork link; `site.json` says whether
+    readers are expected to be members.
+  - **Issues from the playground use no issue template:** title `{name}`, body the canonical form. The templates are
+    the entry point for people who start on the forge.
+- **Issue trigger and label (decided 2026-11-21), the same on GitHub and GitLab.** Implemented in the companion first;
+  then the templates and the example workflow here drop the label, in one PR with the pin bump.
+  - **A check runs when the body contains a schedule directive** (`[!SCHEDULE-`, case-insensitive) **or the issue has
+    the label.** On GitHub the workflow's `if:` filters cheaply (`contains()` ignores case for strings); on GitLab the
+    companion filters the webhook's events. A title marker was considered and rejected: GitLab templates can't set
+    the title, and one rule on both forges is easier to explain.
+  - **The companion stays silent** (no comment, no label) when the parser finds no top-level directive, so issues
+    that only quote the syntax in backticks get nothing.
+  - **The label means "holds a valid schedule", and only CI sets it:** valid adds it, invalid removes it and the
+    comment carries the report. So the templates stop setting `Schedule` (GitHub `labels:`, GitLab `/label
+    ~Schedule`), which also needed label rights the author may not have. The label stays in the trigger, so a run
+    still removes it after an edit breaks the schedule, even without a directive left in the body.
+  - **No loops:** a label set with `GITHUB_TOKEN` starts no workflow; on GitLab the webhook fires for the bot's own
+    label change too, so the companion skips events whose `changes` touch only labels.
+  - **Idempotent by digest, not by timestamp:** the marker records what was checked,
+    `<!-- canned-schedules:issue-preview sha256=<body> tool=<version> args=<sha256 of the args> -->`, and a run that
+    finds its own comment (marker and bot author) with the same three values stops. The body is hashed after the same
+    line-ending handling the check uses. Before posting, the run checks that the body hasn't changed, and otherwise
+    drops its result (the next event's run takes over). A skipped run leaves the label as the stored result says,
+    and puts it back if someone removed it by hand. Timestamps were rejected: `updated_at` moves with every comment
+    and label, "last body edit" is a different field on each forge, a run racing an edit can record the wrong
+    order, and a new release or changed args must recheck the same body. The hash leaks nothing (the body is public
+    on the issue), and only the bot's own comment counts, so nobody can plant a "skip".
 - **Still open:** what marks a request approved (step 2), shelf versioning (step 3), minimal token scopes, the
   project's name and the demo repo (`canned-schedules-demo`) for the screen recording.
 
@@ -1066,7 +1145,9 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
    base with the library; then the companion repo (a Go binary on the library: run it, `actions/upload-artifact`,
    run it again to post the comment with the links, since a binary can't upload workflow artifacts itself), its
    composite action, the GitLab component, the switch of `examples/consumer` to the action, and the public demo repo
-   `canned-schedules-demo` for the recording last. It is the vehicle for item 2.
+   `canned-schedules-demo` for the recording last. It is the vehicle for item 2. Next (decided 2026-11-21): in the
+   companion the trigger, label and digest of "Issue trigger and label", then the templates and example here; then
+   the self-hosted playground ("Self-hosted playground and proposals"), GitLab first.
 2. **A real catalog in use:** a catalog repo has run the full path (issue → catalog → publish → Terraform) for a few
    weeks, and what it needed has been folded back in.
 3. **A quiet contract:** no breaking change (no new `schema-version` date) for about a month. Then freeze the date
@@ -1250,7 +1331,12 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
     label; GitLab removes the line when it stores the issue. `TestIssueTemplates` (`internal/cli/templates_test.go`)
     requires each GitLab template to be the GitHub body plus that line, no diagnostics, the built-in states in the
     comment and the link. `.rumdl.toml` ignores MD028/MD032 (and MD025 on GitHub) for them, and excludes golden inputs
-    from linting (`mise run lint:md`).
+    from linting (`mise run lint:md`). Both label lines go once the companion sets the label (see "Issue trigger and
+    label").
+  - **Quote frontmatter values (fixed 2026-11-21):** GitHub silently ignores a template whose frontmatter isn't valid
+    YAML; the chooser jumps to a blank issue and no labels are set. `name: Schedule request: office hours` (an
+    unquoted `: `) did that to all three, here and in the demo repo, from `eed9610` on. `TestIssueTemplates` now
+    checks the flat `key: value` shape (`checkFrontmatter`), since the repo has no YAML parser.
 - **JSON key order is part of the output:** `Output` and `Transition` fields are in the documented key order (the
   `Transition` order needs a `fieldalignment` exemption), and the golden runner compares the exact text.
 - **Golden fixtures** live in `testdata/golden/` (format in its README), generated by `testdata/golden/gen.py`: `valid/`, `warn/` and `error/` cases, each with
