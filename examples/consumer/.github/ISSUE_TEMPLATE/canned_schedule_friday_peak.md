@@ -2,7 +2,7 @@
 name: "Schedule request: Friday peak"
 about: Regular weekdays with a peak on top
 title: "[schedule-contrib]: "
-labels: ["Schedule", "triage"]
+labels: ["triage"]
 assignees: ""
 ---
 
