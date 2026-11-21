@@ -579,8 +579,16 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     runs the WebAssembly, so it can't return an SVG).
   - The page as a release asset is decided, see "Self-hosted playground and proposals".
 - **Self-hosted playground and proposals (decided 2026-11-21).** A team hosts the page itself, set up for its catalog,
-  and a valid schedule goes from the editor straight to the forge as a merge request (or an issue). Nothing is built
-  yet.
+  and a valid schedule goes from the editor straight to the forge as a merge request (or an issue).
+  - **Built so far (2026-11-21): the Go side.** `schema/site.schema.json` (a compatible addition, same date, published
+    with the others); `web.CheckSite` (WASM `cannedSchedules.checkSite(json)` → `{site, errors}`): the schema, then
+    the URL templates (only the three placeholders, the required ones per target, https with a host, no user info or
+    fragment), `catalog.dir` without `..`, and the flags through `checkLink` (a site may set exactly a link's flags)
+    and the CLI's parser. A site with any error isn't used at all; the result carries the defaults (`dir`
+    `schedules`, `max-length` 8000, `update` as `{url, prefill}`) and lists rather than nulls. `file` in the
+    evaluate result comes from `schedule.FileName` (`FileStem` plus `FileSuffix`), only for a valid document. Still to
+    build: the page (loading `site.json`, locked site flags, the proposal buttons), the site zip as a release asset,
+    the companion's `playground build`.
   - **The page stays in this repo**, not a playground repo of its own. It wraps `internal/web` (trace, highlights,
     `jsonmap`, `htmlpreview`, MyST, the Sphinx kit), which another repo can't import, and its tests (`TestPresets`,
     `TestPalettes`, `TestHighlightInkContrast`, `test:wasm`) check Go and page together. A split would turn the

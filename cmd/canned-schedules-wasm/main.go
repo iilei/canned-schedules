@@ -1,7 +1,8 @@
 //go:build js && wasm
 
 // Command canned-schedules-wasm exposes the pipeline to the browser preflight page as
-// cannedSchedules.evaluate(markdown, args, linkArgs) → JSON string (see internal/web.Result).
+// cannedSchedules.evaluate(markdown, args, linkArgs) → JSON string (see internal/web.Result), and checks a
+// self-hosted playground's setup as cannedSchedules.checkSite(siteJSON) → JSON string (internal/web.SiteResult).
 package main
 
 import (
@@ -14,6 +15,7 @@ func main() {
 	js.Global().Set("cannedSchedules", js.ValueOf(map[string]any{
 		"evaluate":  js.FuncOf(evaluate),
 		"sphinxKit": js.FuncOf(sphinxKit),
+		"checkSite": js.FuncOf(checkSite),
 	}))
 
 	select {} // Keep the Go runtime alive for later calls.
@@ -25,6 +27,18 @@ func evaluate(_ js.Value, argv []js.Value) any {
 	}
 
 	res := web.Evaluate([]byte(argv[0].String()), stringArgs(argv, 2), stringArgs(argv, 1))
+
+	return res.Encode()
+}
+
+// checkSite(siteJSON) → JSON string with the checked site or the errors.
+func checkSite(_ js.Value, argv []js.Value) any {
+	raw := ""
+	if len(argv) > 0 {
+		raw = argv[0].String()
+	}
+
+	res := web.CheckSite([]byte(raw))
 
 	return res.Encode()
 }

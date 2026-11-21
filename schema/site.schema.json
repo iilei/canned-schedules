@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iilei.github.io/canned-schedules/schema/2026-11-18/site.schema.json",
+  "title": "canned-schedules self-hosted playground (site.json)",
+  "description": "An optional file next to the playground's index.html that sets it up for one catalog: the flags every schedule is checked with, the catalog's schedules, and where a valid schedule is proposed. Only this file sets proposal targets, never the page's address.",
+  "type": "object",
+  "properties": {
+    "schema-version": {
+      "const": "2026-11-18",
+      "description": "Optional. Defaults to the version the page was built with."
+    },
+    "name": {
+      "description": "Shown in the page's header, so a team's playground doesn't pass itself off as the public one.",
+      "type": "string",
+      "pattern": "^[A-Za-z](?:[A-Za-z0-9 -]{0,78}[A-Za-z0-9])?$"
+    },
+    "args": {
+      "description": "The flags every schedule is checked with, one argument per array item, as in canned-schedules.args: --require-base, --base, --error-unless-alert-pattern and --set-config-at with --set-config-value. Applied before the page's own and locked, so a schedule valid here is valid in CI.",
+      "type": "array",
+      "maxItems": 256,
+      "items": { "type": "string", "maxLength": 4096 }
+    },
+    "catalog": {
+      "type": "object",
+      "properties": {
+        "dir": {
+          "description": "The catalog's folder in the repository, relative to its root. Default: schedules.",
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]*(?:/[A-Za-z0-9_][A-Za-z0-9._-]*)*$"
+        },
+        "names": {
+          "description": "The schedules the catalog already holds, as file names without .canned-schedule.md. A schedule whose name is listed gets the update target, others the create target.",
+          "type": "array",
+          "maxItems": 10000,
+          "uniqueItems": true,
+          "items": { "type": "string", "maxLength": 80, "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "propose": {
+      "description": "URL templates for proposing a valid schedule. Placeholders: {path} (the file's path in the repository), {content} (the schedule in canonical form) and {name} (its name); the page fills them in, URL-encoded.",
+      "type": "object",
+      "properties": {
+        "create": { "$ref": "#/$defs/template", "description": "A new file, e.g. a forge's new-file page; needs {path} and {content}." },
+        "update": {
+          "description": "A change to an existing file; needs {path}. A plain string prefills {content}; with prefill false the page copies the schedule to the clipboard and opens the URL (for forges whose edit page takes no content).",
+          "oneOf": [
+            { "$ref": "#/$defs/template" },
+            {
+              "type": "object",
+              "properties": {
+                "url": { "$ref": "#/$defs/template" },
+                "prefill": { "type": "boolean" }
+              },
+              "required": ["url"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "issue": { "$ref": "#/$defs/template", "description": "A new issue; needs {content}." },
+        "max-length": {
+          "description": "The longest URL the forge takes. Above it the page copies the schedule and opens the URL without {content}. Default: 8000.",
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 65536
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "template": {
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^https://"
+    }
+  }
+}

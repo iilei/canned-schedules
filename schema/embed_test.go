@@ -49,6 +49,7 @@ func TestEmbeddedSchemasCompile(t *testing.T) {
 		MetaSchemaURL:   MetaSchema,
 		OutputSchemaURL: OutputSchema,
 		ReportSchemaURL: ReportSchema,
+		SiteSchemaURL:   SiteSchema,
 	} {
 		if _, err := Compile(url, raw); err != nil {
 			t.Errorf("%s: %v", url, err)
@@ -66,6 +67,7 @@ func TestVersionIsTheSingleSource(t *testing.T) {
 		MetaSchemaURL:   MetaSchema,
 		OutputSchemaURL: OutputSchema,
 		ReportSchemaURL: ReportSchema,
+		SiteSchemaURL:   SiteSchema,
 	} {
 		var s struct {
 			ID         string `json:"$id"`

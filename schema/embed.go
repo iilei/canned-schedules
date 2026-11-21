@@ -1,4 +1,5 @@
-// Package schema embeds the built-in configuration and the JSON Schemas that validate configs and document META.
+// Package schema embeds the built-in configuration and the JSON Schemas that validate configs, document META and a
+// self-hosted playground's site.json.
 //
 // Not part of the stable Go API: the package sits outside internal/ only because go:embed can't reach parent
 // directories, and it may change in any release. Import github.com/iilei/canned-schedules instead; api:diff checks
@@ -27,6 +28,7 @@ const (
 	OutputSchemaURL = BaseURL + "output.schema.json"
 	ReportSchemaURL = BaseURL + "report.schema.json"
 	MetaSchemaURL   = BaseURL + "meta.schema.json"
+	SiteSchemaURL   = BaseURL + "site.schema.json"
 	// TraceSchemaURL is published with the others, but the trace is outside the stability promise.
 	TraceSchemaURL = BaseURL + "trace.schema.json"
 )
@@ -56,6 +58,11 @@ var (
 	//
 	//go:embed report.schema.json
 	ReportSchema []byte
+
+	// SiteSchema validates site.json, the optional setup of a self-hosted playground.
+	//
+	//go:embed site.schema.json
+	SiteSchema []byte
 
 	// TraceSchema describes the paint trace (--trace-output-file), a debugging aid outside the stability promise.
 	//
