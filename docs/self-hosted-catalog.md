@@ -172,4 +172,6 @@ copy. What differs from GitLab:
   pull requests rather than commits.
 
 The demo repository [`canned-schedules-demo`](https://github.com/iilei/canned-schedules-demo) runs this setup; its
-playground is at <https://iilei.github.io/canned-schedules-demo/>.
+playground is at <https://iilei.github.io/canned-schedules-demo/>. Follow
+[an issue becoming a capacity schedule](stories/classroom-capacity/README.md) there, with a screenshot of each step: the
+issue preview, the approval label and the pull request the bot opens.
