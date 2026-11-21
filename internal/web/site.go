@@ -26,6 +26,9 @@ const (
 // placeholder matches {word} in a URL template.
 var placeholder = regexp.MustCompile(`\{[^{}]*\}`)
 
+// atLocation matches the location jsonschema puts before its messages.
+var atLocation = regexp.MustCompile(`^at '[^']*': `)
+
 // placeholders are the ones the page fills in.
 var placeholders = []string{"{path}", "{content}", "{name}"}
 
@@ -50,6 +53,7 @@ type Propose struct {
 	Update    *Target `json:"update,omitempty"`
 	Create    string  `json:"create,omitempty"`
 	Issue     string  `json:"issue,omitempty"`
+	Fork      string  `json:"fork,omitempty"`
 	MaxLength int     `json:"max-length"`
 }
 
@@ -85,6 +89,7 @@ func CheckSite(raw []byte) SiteResult {
 		Propose *struct {
 			Create    string          `json:"create"`
 			Issue     string          `json:"issue"`
+			Fork      string          `json:"fork"`
 			Update    json.RawMessage `json:"update"`
 			MaxLength int             `json:"max-length"`
 		} `json:"propose"`
@@ -121,6 +126,14 @@ func CheckSite(raw []byte) SiteResult {
 	if in.Propose != nil {
 		p, more := propose(in.Propose.Create, in.Propose.Issue, in.Propose.Update, in.Propose.MaxLength)
 		site.Propose = p
+
+		if p.Fork = in.Propose.Fork; p.Fork != "" {
+			more = append(more, checkTemplate("propose.fork", p.Fork)...)
+
+			if placeholder.MatchString(p.Fork) {
+				more = append(more, "propose.fork: a plain URL, without placeholders")
+			}
+		}
 		errs = append(errs, more...)
 	}
 
@@ -152,7 +165,9 @@ func validateSite(doc any) []string {
 			where = strings.Join(leaf.InstanceLocation, ".")
 		}
 
-		errs = append(errs, where+": "+diag.Sanitize(leaf.Error()))
+		// jsonschema repeats the location ("at '/propose/create': …"); where already says it.
+		msg := atLocation.ReplaceAllString(leaf.Error(), "")
+		errs = append(errs, where+": "+diag.Sanitize(msg))
 	}
 
 	return errs

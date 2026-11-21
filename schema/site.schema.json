@@ -60,6 +60,11 @@
           ]
         },
         "issue": { "$ref": "#/$defs/template", "description": "A new issue; needs {content}." },
+        "fork": {
+          "description": "Where readers who aren't members fork the project first (GitLab's new-file and edit pages need a fork for them), e.g. https://gitlab.example.com/acme/catalog/-/forks/new. No placeholders. Omit it when every reader is a member.",
+          "type": "string",
+          "maxLength": 2048
+        },
         "max-length": {
           "description": "The longest URL the forge takes. Above it the page copies the schedule and opens the URL without {content}. Default: 8000.",
           "type": "integer",
@@ -73,9 +78,9 @@
   "additionalProperties": false,
   "$defs": {
     "template": {
+      "description": "An https URL with a host, without user info or a fragment; the page checks it with the placeholders filled in.",
       "type": "string",
-      "maxLength": 2048,
-      "pattern": "^https://"
+      "maxLength": 2048
     }
   }
 }

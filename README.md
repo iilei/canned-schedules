@@ -108,6 +108,46 @@ shows). A status bar under the editor explains it with the
 mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)
 ```
 
+### Your own playground
+
+A team can host the page itself (`mise run web:build`, then serve `dist/site` from its own Pages site or intranet)
+and set it up for its catalog with a `site.json` next to `index.html`
+([schema](schema/site.schema.json)). With it, the page checks every schedule with the catalog's flags, and a valid
+schedule goes straight to the forge: **Propose new schedule** opens the forge's new-file page with the file named after
+the schedule's title (`Night Shift` → `schedules/night-shift.canned-schedule.md`), **Propose change** does the same for
+a schedule the catalog already has, and **Open as issue** opens a new issue. Merging stays with the repository's rules.
+
+```json
+{
+  "name": "Acme schedules",
+  "args": ["--error-unless-alert-pattern", "(?i)NOTE|TIP|IMPORTANT|WARNING|CAUTION"],
+  "catalog": {"dir": "schedules", "names": ["office-hours", "on-call"]},
+  "propose": {
+    "create": "https://gitlab.example.com/acme/catalog/-/new/main?file_name={path}&content={content}",
+    "update": "https://gitlab.example.com/acme/catalog/-/edit/main/{path}?content={content}",
+    "issue": "https://gitlab.example.com/acme/catalog/-/issues/new?issue[title]={name}&issue[description]={content}",
+    "fork": "https://gitlab.example.com/acme/catalog/-/forks/new"
+  }
+}
+```
+
+- `args` are the flags of your `canned-schedules.args`, the ones a link's `?arg=` may set; the page applies them
+  before its own and they can't be dropped.
+- `catalog.names` lists the schedules the catalog has (file names without `.canned-schedule.md`), so the page knows
+  whether a schedule is new or a change. Regenerate the file when the catalog changes; a stale list only means the forge
+  reports that the file exists.
+- In the templates, `{path}`, `{content}` (the schedule in canonical form) and `{name}` are filled in, URL-encoded. Only
+  https URLs. On GitHub, use `/new/<branch>?filename={path}&value={content}` for `create`, and
+  `{"url": "https://github.com/OWNER/REPO/edit/<branch>/{path}", "prefill": false}` for `update`: GitHub's edit page
+  takes no content, so the page copies the schedule and opens the page. Above `max-length` (default 8000, GitLab's
+  limit is about 8 KB) the schedule goes to the clipboard as well.
+- `fork`: on GitLab, readers who aren't members of the project need a fork before the new-file and edit pages open;
+  the page links there. Leave it out when every reader is a member.
+- Protect the default branch: members with push rights could otherwise commit straight to it from those pages.
+
+Only `site.json` sets proposal targets, never the page's address, so a link can't send a schedule anywhere else. A
+`site.json` with errors is ignored as a whole, and the page says why. The public page has none.
+
 ## Syntax
 
 A schedule is an H1 heading (the name) plus directive blocks: quotes that start with a `[!SCHEDULE-…]` marker.
