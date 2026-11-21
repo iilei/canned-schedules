@@ -24,6 +24,9 @@ At the end, the flow looks like this:
 
 People who start on GitLab instead open an issue from a template, and the issue preview answers there.
 
+For a change to an existing schedule, follow [two people swapping an on-call shift](stories/shift-swap/README.md),
+with a screenshot of each step.
+
 ## What you need
 
 - A GitLab project for the catalog, with **GitLab Pages** enabled on the instance and the project.
