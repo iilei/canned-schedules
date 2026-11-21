@@ -3,7 +3,8 @@
 A team keeps its on-call roster as a schedule in a GitLab project. Anyone on the roster can propose a change; the
 person they swap with reviews it. This story walks through one swap, start to finish, with a screenshot of each step.
 
-Everything shown ran on a local GitLab (Docker) with the released site zip on GitLab Pages, as described in
+Everything shown ran on a local GitLab (Docker) with the released site zip on GitLab Pages and companion
+v0.3.2, as described in
 [How to host your own schedule catalog](../../self-hosted-catalog.md). The people are the 30 invented names of the
 preflight page's `on-call-roster` preset.
 
@@ -41,14 +42,15 @@ status bar says: line 23, Caelum, MON 12:00–18:00, all 6 h effective.
 
 Two lines change: Caelum's range becomes `18:00` to `00:00` MON, Dervla's `12:00` to `18:00` MON. The week
 redraws as Caelum types, and the status line still says "Valid: ready to propose". Since the catalog already has
-`on-call-roster`, the button reads **Propose change**, and the note under it names the file it replaces.
+`on-call-roster`, the button reads **Propose change**. A click copies the roster to the clipboard and opens GitLab's
+editor in a new tab; the note under the button says to paste it there.
 
 ![The swapped roster in the playground](03-swapped-in-playground.jpg)
 
 ## 4. Caelum commits to a new branch
 
-**Propose change** opens GitLab's editor for the roster. GitLab's edit page always loads the stored file, so the
-playground copies the changed roster to the clipboard and Caelum pastes it over the old text. Because Caelum can't
+In GitLab's editor, Caelum pastes the changed roster over the old text. (GitLab's edit page always loads the
+stored file, so the playground can't fill it in through the link, as it does for a new file.) Because Caelum can't
 push to `main`, GitLab asks for a branch and offers a merge request. The commit message and branch name are
 Caelum's own: GitLab doesn't let a link set them.
 
