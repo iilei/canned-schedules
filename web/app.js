@@ -484,24 +484,52 @@ function pressed(group, value) {
 // see internal/web/link.go) and puts them before the page's own, so the page's controls win on the same config path.
 let linkArgs = [];
 
-// The flags the checker gets ahead of the page's own: a self-hosted playground's (site.json), the selected preset's
-// (presets/<id>.args), then the link's. All go through the same check, so a site or a preset can only set what a
-// link can.
+// The flags the checker gets ahead of the page's own: the selected preset's (presets/<id>.args), then the link's. Both
+// go through the same check, so a preset can only set what a link can.
 function linked() {
-    return [...(site?.args || []), ...(current?.args || []), ...linkArgs];
+    return [...(current?.args || []), ...linkArgs];
+}
+
+// A self-hosted playground's flags (site.json). The checker puts them last, so neither a link, a preset nor the
+// page's controls can loosen the check the team set up; a link or preset flag the site sets is an error.
+function siteArgs() {
+    return site?.args || [];
+}
+
+// siteSets reports whether the site sets a flag (by name) or a config path (the path itself or one inside it).
+function siteSets(flag) {
+    return siteArgs().some((a) => a === "--" + flag || a.startsWith("--" + flag + "="));
+}
+
+function siteSetsPath(path) {
+    const list = siteArgs();
+    return list.some((a, i) => {
+        const p = a === "--set-config-at" ? list[i + 1] : a.startsWith("--set-config-at=") ? a.slice(16) : null;
+        return p !== null && (p === path || p.startsWith(path + ".") || p.startsWith(path + "["));
+    });
+}
+
+// siteValue is the value the site gives a flag.
+function siteValue(flag) {
+    const list = siteArgs();
+    for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i] === "--" + flag) return list[i + 1];
+        if (list[i].startsWith("--" + flag + "=")) return list[i].slice(flag.length + 3);
+    }
+    return null;
 }
 
 // The flags that shape the result, only where they differ from the CLI's defaults: the checker, the Sphinx kit and
 // the "Equivalent CLI flags" box all use these lists, so the box always shows what the page checked.
 function cliArgs() {
-    return [...linked(), ...pageArgs()];
+    return [...linked(), ...pageArgs(), ...siteArgs()];
 }
 
 // The flags from the page's controls.
 function pageArgs() {
     const a = [];
     const interval = $("sample-interval").value;
-    if (interval !== "1") a.push("--sample-interval", interval);
+    if (interval !== "1" && !siteSets("sample-interval")) a.push("--sample-interval", interval);
     const symbols = $("symbols").value;
     if (symbols !== "ascii") a.push("--ascii-symbols", symbols);
     const ds = $("downsample").value;
@@ -525,7 +553,7 @@ function evaluate() {
     let res;
     try {
         state.src = editor.value; // What this result was checked from: a proposal carries exactly this text.
-        res = JSON.parse(globalThis.cannedSchedules.evaluate(state.src, args(), linked()));
+        res = JSON.parse(globalThis.cannedSchedules.evaluate(state.src, args(), linked(), siteArgs()));
     } catch (err) {
         showStatus("err", "Internal error: " + err);
         return;
@@ -617,6 +645,20 @@ function applySite(raw) {
     if (site.propose?.fork) {
         $("propose-fork-link").href = site.propose.fork;
         $("propose-fork").hidden = false;
+    }
+    // Controls the site decides are locked to its values, so editing them can't silently do nothing.
+    const interval = siteValue("sample-interval");
+    if (interval !== null) {
+        if (!Array.from($("sample-interval").options).some((o) => o.value === interval)) {
+            $("sample-interval").add(new Option(interval + " min", interval));
+        }
+        $("sample-interval").value = interval;
+        $("sample-interval").disabled = true;
+        $("sample-interval").title = "Set by this playground (site.json), as the catalog's CI checks";
+    }
+    if (siteSetsPath("states")) {
+        $("state-edit").disabled = true;
+        $("state-edit").title = "Set by this playground (site.json), as the catalog's CI checks";
     }
 }
 
@@ -871,7 +913,7 @@ function download(name, type, content) {
 
 // The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current schedule as MyST.
 function downloadKit() {
-    const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linked());
+    const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linked(), siteArgs());
     if (typeof zip === "string") {
         showStatus("err", zip);
         return;
@@ -961,7 +1003,7 @@ let queryStates = null; // ?states=… entries, applied once the defaults are kn
 // the defaults stay in schema/config.json only. The preset's and the link's flags count: states they set are the
 // defaults then.
 function loadDefaultStates() {
-    const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linked()));
+    const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linked(), siteArgs()));
     defaultStates = (res.states || []).map((s) => ({ id: s.id, name: s["display-name"] }));
 }
 
@@ -972,7 +1014,7 @@ function sameStates(a, b) {
 }
 
 function statesOverride() {
-    if (sameStates(stateRows, defaultStates)) return null;
+    if (siteSetsPath("states") || sameStates(stateRows, defaultStates)) return null;
     return JSON.stringify(stateRows.map((r) => ({ id: r.id, "display-name": displayName(r) })));
 }
 
@@ -1066,7 +1108,7 @@ function updateStatesSummary() {
         stateRows.length +
         ", " +
         (custom ? "custom" : defaultsSource("states", "built-in")) +
-        (locked ? ", locked" : "");
+        (locked || siteSetsPath("states") ? ", locked" : "");
     $("reset-states").disabled = !custom;
 }
 
@@ -1155,10 +1197,10 @@ function setsPath(list, path) {
 
 // Where the defaults at a config path come from: the preset's flags, the link's, or the built-in config.
 function defaultsSource(path, builtIn) {
+    // The site's flags come last and a link can't set the same path, so the site's decide.
+    if (siteSetsPath(path)) return "the playground's";
     if (setsPath(current?.args || [], path)) return "the preset's";
     if (setsPath(linkArgs, path)) return "the link's";
-    // The site's flags come first, so a preset's or a link's win on the same path.
-    if (setsPath(site?.args || [], path)) return "the playground's";
     return builtIn;
 }
 

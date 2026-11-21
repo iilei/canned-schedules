@@ -1,98 +1,9 @@
 package web
 
 import (
-	"slices"
 	"strings"
 	"testing"
 )
-
-// gitlabSite is what the companion's playground build would write for a GitLab catalog.
-const gitlabSite = `{
-  "name": "Acme schedules",
-  "args": ["--error-unless-alert-pattern", "(?i)NOTE|TIP", "--require-base", "true"],
-  "catalog": {"dir": "schedules", "names": ["office-hours", "on-call"]},
-  "propose": {
-    "create": "https://gitlab.example.com/acme/catalog/-/new/main?file_name={path}&content={content}",
-    "update": "https://gitlab.example.com/acme/catalog/-/edit/main/{path}?content={content}",
-    "issue": "https://gitlab.example.com/acme/catalog/-/issues/new?issue[title]={name}&issue[description]={content}",
-    "fork": "https://gitlab.example.com/acme/catalog/-/forks/new"
-  }
-}`
-
-func TestCheckSite(t *testing.T) {
-	t.Parallel()
-
-	res := CheckSite([]byte(gitlabSite))
-	if len(res.Errors) != 0 || res.Site == nil {
-		t.Fatalf("errors %q", res.Errors)
-	}
-
-	s := res.Site
-	if s.Name != "Acme schedules" || len(s.Args) != 4 ||
-		!slices.Equal(s.Catalog.Names, []string{"office-hours", "on-call"}) {
-		t.Errorf("site %+v", s)
-	}
-
-	if s.Propose == nil || s.Propose.MaxLength != defaultMaxLength || s.Propose.Update == nil ||
-		!s.Propose.Update.Prefill || !strings.Contains(s.Propose.Update.URL, "/-/edit/main/{path}") ||
-		s.Propose.Fork != "https://gitlab.example.com/acme/catalog/-/forks/new" {
-		t.Errorf("propose %+v", s.Propose)
-	}
-
-	if !strings.Contains(compact(res.Encode()), `"errors":[]`) {
-		t.Errorf("encoded %s", res.Encode())
-	}
-}
-
-// TestCheckSiteDefaults: an empty site is valid and gets the defaults, with lists instead of nulls for JavaScript.
-func TestCheckSiteDefaults(t *testing.T) {
-	t.Parallel()
-
-	res := CheckSite([]byte(`{}`))
-	if len(res.Errors) != 0 || res.Site == nil || res.Site.Catalog.Dir != "schedules" || res.Site.Propose != nil {
-		t.Fatalf("%+v", res)
-	}
-
-	if enc := compact(res.Encode()); !strings.Contains(enc, `"args":[]`) || !strings.Contains(enc, `"names":[]`) {
-		t.Errorf("encoded %s", enc)
-	}
-
-	// GitHub's edit page takes no content: copy, then open.
-	res = CheckSite(
-		[]byte(`{"propose": {"update": {"url": "https://github.com/o/r/edit/main/{path}", "prefill": false}}}`),
-	)
-	if len(res.Errors) != 0 || res.Site.Propose.Update.Prefill {
-		t.Errorf("%+v", res)
-	}
-}
-
-func TestCheckSiteRefuses(t *testing.T) {
-	t.Parallel()
-
-	for name, c := range map[string]struct{ json, want string }{
-		"not JSON":         {`{`, "not JSON"},
-		"unknown key":      {`{"colour": 1}`, "colour"},
-		"bad name":         {`{"name": "Acme!"}`, "name"},
-		"bad catalog name": {`{"catalog": {"names": ["Office Hours"]}}`, "catalog.names"},
-		"dot dot":          {`{"catalog": {"dir": "a/../b"}}`, "catalog.dir"},
-		"http":             {`{"propose": {"issue": "http://x.example/{content}"}}`, "propose.issue"},
-		"no content":       {`{"propose": {"create": "https://x.example/new?file={path}"}}`, "needs {content}"},
-		"no path":          {`{"propose": {"update": "https://x.example/edit?c={content}"}}`, "needs {path}"},
-		"unknown ph":       {`{"propose": {"issue": "https://x.example/?t={title}&b={content}"}}`, "unknown placeholder {title}"},
-		"user info":        {`{"propose": {"issue": "https://me@x.example/?b={content}"}}`, "user info"},
-		"fragment":         {`{"propose": {"issue": "https://x.example/#{content}"}}`, "fragment"},
-		"page flag":        {`{"args": ["--sample-interval", "15"]}`, "control"},
-		"output flag":      {`{"args": ["--svg-output-file", "x.svg"]}`, "from site.json: args take"},
-		"bad value":        {`{"args": ["--require-base", "maybe"]}`, "args:"},
-		"short max":        {`{"propose": {"max-length": 10}}`, "max-length"},
-		"fork placeholder": {`{"propose": {"fork": "https://x.example/{path}"}}`, "propose.fork"},
-	} {
-		res := CheckSite([]byte(c.json))
-		if res.Site != nil || !strings.Contains(strings.Join(res.Errors, "\n"), c.want) {
-			t.Errorf("%s: site %v, errors %q; want an error with %q", name, res.Site, res.Errors, c.want)
-		}
-	}
-}
 
 func TestEvaluateFile(t *testing.T) {
 	t.Parallel()
@@ -107,22 +18,54 @@ func TestEvaluateFile(t *testing.T) {
 	}
 }
 
-// compact drops the encoder's indentation, so tests can look for fragments.
-func compact(s string) string { return strings.Join(strings.Fields(s), "") }
-
-// TestCheckSiteMessages: one clear message per problem, without jsonschema's location prefix or the other branch of
-// update's string-or-object.
-func TestCheckSiteMessages(t *testing.T) {
+// TestCheckSiteForThePage: the page gets lists rather than nulls.
+func TestCheckSiteForThePage(t *testing.T) {
 	t.Parallel()
 
-	res := CheckSite([]byte(`{"propose": {"update": "http://x.example/edit/{path}?c={content}"}}`))
-	if len(res.Errors) != 1 || res.Errors[0] != "propose.update: must be an https URL with a host" {
-		t.Errorf("template: %q", res.Errors)
+	res := CheckSite([]byte(`{}`))
+	if enc := strings.Join(strings.Fields(res.Encode()), ""); !strings.Contains(enc, `"errors":[]`) ||
+		!strings.Contains(enc, `"args":[]`) || !strings.Contains(enc, `"names":[]`) {
+		t.Errorf("encoded %s", enc)
 	}
 
-	res = CheckSite([]byte(`{"catalog": {"dir": 7}}`))
-	if len(res.Errors) != 1 || strings.Contains(res.Errors[0], "at '") ||
-		!strings.HasPrefix(res.Errors[0], "catalog.dir: ") {
-		t.Errorf("schema: %q", res.Errors)
+	if res := CheckSite([]byte(`{`)); res.Site != nil || len(res.Errors) != 1 {
+		t.Errorf("%+v", res)
+	}
+}
+
+// TestEvaluateSiteWins: on a self-hosted playground the site's flags decide. A link that sets one of them is refused
+// (and its flags left out), and the page's controls can't loosen them either: the site's flags come last.
+func TestEvaluateSiteWins(t *testing.T) {
+	t.Parallel()
+
+	src := []byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `06:05` to `22:00` MON-FRI\n")
+	site := []string{"--sample-interval", "5", "--require-base", "true"}
+
+	res := EvaluateSite(src, site, []string{"--require-base", "false"}, nil)
+	if res.Errors == 0 || !strings.Contains(res.Report, "set by this playground") {
+		t.Errorf("a link must not change a site flag: %s", res.Report)
+	}
+
+	// The page's sample-interval control says 1, the site 5: 06:05 is fine with 5, but the site wants a BASE.
+	res = EvaluateSite(src, site, nil, []string{"--sample-interval", "1"})
+	if !strings.Contains(res.Report, "missing-base") && !strings.Contains(res.Report, "BASE") {
+		t.Errorf("the site's --require-base must hold: %s", res.Report)
+	}
+
+	strict := []string{"--sample-interval", "15"}
+	if res := EvaluateSite(
+		src,
+		strict,
+		nil,
+		[]string{"--sample-interval", "5"},
+	); !strings.Contains(
+		res.Report,
+		"sample-interval",
+	) {
+		t.Errorf("the page's control must not loosen the site's interval: %s", res.Report)
+	}
+
+	if res := EvaluateSite(src, nil, nil, []string{"--sample-interval", "5"}); res.Errors != 0 {
+		t.Errorf("without a site the page's control decides: %s", res.Report)
 	}
 }

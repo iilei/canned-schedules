@@ -110,9 +110,10 @@ mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:808
 
 ### Your own playground
 
-A team can host the page itself (`mise run web:build`, then serve `dist/site` from its own Pages site or intranet)
-and set it up for its catalog with a `site.json` next to `index.html`
-([schema](schema/site.schema.json)). With it, the page checks every schedule with the catalog's flags, and a valid
+A team can host the page itself and set it up for its catalog with a `site.json` next to `index.html`
+([schema](schema/site.schema.json)). Every release attaches the page as `canned-schedules-site_<version>.zip`
+(`index.html` at the root, listed in the signed `checksums.txt`): unzip it into your Pages folder, add `site.json`
+and publish; `mise run web:build` builds the same from a checkout. With it, the page checks every schedule with the catalog's flags, and a valid
 schedule goes straight to the forge: **Propose new schedule** opens the forge's new-file page with the file named after
 the schedule's title (`Night Shift` → `schedules/night-shift.canned-schedule.md`), **Propose change** does the same for
 a schedule the catalog already has, and **Open as issue** opens a new issue. Merging stays with the repository's rules.
@@ -131,8 +132,11 @@ a schedule the catalog already has, and **Open as issue** opens a new issue. Mer
 }
 ```
 
-- `args` are the flags of your `canned-schedules.args`, the ones a link's `?arg=` may set; the page applies them
-  before its own and they can't be dropped.
+- `args` are the flags of your `canned-schedules.args`: `--require-base`, `--base`, `--error-unless-alert-pattern`,
+  `--sample-interval` and `--set-config-at` / `--set-config-value`. They decide: the page applies them last, so its
+  controls, a preset or a link can't loosen them. A link (`?arg=`) or preset that sets one of them is reported as an
+  error, the sample-interval control shows the site's value and is locked, and so is the States panel when the site
+  sets the states.
 - `catalog.names` lists the schedules the catalog has (file names without `.canned-schedule.md`), so the page knows
   whether a schedule is new or a change. Regenerate the file when the catalog changes; a stale list only means the forge
   reports that the file exists.
@@ -148,6 +152,10 @@ a schedule the catalog already has, and **Open as issue** opens a new issue. Mer
 
 Only `site.json` sets proposal targets, never the page's address, so a link can't send a schedule anywhere else. A
 `site.json` with errors is ignored as a whole, and the page says why. The public page has none.
+
+`site.json` is as public as the Pages site: it holds no secrets, but it does list the catalog's schedules. For a
+private catalog, restrict who can see the Pages site (GitLab Pages can be limited to project members; on GitHub it
+depends on the plan). Regenerate `site.json` on every deploy, so `catalog.names` stays current.
 
 ## Syntax
 

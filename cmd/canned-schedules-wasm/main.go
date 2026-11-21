@@ -1,7 +1,7 @@
 //go:build js && wasm
 
 // Command canned-schedules-wasm exposes the pipeline to the browser preflight page as
-// cannedSchedules.evaluate(markdown, args, linkArgs) → JSON string (see internal/web.Result), and checks a
+// cannedSchedules.evaluate(markdown, args, linkArgs, siteArgs) → JSON string (see internal/web.Result), and checks a
 // self-hosted playground's setup as cannedSchedules.checkSite(siteJSON) → JSON string (internal/web.SiteResult).
 package main
 
@@ -26,7 +26,7 @@ func evaluate(_ js.Value, argv []js.Value) any {
 		return ""
 	}
 
-	res := web.Evaluate([]byte(argv[0].String()), stringArgs(argv, 2), stringArgs(argv, 1))
+	res := web.EvaluateSite([]byte(argv[0].String()), stringArgs(argv, 3), stringArgs(argv, 2), stringArgs(argv, 1))
 
 	return res.Encode()
 }
@@ -43,13 +43,14 @@ func checkSite(_ js.Value, argv []js.Value) any {
 	return res.Encode()
 }
 
-// sphinxKit(markdown, args, linkArgs) → Uint8Array with the zip, or an error message string.
+// sphinxKit(markdown, args, linkArgs, siteArgs) → Uint8Array with the zip, or an error message string.
 func sphinxKit(_ js.Value, argv []js.Value) any {
 	if len(argv) == 0 {
 		return "missing document"
 	}
 
-	zip, err := web.SphinxKit([]byte(argv[0].String()), stringArgs(argv, 2), stringArgs(argv, 1))
+	zip, err := web.SphinxKitSite([]byte(argv[0].String()), stringArgs(argv, 3), stringArgs(argv, 2),
+		stringArgs(argv, 1))
 	if err != nil {
 		return err.Error()
 	}
