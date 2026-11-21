@@ -16,6 +16,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/htmlpreview"
 	"github.com/iilei/canned-schedules/internal/render"
 	"github.com/iilei/canned-schedules/internal/report"
+	"github.com/iilei/canned-schedules/internal/schedule"
 	"github.com/iilei/canned-schedules/internal/sphinxkit"
 )
 
@@ -30,17 +31,20 @@ var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid 
 // effective states after the config overrides (the page's states editor starts from them), absent when the config
 // doesn't load.
 type Result struct {
-	JSON           string         `json:"json"`
-	SVG            string         `json:"svg"`
-	ASCII          string         `json:"ascii"`
-	MyST           string         `json:"myst"`
-	Text           string         `json:"text"`
-	Report         string         `json:"report"`
-	ReportMarkdown string         `json:"report-markdown"`
-	GitHubHTML     string         `json:"github-html"`
-	SphinxHTML     string         `json:"sphinx-html"`
-	SphinxCSS      string         `json:"sphinx-css"`
-	States         []config.State `json:"states,omitempty"`
+	JSON           string `json:"json"`
+	SVG            string `json:"svg"`
+	ASCII          string `json:"ascii"`
+	MyST           string `json:"myst"`
+	Text           string `json:"text"`
+	Report         string `json:"report"`
+	ReportMarkdown string `json:"report-markdown"`
+	GitHubHTML     string `json:"github-html"`
+	SphinxHTML     string `json:"sphinx-html"`
+	SphinxCSS      string `json:"sphinx-css"`
+	// File is the catalog file name derived from the schedule's name (schedule.FileName); absent when the document
+	// has errors. A self-hosted playground proposes the schedule under it.
+	File   string         `json:"file,omitempty"`
+	States []config.State `json:"states,omitempty"`
 	// Highlights are the SVG areas each source entry paints, in the preview's buckets; the page stripes the ones
 	// under the editor cursor. Absent when the document has errors.
 	Highlights []render.Highlight `json:"highlights,omitempty"`
@@ -67,6 +71,7 @@ func Evaluate(src []byte, link, args []string) Result {
 			// source anyway.
 			opts.Preview.SVGAnnotations = true
 			res.JSON = encode(out)
+			res.File = schedule.FileName(out.Name)
 			res.SVG = string(must(cli.SVG(&opts, out, src, generator())))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
