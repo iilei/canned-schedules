@@ -771,8 +771,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     content hash equals the reviewed one. It puts them under a path set by its inputs, together with the **raw input** (the
     schedule file as merged) and a **provenance file**.
   - **Re-rendered when the content differs (decided 2026-11-21):** after a rebase or any edit after the last review
-    (including a conflict resolved in the merge), the merged file is rendered again with the default branch's args
-    file, and the provenance says so: `rendered` is `review` or `publish`, with both content hashes (reviewed, merged)
+    (including a conflict resolved in the merge), the merged file is rendered again with the args file of the commit
+    being published (the branch the merge request targeted, as it is after the merge), and the provenance says so: `rendered` is `review` or `publish`, with both content hashes (reviewed, merged)
     when they differ. A file that no longer renders without errors fails the publish (the review on the merge request
     showed it valid, so something changed after it).
   - **Provenance** (the companion's file, not part of the core's output contract), from the forge's records rather
