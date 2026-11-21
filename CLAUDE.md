@@ -1270,6 +1270,61 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
     input MD → TOML → MD gives the same `want.json`.
   - Pick the Go TOML library by its position info: line numbers for keys and for **array elements**; without element
     positions, errors fall back to the line of the `ranges` key. About half a day.
+- **Compact form** (designed 2026-11-21, not scheduled): a line-based syntax with its own lexer, as a fenced block in
+  Markdown or as a file of its own. Worth it if authors find alerts plus backticks too fiddly, or for long rosters
+  (the 30-person preset: about 40 lines instead of about 120). The cost is a second input grammar (positions, errors,
+  fixtures), and on GitHub/GitLab the schedule renders as code, not as prose, which cuts against "readability for
+  humans first". So the alert syntax stays the default; decide after the catalog (item 2 under "Open") shows a need.
+
+  ````markdown
+  ```canned-schedule
+  !name     Support Desk
+  !summary  Channels customers can reach
+  x-team:   customer-care
+
+  !base     Closed
+
+  Email     MON-FRI  07:00 to 21:00
+            SAT      09:00 to 17:00
+  Phone     MON-FRI  09:00 to 12:00
+            MON-THU  13:00 to 17:00
+  ```
+  ````
+
+  - **Self-contained:** the name is inside (`!name`), so the fence content is the whole schedule. Everything outside
+    the fence is prose, the H1 included. A file `<name>.canned-schedule` holds the same bytes as the fence, so
+    promotion (issue → catalog) and proposals (playground → issue) are copy and paste; outputs keep their names
+    (`office-hours.canned-schedule.json`, …). Positions in Markdown add the fence's opening line.
+  - **Directives start with `!`** and only the spec defines them: `!name`, `!summary`, `!base` (later
+    `!schema-version`, `!description`). The sigil means state names need no reserved words (a state may be called
+    `Base`), and new directives stay compatible. Echoes `[!SCHEDULE-…]`. Rejected: `@` (mentions when copied out of
+    the fence), `:key:`, and a shared sigil for `x-*` keys, which would mix user data with the spec's namespace.
+  - **User data is `x-<name>: value`**, the META item without backticks, recognised by the colon right after the first
+    word (so even a state named `x-team` stays unambiguous). Keys follow the META schema, no spaces. Whitespace
+    around the colon is allowed.
+  - **Values run to the end of the line** (`!summary`, `!name`, `x-*`), trimmed with `document.IsSpace`; `#`, `:`,
+    `\` and quotes are literal after the first colon. Limits apply to the joined value.
+  - **Ranges:** `<State> <days> <start> to <end>`, weekday before time; times and weekday expressions keep their
+    grammar and codes (`internal/expr`). **An indented line is another range of the state above;** a state name may
+    appear again later, which only means "paint it again here". Painting order is line order. Blank lines mean
+    nothing.
+  - **Continuation: a leading `\`** (first non-space character of a line) continues the line above, joined with one
+    space; everything after the marker is literal, so no escaping. Ranges can't be continued (`invalid-range`, as a
+    range split over two lines is today). A trailing `\` followed by a continuation-looking line warns
+    (`trailing-backslash`, "a continuation goes at the start of the next line"), since shell habit puts it there.
+  - **The fence:** exactly one, info string exactly `canned-schedule` (lowercase, nothing after it; the version goes
+    into `!schema-version` so it survives copying), backtick or tilde, any length. A second fence is
+    `duplicate-block`; no fence (and no alert directives) is an error (`missing-schedule`), which catches typos in
+    the info string. Alert directives and a fence in one document is an error.
+  - **Errors** (codes are illustrative): `unknown-directive` (`!sumary`; `!x-owner` points to `x-owner:`),
+    `meta-schema` (`owner:`, `x-Owner:`), `invalid-range` (an indented range with no state above, a continued range).
+  - **Open:** `--input-format markdown|compact` (explicit, never from the file name, as decided for MyST; tasks may
+    pick it by suffix); the suffix `.canned-schedule`; comments in the file (start without: the "why" lives in the
+    issue, MR or commit; `!note` is possible later, compatibly); whether the canonical writer emits compact form for
+    catalog files.
+  - **Architecture:** a front end producing the same `document` syntax, like the TOML and MyST ideas, so evaluation,
+    output and fixtures stay shared. Test: every golden input converted to compact form and back gives the same
+    `want.json`.
 
 ## Working conventions
 
