@@ -54,7 +54,7 @@ func TestAWSSchedulesAreTheTemplates(t *testing.T) {
 		"friday-peak": "canned_schedule_friday_peak.md",
 		"night-shift": "canned_schedule_night_shift.md",
 	} {
-		body, ok := stripFrontmatter(readFile(t, githubTemplates+template))
+		_, body, ok := splitFrontmatter(readFile(t, githubTemplates+template))
 		if !ok || readFile(t, awsExample+"schedules/"+schedule+".canned-schedule.md") != body {
 			t.Errorf("examples/aws/schedules/%s differs from %s", schedule, template)
 		}

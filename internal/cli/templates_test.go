@@ -32,10 +32,12 @@ func TestIssueTemplates(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			body, ok := stripFrontmatter(readFile(t, githubTemplates+name))
+			front, body, ok := splitFrontmatter(readFile(t, githubTemplates+name))
 			if !ok {
 				t.Fatal("the GitHub template needs its frontmatter (name, about, title, labels)")
 			}
+
+			checkFrontmatter(t, front)
 
 			if readFile(t, gitlabTemplates+name) != body+gitlabLabel {
 				t.Error("the GitLab template must be the GitHub body followed by the label line")
@@ -108,17 +110,46 @@ func TestDocsPreview(t *testing.T) {
 	}
 }
 
-// stripFrontmatter removes GitHub's issue template frontmatter. GitHub drops it from the issue body.
-func stripFrontmatter(s string) (string, bool) {
+// splitFrontmatter separates GitHub's issue template frontmatter from the body. GitHub drops it from the issue body.
+func splitFrontmatter(s string) (string, string, bool) {
 	rest, ok := strings.CutPrefix(s, "---\n")
 	if !ok {
-		return s, false
+		return "", s, false
 	}
 
-	_, body, ok := strings.Cut(rest, "\n---\n")
+	front, body, ok := strings.Cut(rest, "\n---\n")
 	if !ok {
-		return s, false
+		return "", s, false
 	}
 
-	return strings.TrimPrefix(body, "\n"), true
+	return front, strings.TrimPrefix(body, "\n"), true
+}
+
+// checkFrontmatter catches frontmatter GitHub can't read. GitHub ignores a template whose YAML doesn't parse, without
+// a word: the chooser jumps to a blank issue and the labels are never set. That happened with an unquoted
+// "name: Schedule request: office hours". The repo has no YAML parser (it isn't needed at runtime), so this checks the
+// flat "key: value" shape the templates use: a plain value must not contain ": " or " #" and must not start with a
+// character YAML treats specially; quote it instead.
+func checkFrontmatter(t *testing.T, front string) {
+	t.Helper()
+
+	for line := range strings.SplitSeq(front, "\n") {
+		key, value, ok := strings.Cut(line, ":")
+		if !ok || key == "" || strings.ContainsAny(key, " \t\"'") {
+			t.Errorf("frontmatter line %q: want key: value", line)
+
+			continue
+		}
+
+		value = strings.TrimSpace(value)
+		if value == "" || strings.ContainsRune(`"'[`, rune(value[0])) {
+			continue
+		}
+
+		if strings.Contains(value, ": ") || strings.Contains(value, " #") ||
+			strings.ContainsRune("&*!|>%@`{", rune(value[0])) ||
+			strings.HasPrefix(value, "- ") || strings.HasPrefix(value, "? ") {
+			t.Errorf("frontmatter line %q: quote the value, YAML would not read it as plain text", line)
+		}
+	}
 }
