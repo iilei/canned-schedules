@@ -755,8 +755,31 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   valid schedule gets the label taken back. Wrappers: `promote/action.yml` (`issues: labeled`) and
   `templates/promote.yml` (the issue preview's webhook pipeline). Proposals from the playground skip this step:
   they arrive as pull or merge requests already.
-- **Still open:** catalog versioning (step 3), minimal token scopes, the project's name and the demo repo
-  (`canned-schedules-demo`) for the screen recording.
+- **Catalog versioning is git (decided 2026-11-21):** a catalog file's history is its commits, reviewed in merge
+  requests; canned-schedules adds no version scheme. A consumer pins a commit or tag, and rolling back is a revert.
+- **Step 3, publishing (designed 2026-11-21, not built):** the outputs a merge request was reviewed with are the ones
+  that get published, with their provenance; where they go is the team's choice.
+  - **The review attaches its outputs:** when the merge request review posts its stamped comment, it also attaches
+    each changed schedule's generated files (`.canned-schedule.json`, the report, `.txt`, `.svg`) to the merge request:
+    the job's artifacts on GitLab, workflow artifacts on GitHub, linked from the comment.
+  - **On merge, a publish action / component takes them:** it finds the review of the merged head commit, downloads
+    those files and puts them under a path set by its inputs, together with the **raw input** (the schedule file as
+    merged) and a **provenance file**.
+  - **Provenance** (the companion's file, not part of the core's output contract): the merge request and its review
+    pipeline or workflow run (URLs, numbers, head SHA), the merge commit, the git author and commit date of the commit
+    that last changed the schedule file, the companion and core versions, and the stamp the review recorded (input
+    digest, args digest). The digests stay out of the canonical JSON (see "No digests"); here they tie the published
+    files to the reviewed run.
+  - **A user-provided post-fetch script** then runs with the output directory, e.g. to upload to S3 or Artifactory or
+    to commit to another repository. It runs only on the default branch after a merge (trusted code) with the job's
+    secrets, which the team provides.
+  - **Open:** what happens when the merged file differs from the reviewed one (later commits, a rebase merge; fail, or
+    re-render and say so in the provenance), the artifact retention on GitHub (90 days by default, enough for a
+    publish that runs at merge), the directory layout and the provenance file's schema, the commands' names
+    (`publish fetch` / `publish prepare`, following `<step> <verb>`), and merge requests that change several
+    schedules.
+- **Still open:** minimal token scopes, the project's name and the demo repo (`canned-schedules-demo`) for the screen
+  recording.
 
 ## Stability (decided and implemented 2026-10-25)
 
