@@ -486,6 +486,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
       and `Preview *PreviewOptions{Downsample}`. **A preview is planned up front**, as with the CLI's preview flags:
       only then does the output carry `preview-approximate`, and the preview renderers return `ErrNoPreview`
       without it, so a library user never gets different warnings than a CLI run with the same previews.
+    - `FileName(name) string` and `FileSuffix`: the catalog file name for a schedule's H1 (`schedule.FileName`), for
+      catalog checks such as the companion's merge request review.
     - `CheckSite(siteJSON) []string`: the problems of a self-hosted playground's `site.json`, empty when the page
       will use it (for tools that write one, such as the companion's `playground build`).
     - `Result`: `Output *Output` (nil on errors), `Diagnostics`, `Valid()`, `HasDirectives()` (whether the text
