@@ -32,7 +32,7 @@ the moments the state changes, with ready-made cron expressions.
 
 Read it as: the base state is `Off`, and `Medium` applies on weekdays from 08:00 to 18:00.
 
-Start a request from one of three short issue templates, each showing one idea:
+Propose a schedule with one of three short issue templates, each showing one idea:
 
 | Template     | Shows                                  | GitHub                                                            | GitLab                                                             |
 | ------------ | -------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -40,7 +40,8 @@ Start a request from one of three short issue templates, each showing one idea:
 | Night shift  | A range that crosses midnight          | [template](.github/ISSUE_TEMPLATE/canned_schedule_night_shift.md) | [template](.gitlab/issue_templates/canned_schedule_night_shift.md) |
 | Friday peak  | Two states, where the later range wins | [template](.github/ISSUE_TEMPLATE/canned_schedule_friday_peak.md) | [template](.gitlab/issue_templates/canned_schedule_friday_peak.md) |
 
-The templates label a request `Schedule`, so on GitLab that label has to exist in the project.
+The bot labels an issue with a valid schedule `Schedule` and takes the label off when the schedule breaks; GitLab creates
+the label when it is missing.
 
 ## How it fits together
 
@@ -72,9 +73,9 @@ flowchart TB
   release --> docs
 ```
 
-1. **Propose:** someone opens an issue from the template. The issue workflow checks the request and keeps one
-   comment with the report and, for a valid request, the preview.
-2. **Catalog:** once approved, the request becomes `schedules/<name>.canned-schedule.md` in a catalog repo. CI and
+1. **Propose:** someone opens an issue from the template, or proposes the schedule from a team's playground. The
+   issue workflow checks the proposal and keeps one comment with the report and, for a valid schedule, the preview.
+2. **Catalog:** once approved, the proposal becomes `schedules/<name>.canned-schedule.md` in a catalog repo. CI and
    the pre-commit hook check it; `schedule:render` writes the outputs. [`examples/consumer`](examples/consumer) has
    both steps ready to copy.
 3. **Publish:** your pipeline's part. The outputs are plain files, so a git tag with release assets, an Artifactory
@@ -109,6 +110,9 @@ mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:808
 ```
 
 ### Your own playground
+
+**[How to host your own schedule catalog](docs/self-hosted-catalog.md)** walks through the whole setup on GitLab:
+catalog, playground on Pages, issue preview and merge request review.
 
 A team can host the page itself and set it up for its catalog with a `site.json` next to `index.html`
 ([schema](schema/site.schema.json)). Every release attaches the page as `canned-schedules-site_<version>.zip`

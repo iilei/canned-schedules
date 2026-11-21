@@ -1,5 +1,5 @@
 ---
-name: "Schedule request: Friday peak"
+name: "Schedule proposal: Friday peak"
 about: Regular weekdays with a peak on top
 title: "[schedule-contrib]: "
 labels: ["triage"]

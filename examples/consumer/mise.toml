@@ -14,9 +14,9 @@ arg "[file]..." var=#true help="Schedule files (default: every *.canned-schedule
 run = 'eval "set -- ${usage_file:-}"; sh scripts/canned-schedule render "$@"'
 
 [tasks."schedule:check"]
-description = "Check one schedule request (e.g. an issue body) and write the report and the comment to post"
+description = "Check one schedule proposal (e.g. an issue body) and write the report and the comment to post"
 usage = '''
-arg "<file>" help="The request, e.g. an issue body written to a file"
+arg "<file>" help="The proposal, e.g. an issue body written to a file"
 arg "[out_dir]" default="canned-schedule-report" help="Where report.md, report.json, comment.md and the outputs go"
 '''
 run = 'sh scripts/canned-schedule check "$usage_file" "$usage_out_dir"'

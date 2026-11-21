@@ -128,7 +128,7 @@ check() {
 	cs_run --error-output-file "$out/report.json" --error-output-format json "$f" >/dev/null || :
 
 	# The comment a workflow posts: the marker it finds the comment by (specific to this step, so later steps get
-	# their own comments), the report, and for a valid request the text form inside a fence, so nothing in it renders
+	# their own comments), the report, and for a valid schedule the text form inside a fence, so nothing in it renders
 	# as Markdown. The workflow may append links to the files it uploads.
 	{
 		echo '<!-- canned-schedules:issue-preview -->'
