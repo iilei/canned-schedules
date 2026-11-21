@@ -40,7 +40,7 @@
       "additionalProperties": false
     },
     "propose": {
-      "description": "URL templates for proposing a valid schedule. Placeholders: {path} (the file's path in the repository), {content} (the schedule in canonical form) and {name} (its name); the page fills them in, URL-encoded.",
+      "description": "URL templates for proposing a valid schedule. Placeholders: {path} (the file's path in the repository), {content} (the schedule exactly as written in the editor) and {name} (its name); the page fills them in, URL-encoded.",
       "type": "object",
       "properties": {
         "create": { "$ref": "#/$defs/template", "description": "A new file, e.g. a forge's new-file page; needs {path} and {content}." },

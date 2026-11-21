@@ -136,7 +136,8 @@ a schedule the catalog already has, and **Open as issue** opens a new issue. Mer
 - `catalog.names` lists the schedules the catalog has (file names without `.canned-schedule.md`), so the page knows
   whether a schedule is new or a change. Regenerate the file when the catalog changes; a stale list only means the forge
   reports that the file exists.
-- In the templates, `{path}`, `{content}` (the schedule in canonical form) and `{name}` are filled in, URL-encoded. Only
+- In the templates, `{path}`, `{content}` (the schedule verbatim, exactly as written in the editor, prose included) and
+  `{name}` are filled in, URL-encoded. Only
   https URLs. On GitHub, use `/new/<branch>?filename={path}&value={content}` for `create`, and
   `{"url": "https://github.com/OWNER/REPO/edit/<branch>/{path}", "prefill": false}` for `update`: GitHub's edit page
   takes no content, so the page copies the schedule and opens the page. Above `max-length` (default 8000, GitLab's
