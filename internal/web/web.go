@@ -24,6 +24,12 @@ import (
 // fileName names the document in reports; the page has no file.
 const fileName = "schedule.md"
 
+// The names the page gives itself as a generator: the public instance, or a team's copy with a site.json.
+const (
+	PreflightPage = "canned-schedules preflight page"
+	Playground    = "canned-schedules playground"
+)
+
 // errInvalid means the document has errors, so there is nothing to put into a kit.
 var errInvalid = errors.New("fix the errors first: the Sphinx kit needs a valid schedule")
 
@@ -56,12 +62,15 @@ type Result struct {
 // Evaluate runs the CLI pipeline on src with the flags from a link (?arg=, checked by linkargs.Check) followed by the
 // page's own flags (no file argument). The page's flags come last, so its controls win over a link's config
 // overrides of the same path. A link with a flag the page can't take is reported and left out entirely.
-func Evaluate(src []byte, link, args []string) Result { return EvaluateSite(src, nil, link, args) }
+func Evaluate(src []byte, link, args []string) Result {
+	return EvaluateSite(src, nil, link, args, false)
+}
 
 // EvaluateSite is Evaluate on a self-hosted playground: site holds its site.json's flags, which come last, so neither
 // a link, a preset nor the page's controls can loosen the check the team set up; a link or preset flag the site sets
-// is reported (linkargs.Conflicts) and the link's flags are left out.
-func EvaluateSite(src []byte, site, link, args []string) Result {
+// is reported (linkargs.Conflicts) and the link's flags are left out. playground says the page has a site.json (even one
+// with errors), so the SVG names the playground as its generator instead of the preflight page.
+func EvaluateSite(src []byte, site, link, args []string, playground bool) Result {
 	var res Result
 
 	opts, diags := parse(site, link, args)
@@ -78,7 +87,7 @@ func EvaluateSite(src []byte, site, link, args []string) Result {
 			opts.Preview.SVGAnnotations = true
 			res.JSON = encode(out)
 			res.File = schedule.FileName(out.Name)
-			res.SVG = string(must(cli.SVG(&opts, out, src, generator())))
+			res.SVG = string(must(cli.SVG(&opts, out, src, generator(playground))))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))
 			res.Text = string(must(cli.Text(&opts, out, src, false)))
@@ -151,10 +160,19 @@ func encode(v any) string {
 // must drops the error of a rendering step that only fails on a bug; the page shows what it has.
 func must(b []byte, _ error) []byte { return b }
 
+// pageName is Playground on a team's copy, PreflightPage otherwise.
+func pageName(playground bool) string {
+	if playground {
+		return Playground
+	}
+
+	return PreflightPage
+}
+
 // generator names the page and, when the build has one, the module version (WebAssembly builds from a checkout get
 // it from git), for the SVG's source element.
-func generator() string {
-	const page = "canned-schedules preflight page"
+func generator(playground bool) string {
+	page := pageName(playground)
 
 	if info, ok := debug.ReadBuildInfo(); ok {
 		if v := strings.TrimPrefix(info.Main.Version, "v"); v != "" && v != "(devel)" {
@@ -167,11 +185,11 @@ func generator() string {
 
 // SphinxKit builds the Sphinx kit zip for src with the given flags. The page calls it on demand, not on every edit.
 func SphinxKit(src []byte, link, args []string) ([]byte, error) {
-	return SphinxKitSite(src, nil, link, args)
+	return SphinxKitSite(src, nil, link, args, false)
 }
 
-// SphinxKitSite is SphinxKit with a self-hosted playground's flags, as in EvaluateSite.
-func SphinxKitSite(src []byte, site, link, args []string) ([]byte, error) {
+// SphinxKitSite is SphinxKit with a self-hosted playground's flags and page name, as in EvaluateSite.
+func SphinxKitSite(src []byte, site, link, args []string, playground bool) ([]byte, error) {
 	opts, diags := parse(site, link, args)
 	if diags.HasErrors() {
 		return nil, errInvalid
@@ -186,5 +204,5 @@ func SphinxKitSite(src []byte, site, link, args []string) ([]byte, error) {
 		return nil, err
 	}
 
-	return sphinxkit.Kit(src, cfg, "canned-schedules preflight page")
+	return sphinxkit.Kit(src, cfg, pageName(playground))
 }
