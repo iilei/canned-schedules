@@ -95,5 +95,5 @@ func ExampleCheckSite() {
 	// Output:
 	// 0
 	// propose.issue: needs {content}
-	// propose.issue: must be an https URL with a host
+	// propose.issue: must be an https URL with a host (http only for localhost)
 }

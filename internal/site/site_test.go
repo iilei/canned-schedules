@@ -92,6 +92,7 @@ func TestCheckSiteRefuses(t *testing.T) {
 		"bad catalog name": {`{"catalog": {"names": ["Office Hours"]}}`, "catalog.names"},
 		"dot dot":          {`{"catalog": {"dir": "a/../b"}}`, "catalog.dir"},
 		"http":             {`{"propose": {"issue": "http://x.example/{content}"}}`, "propose.issue"},
+		"http lookalike":   {`{"propose": {"issue": "http://localhost.example.com/{content}"}}`, "propose.issue"},
 		"no content":       {`{"propose": {"create": "https://x.example/new?file={path}"}}`, "needs {content}"},
 		"no path":          {`{"propose": {"update": "https://x.example/edit?c={content}"}}`, "needs {path}"},
 		"unknown ph":       {`{"propose": {"issue": "https://x.example/?t={title}&b={content}"}}`, "unknown placeholder {title}"},
@@ -114,4 +115,25 @@ func check(raw []byte) result {
 	s, errs := Check(raw)
 
 	return result{s, errs}
+}
+
+// TestCheckSiteLoopbackHTTP: a forge on this machine (a demo, a test instance) may be a target over http; nothing else.
+func TestCheckSiteLoopbackHTTP(t *testing.T) {
+	t.Parallel()
+
+	for _, base := range []string{
+		"http://localhost:8080", "http://LOCALHOST", "http://gitlab.localhost", "http://127.0.0.1:8080",
+		"http://127.1.2.3", "http://[::1]:8080",
+	} {
+		res := check([]byte(`{"propose": {"issue": "` + base + `/g/p/-/issues/new?issue[description]={content}"}}`))
+		if res.Site == nil {
+			t.Errorf("%s: %q", base, res.Errors)
+		}
+	}
+
+	for _, host := range []string{"localhost.example.com", "10.0.0.1", "192.168.1.2", "[fe80::1]", "localhostx"} {
+		if Loopback(strings.Trim(host, "[]")) {
+			t.Errorf("%s must not count as loopback", host)
+		}
+	}
 }
