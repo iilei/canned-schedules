@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"regexp"
 	"slices"
@@ -250,6 +251,20 @@ func propose(create, issue string, rawUpdate json.RawMessage, maxLength int) (*P
 	return p, errs
 }
 
+// Loopback reports whether host is this machine: localhost, a name under .localhost, 127.0.0.0/8 or ::1. http is
+// allowed there, as browsers treat these as secure contexts too, so a forge running on a developer's machine (a
+// demo, a test instance) can be a proposal target; every other host needs https.
+func Loopback(host string) bool {
+	host = strings.TrimSuffix(strings.ToLower(host), ".")
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+		return true
+	}
+
+	ip := net.ParseIP(host)
+
+	return ip != nil && ip.IsLoopback()
+}
+
 // checkTemplate checks a URL template: only the known placeholders, the required ones present, and with them filled
 // in an https URL with a host and without user info or a fragment.
 func checkTemplate(where, tmpl string, need ...string) []string {
@@ -273,8 +288,8 @@ func checkTemplate(where, tmpl string, need ...string) []string {
 	switch {
 	case err != nil:
 		errs = append(errs, where+": not a URL")
-	case u.Scheme != "https" || u.Host == "":
-		errs = append(errs, where+": must be an https URL with a host")
+	case u.Host == "" || (u.Scheme != "https" && (u.Scheme != "http" || !Loopback(u.Hostname()))):
+		errs = append(errs, where+": must be an https URL with a host (http only for localhost)")
 	case u.User != nil:
 		errs = append(errs, where+": must not contain user info")
 	case u.Fragment != "" || strings.Contains(tmpl, "#"):

@@ -614,6 +614,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     addition). The check moved to `internal/site`, and the flag rules links, presets and sites share to
     `internal/linkargs`, because `internal/web` links the Sphinx kit, which the library must not
     (`TestLibraryDependencies` runs `go list -deps .`; skipped where `go` isn't on the path, as in `test:wasm`).
+  - **http for loopback hosts only (decided 2026-11-21):** proposal targets need https, except on this machine
+    (`localhost`, `*.localhost`, `127.0.0.0/8`, `::1`; `site.Loopback`), as browsers treat those as secure contexts
+    too. For a forge in Docker (the local GitLab demo with Pages); a compatible relaxation. Lookalikes such as
+    `localhost.example.com` stay refused.
   - **The site's flags win (decided 2026-11-21):** the page passes them separately (`evaluate(markdown, args,
     linkArgs, siteArgs)`, `web.EvaluateSite`), and they come last, after the link's, the preset's and the page's
     own, so nothing loosens the team's check. A link or preset flag the site sets (same flag; for `--set-config-at`
