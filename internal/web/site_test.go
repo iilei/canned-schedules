@@ -41,13 +41,13 @@ func TestEvaluateSiteWins(t *testing.T) {
 	src := []byte("# Plan\n\n> [!SCHEDULE-STATE] Medium\n> - `06:05` to `22:00` MON-FRI\n")
 	site := []string{"--sample-interval", "5", "--require-base", "true"}
 
-	res := EvaluateSite(src, site, []string{"--require-base", "false"}, nil)
+	res := EvaluateSite(src, site, []string{"--require-base", "false"}, nil, false)
 	if res.Errors == 0 || !strings.Contains(res.Report, "set by this playground") {
 		t.Errorf("a link must not change a site flag: %s", res.Report)
 	}
 
 	// The page's sample-interval control says 1, the site 5: 06:05 is fine with 5, but the site wants a BASE.
-	res = EvaluateSite(src, site, nil, []string{"--sample-interval", "1"})
+	res = EvaluateSite(src, site, nil, []string{"--sample-interval", "1"}, false)
 	if !strings.Contains(res.Report, "missing-base") && !strings.Contains(res.Report, "BASE") {
 		t.Errorf("the site's --require-base must hold: %s", res.Report)
 	}
@@ -58,6 +58,7 @@ func TestEvaluateSiteWins(t *testing.T) {
 		strict,
 		nil,
 		[]string{"--sample-interval", "5"},
+		false,
 	); !strings.Contains(
 		res.Report,
 		"sample-interval",
@@ -65,7 +66,24 @@ func TestEvaluateSiteWins(t *testing.T) {
 		t.Errorf("the page's control must not loosen the site's interval: %s", res.Report)
 	}
 
-	if res := EvaluateSite(src, nil, nil, []string{"--sample-interval", "5"}); res.Errors != 0 {
+	if res := EvaluateSite(src, nil, nil, []string{"--sample-interval", "5"}, false); res.Errors != 0 {
 		t.Errorf("without a site the page's control decides: %s", res.Report)
+	}
+}
+
+// TestPlaygroundGenerator: a team's copy names itself in the SVG it renders, so a downloaded picture doesn't claim to
+// come from the public preflight page.
+func TestPlaygroundGenerator(t *testing.T) {
+	t.Parallel()
+
+	src := []byte("# Office\n\n> [!SCHEDULE-STATE] Medium\n> - `06:00` to `22:00` MON-FRI\n")
+
+	res := EvaluateSite(src, nil, nil, nil, true)
+	if !strings.Contains(res.SVG, `generator="`+Playground) {
+		t.Errorf("the playground's SVG must name it as its generator:\n%.400s", res.SVG)
+	}
+
+	if res := Evaluate(src, nil, nil); !strings.Contains(res.SVG, `generator="`+PreflightPage) {
+		t.Errorf("the preflight page's SVG must name it as its generator:\n%.400s", res.SVG)
 	}
 }

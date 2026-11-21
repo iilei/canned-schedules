@@ -553,7 +553,7 @@ function evaluate() {
     let res;
     try {
         state.src = editor.value; // What this result was checked from: a proposal carries exactly this text.
-        res = JSON.parse(globalThis.cannedSchedules.evaluate(state.src, args(), linked(), siteArgs()));
+        res = JSON.parse(globalThis.cannedSchedules.evaluate(state.src, args(), linked(), siteArgs(), playground));
     } catch (err) {
         showStatus("err", "Internal error: " + err);
         return;
@@ -623,10 +623,13 @@ async function loadSite() {
 }
 
 const PLAYGROUND = "canned-schedules playground";
+// playground is true on a team's copy; the SVG and the Sphinx kit then name the playground as their generator.
+let playground = false;
 
 // nameAsPlayground renames the page for a team's copy: one with a site.json is a playground, the public one (no
 // site.json) stays the preflight page. Also when the site.json has errors, since it is still the team's page.
 function nameAsPlayground() {
+    playground = true;
     document.title = PLAYGROUND;
     $("page-kind").textContent = "playground";
     $("home").setAttribute("aria-label", PLAYGROUND + ": start over");
@@ -924,7 +927,7 @@ function download(name, type, content) {
 
 // The kit is built on demand: stylesheet, fonts, a local Sphinx extension and the current schedule as MyST.
 function downloadKit() {
-    const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linked(), siteArgs());
+    const zip = globalThis.cannedSchedules.sphinxKit(editor.value, args(), linked(), siteArgs(), playground);
     if (typeof zip === "string") {
         showStatus("err", zip);
         return;
@@ -1014,7 +1017,7 @@ let queryStates = null; // ?states=… entries, applied once the defaults are kn
 // the defaults stay in schema/config.json only. The preset's and the link's flags count: states they set are the
 // defaults then.
 function loadDefaultStates() {
-    const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linked(), siteArgs()));
+    const res = JSON.parse(globalThis.cannedSchedules.evaluate("", [], linked(), siteArgs(), playground));
     defaultStates = (res.states || []).map((s) => ({ id: s.id, name: s["display-name"] }));
 }
 

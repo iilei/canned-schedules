@@ -611,7 +611,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     flags win on the same path; a note counts them, with no Drop button. `name` goes under the title and into the
     document title. A page with a `site.json` calls itself a playground (heading "canned-schedules playground", tab
     "<name> · canned-schedules playground", the home link's label), even when the file has errors, since it is still
-    a team's copy; without one it stays the preflight page (`nameAsPlayground`, 2026-11-21). The proposal box under the status line appears only for a valid document with a fitting target:
+    a team's copy; without one it stays the preflight page (`nameAsPlayground`, 2026-11-21). The SVG's and the Sphinx kit's generator follow (`web.Playground`). The proposal box under the status line appears only for a valid document with a fitting target:
     **Propose new schedule** (`create`) or **Propose change** (`update`, when `catalog.names` has the file's stem),
     and **Open as issue**; a note names the file. A click fills the template (`{path}` keeps its slashes) with the
     text the result was checked from and opens a new tab (`noopener`); without prefill or above `max-length` the
@@ -870,7 +870,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `syscall/js` wrapper around `internal/web.Evaluate`). Nothing leaves the browser.
 - Shows: the SVG week (showcase, rendered with `--svg-theme` matching the page theme; it always embeds the canonical
   schedule in canonical form like `--svg-embed-source`, set in `web.Evaluate` because the page has no `--svg-output-file`, with the
-  generator `canned-schedules preflight page <module version>`; the inline copy shows none of it), **Download text**
+  generator `canned-schedules preflight page <module version>`, or `canned-schedules playground <module version>` on a
+  team's copy (the page passes `playground` to `evaluate` and `sphinxKit`); the inline copy shows none of it), **Download text**
   (`text` in the evaluate result: the text form with the page's preview settings, `schedule.txt`, disabled while
   the document has errors), the Markdown as a Sphinx page
   with custom admonitions (the default, left in the switch) or as a GitHub issue (`internal/htmlpreview`), diagnostics that jump to `line:col` in the
