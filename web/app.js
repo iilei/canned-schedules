@@ -27,6 +27,9 @@ const ASSET_VERSIONS = (() => {
 })();
 const asset = (rel) => (ASSET_VERSIONS[rel] ? `${rel}?v=${ASSET_VERSIONS[rel]}` : rel);
 let current = null; // the selected preset
+// linkedDoc stands for a document a link brought (#doc=) without ?preset=: the dropdown shows "Linked schedule"
+// rather than a preset that has nothing to do with it, Reset brings the linked text back, and it carries no flags.
+let linkedDoc = null;
 let ready = false;
 
 // ---- editor ------------------------------------------------------------------------------------------------------
@@ -861,9 +864,10 @@ function applyPresetOptions(prev, next, keep = new Set()) {
 
 // Switching presets replaces the editor content; unsaved edits are only dropped after confirmation.
 function choosePreset(id) {
-    const next = presets.find((p) => p.id === id);
+    const next = linkedDoc && id === linkedDoc.id ? linkedDoc : presets.find((p) => p.id === id);
     if (!next) return;
-    if (dirty() && !confirm('Replace your edits with the "' + next.label + '" preset?')) {
+    const what = next === linkedDoc ? "the linked schedule" : 'the "' + next.label + '" preset';
+    if (dirty() && !confirm("Replace your edits with " + what + "?")) {
         $("preset").value = current.id;
         return;
     }
@@ -1267,7 +1271,7 @@ const CONTROLS = ["downsample", "sample-interval", "symbols"];
 // link sees what they can change. Only the states (written when custom) and the link's flags are left out when empty.
 function permalink() {
     const q = new URLSearchParams();
-    if (current) q.set("preset", current.id);
+    if (current && current !== linkedDoc) q.set("preset", current.id);
     q.set("lock", String(locked));
     q.set("theme", state.theme);
     q.set("view", state.flavour);
@@ -1279,7 +1283,7 @@ function permalink() {
     for (const a of linkArgs) q.append("arg", a);
     const url = new URL(location.pathname, location.origin);
     url.search = q.toString();
-    if (dirty()) url.hash = "doc=" + toBase64url(editor.value);
+    if (dirty() || current === linkedDoc) url.hash = "doc=" + toBase64url(editor.value);
     return url.href;
 }
 
@@ -1508,7 +1512,14 @@ async function start() {
         ]);
         go.run(instance);
         applySite(siteText);
-        current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
+        const doc = fromHash();
+        if (doc !== null && !state.preset) {
+            linkedDoc = { id: "linked", label: "Linked schedule", text: doc };
+            $("preset").prepend(new Option(linkedDoc.label, linkedDoc.id));
+            current = linkedDoc;
+        } else {
+            current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
+        }
         applyPresetOptions(null, current, queriedControls);
         loadDefaultStates();
         setStates(queryStates || defaultStates);
@@ -1518,7 +1529,7 @@ async function start() {
         if (queryStates) $("states-panel").open = true;
         if (current.hidden) addPresetOption(current);
         $("preset").value = current.id;
-        editor.value = fromHash() ?? current.text;
+        editor.value = doc ?? current.text;
         updateReset();
         ready = true;
         $("hud").hidden = true;
