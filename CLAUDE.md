@@ -698,8 +698,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     and on github.com as a collaborator (the demo repo):
     - New file: GitLab `/-/new/<branch>?file_name=<dir/file>&content=…` and GitHub
       `/new/<branch>?filename=<dir/file>&value=…` (not officially documented) both prefill folder, name and content.
-    - Change a file: GitLab `/-/edit/<branch>/<path>?content=…` replaces the stored text in the editor; GitHub ignores
-      `value` on `/edit/…`, so the page copies and opens instead.
+    - Change a file: neither forge prefills an existing file's edit page, so `update` is `{"url": …, "prefill": false}`
+      on both (the page copies and opens). GitHub ignores `value` on `/edit/…`; GitLab 19.4 renders `?content=` into
+      the page, but its editor then loads the stored file through the API (`getRawFile` whenever a file path is set),
+      so the text is lost. Found on 2026-11-21 while writing `docs/stories/shift-swap`; the earlier note here said
+      GitLab replaced the text.
     - Issue: GitLab `/-/issues/new?issue[title]=…&issue[description]=…`, GitHub `/issues/new?title=…&body=…`
       (documented).
     - Non-members on GitLab: 404 on new, the read-only view on edit (content lost) until they have a fork; then
