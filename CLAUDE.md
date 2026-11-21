@@ -600,8 +600,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     byte-identical to the signed asset. Keys:
     - `args`: the site's flags in the format of `canned-schedules.args`, the same file the bot uses, so a schedule
       valid in the playground is valid in CI. Checked like `?arg=`, applied like a locked link the reader can't drop.
-    - `catalog`: `dir` (default `schedules`), `names` (the existing schedules' file names; the page matches them by
-      slug and reads each one's form from its suffix) to choose between a new file and a change, and `form` (`markdown`, `compact` or `any`, the default) for new files.
+    - `catalog`: `dir` (default `schedules`), `names` (the existing schedules' slugs, i.e. file names without
+      `.canned-schedule.md`) to choose between a new file and a change, and `form` (`markdown`, `compact` or `any`, the default) for new files.
     - `propose`: URL templates `create`, `update` and `issue`, https only, with the placeholders `{path}`, `{content}`
       (the canonical form) and `{name}`, filled with `encodeURIComponent`. `update` may be `{"url": …, "prefill":
       false}`: copy the schedule to the clipboard, then open the page. Above `max-length` (default 8000) the page
@@ -620,7 +620,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     for Markdown, `night-shift.canned-schedule` for compact, so CI picks `--input-format` from the proposed file's
     name. Both forms write the same outputs (`night-shift.canned-schedule.json`, …), so one slug must never have two
     sources:
-    - **Matching is by slug:** a slug in `catalog.names` in either form gets `update`.
+    - **Matching is by slug:** `names` keeps its meaning (slugs of Markdown files); compact files get a list of their
+      own, `catalog.compact-names` (optional, a compatible addition), so the page knows each file's form. A slug in
+      either list gets `update`; a slug in both is a `site.json` error.
     - **An update keeps the catalog file's form:** the page converts the editor content to that form (the switch's
       conversion) before filling `{content}`; a change of form is a deliberate rename, never a side effect of the
       toggle.
