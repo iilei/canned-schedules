@@ -50,7 +50,7 @@ jobs:
             printf '\n%s\n' "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: iilei/canned-schedules-companion@7755130ba6a349f1eb102e76ac6ae186b33bd159 # v0.2.0
+      - uses: iilei/canned-schedules-companion@906182f426dbb4f4531dbdb6a99b53360fc9268f # v0.3.1
         with:
           body-file: ${{ runner.temp }}/request.md
           args: ${{ steps.flags.outputs.args }}
