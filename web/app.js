@@ -622,10 +622,21 @@ async function loadSite() {
     }
 }
 
+const PLAYGROUND = "canned-schedules playground";
+
+// nameAsPlayground renames the page for a team's copy: one with a site.json is a playground, the public one (no
+// site.json) stays the preflight page. Also when the site.json has errors, since it is still the team's page.
+function nameAsPlayground() {
+    document.title = PLAYGROUND;
+    $("page-kind").textContent = "playground";
+    $("home").setAttribute("aria-label", PLAYGROUND + ": start over");
+}
+
 // applySite checks the fetched text in Go. A site with errors isn't used at all: half of a setup would check
 // schedules differently from CI without saying so.
 function applySite(raw) {
     if (raw === null) return;
+    nameAsPlayground();
     const res = JSON.parse(globalThis.cannedSchedules.checkSite(raw));
     if (res.errors.length) {
         const shown = res.errors.slice(0, 3).join("; ") + (res.errors.length > 3 ? "; …" : "");
@@ -637,7 +648,7 @@ function applySite(raw) {
     if (site.name) {
         $("site-name").textContent = site.name;
         $("site-name").hidden = false;
-        document.title = site.name + " · " + document.title;
+        document.title = site.name + " · " + PLAYGROUND;
     }
     const flags = site.args.filter((a) => a.startsWith("-")).length;
     $("site-args").hidden = flags === 0;
