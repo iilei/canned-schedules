@@ -1,5 +1,5 @@
 ---
-name: "Schedule request: night shift"
+name: "Schedule proposal: night shift"
 about: Hours that run past midnight
 title: "[schedule-contrib]: "
 labels: ["triage"]

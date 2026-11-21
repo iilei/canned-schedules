@@ -1,6 +1,6 @@
-name: schedule request
+name: schedule proposal
 
-# Checks a schedule request issue and keeps one comment on it up to date: the report, and for a valid request the
+# Checks an issue that proposes a schedule and keeps one comment on it up to date: the report, and for a valid schedule the
 # text form inline and links to the SVG week and the other files, uploaded as workflow artifacts (GitHub strips inline
 # SVG, and bots can't attach files to issues). The canned-schedules-companion action does the work; the same check runs
 # locally with `mise run schedule:check body.md`. The workflow never writes to the repository.

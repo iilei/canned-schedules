@@ -28,10 +28,22 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
 
 - **Vocabulary: "schedule", not "request" (decided 2026-11-08).** The Markdown document is *the schedule* (its H1 is
   the schedule's name, files are `*.canned-schedule.md`); what the page and the previews draw is *the week*; JSON,
-  SVG, text form and MyST are outputs of the schedule; "canonical form" names the normalised schedule. "Request"
-  only where an issue is meant: the issue template and its workflow, the bot comment, `schedule:check` on an issue
-  body, "ready to paste into an issue". Examples use `schedule.md` as the input file (the page's reports and CLI
+  SVG, text form and MyST are outputs of the schedule; "canonical form" names the normalised schedule. "Proposal", not
+  "request" (decided 2026-11-21): someone hands in a finished schedule for the catalog and asks for approval, so the issue
+  templates are "Schedule proposal: …", the workflow is "schedule proposal", docs speak of proposals, and the page's
+  buttons say "Propose". ("Request" had replaced nothing better: it suggests someone else writes the schedule.)
+  Technical names stay, being identifiers or contract: the marker `canned-schedules:issue-preview`,
+  `schedule-request.yml`, `canned_schedule_request.md`, flags and `schedule:check`. Examples use `schedule.md` as the input file (the page's reports and CLI
   flags box too). Applies to the page, `--help`, usage strings, messages, code comments and the README.
+- **"Playground" for a team's copy, "preflight page" for the public one (decided 2026-11-21):** the self-hosted page
+  with a `site.json` (docs, the companion's `playground build`, the bot's "Try this schedule in the playground") is the
+  *playground*; the instance on github.io keeps the name *preflight page*. The bot's two jobs keep their names:
+  *issue preview* (issues) and *merge request review* (merge requests), as in the companion's commands.
+- **"Catalog", not "shelf" (decided 2026-11-21).** The repository with a team's approved schedules, its playground and
+  its bots is a *schedule catalog*; `schedules/` is the catalog's folder (`catalog.dir`, `catalog.names`,
+  `--catalog-dir`). "Shelf" fit the can metaphor but needed explaining; "pantry", "library" (clashes with the Go
+  library) and "registry" (sounds like an API service) were rejected too. The product name keeps the cans. Guide:
+  `docs/self-hosted-catalog.md`.
 - **One Go binary (decided).** No CUE (dropped 2026-10-24), no jq, yq, gomplate, `markdown-tool` or sh glue at
   runtime. `rumdl` and `mise` stay as development tools.
   - **Parsing with goldmark:** byte offsets from goldmark segments make `file:line:col` errors possible. Block nodes:
@@ -458,7 +470,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 ## Companion tooling (decided 2026-11-08, #38)
 
 - **A separate project, not this repo.** Everything that talks to a forge (issue comments, uploads, promotion of an
-  approved request to the shelf, releases, housekeeping) lives in a companion project: a Go binary built on the
+  approved request to the catalog, releases, housekeeping) lives in a companion project: a Go binary built on the
   library (below) from step 1 on, wrapped by a thin GitHub Action and a GitLab CI/CD component that only install and
   run it, so later steps extend the binary instead of rewriting shell steps. This repo
   keeps its guarantee whole: nothing here calls a forge API (apart from its own CI and release), and forge clients,
@@ -533,7 +545,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **Name:** `github.com/iilei/canned-schedules-companion`, public; the binary has the same name. The
     `canned-schedules-` prefix sorts it next to the core and gives mise `github:iilei/canned-schedules-companion`;
     `-bot`, `-ci` and `-forge` were rejected because the binary runs locally too, `-shelf` because step 1 isn't
-    about the shelf.
+    about the shelf (since 2026-11-21 called the catalog).
   - **The binary is the core of the design,** usable locally as well as in CI: for reproducing CI, for forges other
     than GitHub and GitLab, and for teams without an issue bot. Every step splits into a **local part** (files in,
     files out; no network, no tokens, the core's guarantees) and a thin **forge part** (posting, opening, uploading).
@@ -729,7 +741,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     and label, "last body edit" is a different field on each forge, a run racing an edit can record the wrong
     order, and a new release or changed args must recheck the same body. The hash leaks nothing (the body is public
     on the issue), and only the bot's own comment counts, so nobody can plant a "skip".
-- **Still open:** what marks a request approved (step 2), shelf versioning (step 3), minimal token scopes, the
+- **Still open:** what marks a request approved (step 2), catalog versioning (step 3), minimal token scopes, the
   project's name and the demo repo (`canned-schedules-demo`) for the screen recording.
 
 ## Stability (decided and implemented 2026-10-25)
