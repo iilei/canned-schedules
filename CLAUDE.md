@@ -483,7 +483,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
       and `Preview *PreviewOptions{Downsample}`. **A preview is planned up front**, as with the CLI's preview flags:
       only then does the output carry `preview-approximate`, and the preview renderers return `ErrNoPreview`
       without it, so a library user never gets different warnings than a CLI run with the same previews.
-    - `Result`: `Output *Output` (nil on errors), `Diagnostics`, `Valid()`, `JSON()` (the CLI's exact bytes),
+    - `Result`: `Output *Output` (nil on errors), `Diagnostics`, `Valid()`, `HasDirectives()` (whether the text
+      holds any schedule marker, for bots that check every issue), `JSON()` (the CLI's exact bytes),
       `Canonical()` (for promotion), `Text(color)`, `ASCII(color)`, `SVG(SVGOptions)`, `Report(file)`. Renderers of
       an invalid document return `ErrInvalidDocument`.
     - `SVGOptions`: `Theme` (`ThemeAuto` when empty, `ThemeLight`, `ThemeDark`), `EmbedSource`, `Generator` (empty
@@ -636,8 +637,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     the label.** On GitHub the workflow's `if:` filters cheaply (`contains()` ignores case for strings); on GitLab the
     companion filters the webhook's events. A title marker was considered and rejected: GitLab templates can't set
     the title, and one rule on both forges is easier to explain.
-  - **The companion stays silent** (no comment, no label) when the parser finds no top-level directive, so issues
-    that only quote the syntax in backticks get nothing.
+  - **The companion stays silent** (no comment, no label) when the body has no directive, so issues that only quote
+    the syntax in backticks or a code block get nothing. The library answers it with `Result.HasDirectives()` (added
+    2026-11-21, a compatible addition): every marker the parser recognises (top-level, also with an unknown or
+    missing kind, the old colon form, misplaced ones) counts, code doesn't. `Valid()` can't tell, because a heading
+    and prose make a valid, empty schedule and text without a heading is invalid.
   - **The label means "holds a valid schedule", and only CI sets it:** valid adds it, invalid removes it and the
     comment carries the report. So the templates stop setting `Schedule` (GitHub `labels:`, GitLab `/label
     ~Schedule`), which also needed label rights the author may not have. The label stays in the trigger, so a run

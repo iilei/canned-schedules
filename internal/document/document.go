@@ -73,6 +73,10 @@ type Document struct {
 	Meta   *Directive
 	Base   *Directive
 	Name   Text
+	// Markers counts the schedule directive markers the parser recognised: top-level ones (also with an unknown or
+	// missing kind), the old colon form and misplaced ones. Markers in code spans and code blocks don't count, so
+	// text that only shows the syntax has none.
+	Markers int
 }
 
 // Options configure Parse.

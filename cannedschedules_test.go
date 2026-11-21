@@ -357,3 +357,44 @@ func must2(r *cs.Result, err error) *cs.Result {
 
 	return r
 }
+
+// TestHasDirectives covers what counts as a schedule directive for tools that check arbitrary text: every marker the
+// parser recognises, but nothing inside code.
+func TestHasDirectives(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		name, src string
+		want      bool
+	}{
+		{"valid", doc, true},
+		{"invalid range", "# A\n\n> [!SCHEDULE-STATE] Medium\n> - 8 to 18\n", true},
+		{"lower case", "# A\n\n> [!schedule-base] Off\n", true},
+		{"unknown kind", "# A\n\n> [!SCHEDULE-TEIR] Medium\n", true},
+		{"missing kind", "# A\n\n> [!SCHEDULE] Medium\n", true},
+		{"colon form", "# A\n\n> [!SCHEDULE:STATE] Medium\n", true},
+		{"nested in a list", "# A\n\n- > [!SCHEDULE-STATE] Medium\n", true},
+		{"bold", "# A\n\n> **[!SCHEDULE-STATE]** Medium\n", true},
+		{"no heading", "> [!SCHEDULE-BASE] Off\n", true},
+		{"prose with a heading", "# A question\n\nHow do schedules work?\n", false},
+		{"prose without a heading", "How do schedules work?\n", false},
+		{"code span", "# A question\n\nWhat does `[!SCHEDULE-STATE]` do?\n", false},
+		{"code block", "# A question\n\n```markdown\n> [!SCHEDULE-STATE] Medium\n```\n", false},
+		{"other alert", "# A\n\n> [!NOTE]\n> Hello\n", false},
+		{"near miss", "# A\n\n> [!SCHEDUEL-STATE] Medium\n", false},
+		{"empty", "", false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			r, err := cs.Evaluate([]byte(c.src), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got := r.HasDirectives(); got != c.want {
+				t.Errorf("HasDirectives() = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
