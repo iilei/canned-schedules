@@ -97,3 +97,15 @@ func ExampleCheckSite() {
 	// propose.issue: needs {content}
 	// propose.issue: must be an https URL with a host (http only for localhost)
 }
+
+// A catalog check compares a schedule's file with the name its H1 asks for.
+func ExampleFileName() {
+	r, err := cs.Evaluate([]byte("# Night Shift\n\n> [!SCHEDULE-STATE] Medium\n> - `22:00` to `06:00` MON-FRI\n"), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(cs.FileName(r.Output.Name))
+	// Output:
+	// night-shift.canned-schedule.md
+}
