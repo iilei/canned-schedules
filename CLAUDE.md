@@ -609,7 +609,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     with `checkSite`, and on errors shows them in red under the options and runs without the site. The site's `args`
     come first in `linked()` (site, preset, link), so the Equivalent CLI flags box shows them and a preset's or link's
     flags win on the same path; a note counts them, with no Drop button. `name` goes under the title and into the
-    document title. The proposal box under the status line appears only for a valid document with a fitting target:
+    document title. A page with a `site.json` calls itself a playground (heading "canned-schedules playground", tab
+    "<name> · canned-schedules playground", the home link's label), even when the file has errors, since it is still
+    a team's copy; without one it stays the preflight page (`nameAsPlayground`, 2026-11-21). The proposal box under the status line appears only for a valid document with a fitting target:
     **Propose new schedule** (`create`) or **Propose change** (`update`, when `catalog.names` has the file's stem),
     and **Open as issue**; a note names the file. A click fills the template (`{path}` keeps its slashes) with the
     text the result was checked from and opens a new tab (`noopener`); without prefill or above `max-length` the
