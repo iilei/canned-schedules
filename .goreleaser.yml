@@ -8,6 +8,8 @@ before:
     - go test ./...
     # The licences of everything compiled or embedded into the binary, shipped in every archive.
     - mise run licenses
+    # The preflight page as a zip (dist/site-zip), so a team hosts exactly the page of the version it pins.
+    - mise run site:zip {{ .Version }}
 
 builds:
   - id: canned-schedules-linux
@@ -116,9 +118,11 @@ universal_binaries:
 
 checksum:
   name_template: 'checksums.txt'
-  # The schemas this release reads and writes: listed, so the signature and the provenance attestation cover them.
+  # The schemas this release reads and writes, and the preflight page: listed, so the signature and the provenance
+  # attestation cover them.
   extra_files:
     - glob: ./schema/*.schema.json
+    - glob: ./dist/site-zip/canned-schedules-site_*.zip
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
@@ -173,6 +177,7 @@ release:
   extra_files:
     - glob: ./release-key.asc
     - glob: ./schema/*.schema.json
+    - glob: ./dist/site-zip/canned-schedules-site_*.zip
   header: |
     ## canned-schedules {{ .Tag }} ({{ .Date }})
 
@@ -211,3 +216,8 @@ release:
     ```bash
     go install github.com/iilei/canned-schedules/cmd/canned-schedules@{{ .Tag }}
     ```
+
+    ### Your own playground
+    `canned-schedules-site_{{ .Version }}.zip` is the preflight page of this release, ready to serve from any static
+    host (`index.html` at the root). Add a `site.json` next to it to set it up for your catalog (see "Your own
+    playground" in the README). It is listed in `checksums.txt`, so the signature and the attestation cover it.

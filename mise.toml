@@ -262,6 +262,21 @@ node editor/stamp-assets.mjs "$out"
 echo "built $out ($(du -sh "$out" | cut -f1))"
 '''
 
+[tasks."site:zip"]
+description = "Pack the preflight page as dist/site-zip/canned-schedules-site_<version>.zip, the release asset teams host"
+depends = ["web:build"]
+usage = '''
+arg "<version>" help="The release version, e.g. 1.2.3"
+'''
+# Git for Windows' sh on Windows, as in web:build.
+shell = "sh -c"
+run = '''
+set -eu
+rm -rf dist/site-zip
+go run ./internal/tools/sitezip dist/site "dist/site-zip/canned-schedules-site_${usage_version}.zip"
+echo "packed dist/site-zip/canned-schedules-site_${usage_version}.zip"
+'''
+
 [tasks."web:serve"]
 description = "Build and serve the preflight page on http://127.0.0.1:<port> (default 8080)"
 depends = ["web:build"]
