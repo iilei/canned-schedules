@@ -1401,6 +1401,40 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   - **In a catalog:** `<slug>.canned-schedule` next to `<slug>.canned-schedule.md`, never both for one slug (same
     outputs); see "Self-hosted playground and proposals" for proposals, the slug match and `catalog.form`. The
     gitignore patterns for outputs stay as they are; the source glob gains `*.canned-schedule`.
+  - **In the Sphinx kit** (asked 2026-11-21): a directive `canned-schedule` that renders the compact form in the
+    same style as the admonitions `internal/myst` writes, or as highlighted code. Used as
+    ````` ```{canned-schedule} ````` in MyST (`.. canned-schedule::` in reST), with `:admonitions: true|false`:
+
+    ````markdown
+    ```{canned-schedule}
+    :admonitions: true
+
+    !name     Night Shift
+    !base     Minimum
+    Medium    SUN-THU 22:00 to 06:00
+    ```
+    ````
+
+    - **A subclass of `sphinx.directives.code.CodeBlock`,** registered by the kit's `_ext/canned_schedules`
+      (`app.add_directive`), with `option_spec` extended by `admonitions` (`true` or `false` via `directives.choice`, default
+      `true`) and the language fixed to `canned-schedule`; `CodeBlock`'s own options (`caption`, `linenos`,
+      `emphasize-lines`, …) keep working for the code view. `false` returns `super().run()`.
+    - **`true` delegates to the binary, never to Python:** the directive passes the content to `canned-schedules
+      --input-format compact --myst-output-file …` (plus the kit's flags, see below) and nested-parses the MyST it
+      returns, so the admonitions are exactly `internal/myst`'s, with the `state-N` classes from the config order.
+      A Python parser of the compact form is rejected for the same reason as the Python transform for GFM (see
+      "MyST generated during the Sphinx build"): a second grammar that doesn't validate. Cost as there: the binary
+      must be available where the docs are built; the extension compares its version with the kit's `VERSION`.
+    - **Errors fail the build:** diagnostics become Sphinx warnings at the directive's source line plus the
+      diagnostic's line inside the content (an error under `-W`), with the CLI's message; nothing is rendered for an
+      invalid schedule, so docs never show a schedule CI would reject.
+    - **Same flags as everywhere:** `conf.py` names the args file (`canned_schedules_args =
+      "canned-schedules.args"`), so a schedule in the docs is checked like one in CI.
+    - **The code view needs no binary:** a Pygments lexer for `canned-schedule` (directives, `x-` keys, states,
+      weekdays, times, `to`, continuation `\`) registered by the extension, which also highlights a plain
+      ```` ```canned-schedule ```` fence. It mirrors the grammar only for colours and never decides validity.
+    - **Verified as the kit is:** `sphinx-build -W` with furo and myst-parser, both views in light and dark, an
+      invalid schedule failing the build at the right line.
   - **Architecture:** a front end producing the same `document` syntax, like the TOML and MyST ideas, so evaluation,
     output and fixtures stay shared. Test: every golden input converted to compact form and back gives the same
     `want.json`.
