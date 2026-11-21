@@ -1416,9 +1416,9 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
     ````
 
     - **A subclass of `sphinx.directives.code.CodeBlock`,** registered by the kit's `_ext/canned_schedules`
-      (`app.add_directive`), with `option_spec` extended by `admonitions` (`true` or `false` via `directives.choice`, default
-      `true`) and the language fixed to `canned-schedule`; `CodeBlock`'s own options (`caption`, `linenos`,
-      `emphasize-lines`, …) keep working for the code view. `false` returns `super().run()`.
+      (`app.add_directive`), with `option_spec` extended by `admonitions` (`true` or `false` via
+      `directives.choice`, default `true`) and the language fixed to `canned-schedule`; `CodeBlock`'s own options
+      (`caption`, `linenos`, `emphasize-lines`, …) keep working for the code view. `false` returns `super().run()`.
     - **`true` delegates to the binary, never to Python:** the directive passes the content to `canned-schedules
       --input-format compact --myst-output-file …` (plus the kit's flags, see below) and nested-parses the MyST it
       returns, so the admonitions are exactly `internal/myst`'s, with the `state-N` classes from the config order.
