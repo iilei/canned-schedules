@@ -1,7 +1,7 @@
 # Canned schedules in your repo
 
-A ready-to-copy setup for a repo that keeps approved schedules as `*.canned-schedule.md` files and checks schedule
-requests that arrive as issues. Everything runs through [mise](https://mise.jdx.dev) tasks, so CI and your machine use
+A ready-to-copy setup for a schedule catalog: a repo that keeps approved schedules as `*.canned-schedule.md` files and
+checks schedules proposed in issues. Everything runs through [mise](https://mise.jdx.dev) tasks, so CI and your machine use
 the same commands. This folder is tested in the canned-schedules CI (`mise run example:test`).
 
 | File                                          | What it does                                                         |
