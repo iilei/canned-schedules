@@ -24,6 +24,7 @@
        aria-label="canned-schedules preflight: start over">▚</a>
     <div>
       <h1>canned-schedules <span class="muted">preflight</span></h1>
+      <p class="site-name" id="site-name" hidden></p>
       <p class="tagline">Weekly schedules that humans and machines agree on. Validated and rendered in your browser; nothing is uploaded.</p>
     </div>
   </div>
@@ -116,6 +117,9 @@
     <p class="config config-note link-args" id="link-args" hidden>This link sets <span id="link-args-count"></span>
       of its own, shown under Equivalent CLI flags.
       <button type="button" class="ghost" id="drop-link-args" title="Check without the link's flags">Drop them</button></p>
+    <p class="config config-note link-args" id="site-args" hidden>This playground checks with
+      <span id="site-args-count"></span> of its own, as the catalog's CI does, shown under Equivalent CLI flags.</p>
+    <p class="config config-note site-error" id="site-error" hidden></p>
     <details class="config" id="states-panel">
       <summary>States <span class="muted" id="states-summary"></span></summary>
       <p class="config-note">The states your schedule may name, in order: the first is the default base, and colours
@@ -143,6 +147,15 @@
     </details>
     </div>
     <div class="status" id="status" role="status" aria-live="polite">Loading…</div>
+    <div class="propose" id="propose" hidden>
+      <div class="actions">
+        <button type="button" class="primary" id="propose-file"></button>
+        <button type="button" class="ghost" id="propose-issue" title="Open a new issue with this schedule">Open as issue</button>
+      </div>
+      <p class="config-note" id="propose-note" aria-live="polite"></p>
+      <p class="config-note" id="propose-fork" hidden>Not a member of the project? <a id="propose-fork-link"
+        target="_blank" rel="noopener noreferrer">Fork it</a> first, then propose from here.</p>
+    </div>
   </section>
 
   <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Editor width"

@@ -14,7 +14,8 @@ const gitlabSite = `{
   "propose": {
     "create": "https://gitlab.example.com/acme/catalog/-/new/main?file_name={path}&content={content}",
     "update": "https://gitlab.example.com/acme/catalog/-/edit/main/{path}?content={content}",
-    "issue": "https://gitlab.example.com/acme/catalog/-/issues/new?issue[title]={name}&issue[description]={content}"
+    "issue": "https://gitlab.example.com/acme/catalog/-/issues/new?issue[title]={name}&issue[description]={content}",
+    "fork": "https://gitlab.example.com/acme/catalog/-/forks/new"
   }
 }`
 
@@ -33,7 +34,8 @@ func TestCheckSite(t *testing.T) {
 	}
 
 	if s.Propose == nil || s.Propose.MaxLength != defaultMaxLength || s.Propose.Update == nil ||
-		!s.Propose.Update.Prefill || !strings.Contains(s.Propose.Update.URL, "/-/edit/main/{path}") {
+		!s.Propose.Update.Prefill || !strings.Contains(s.Propose.Update.URL, "/-/edit/main/{path}") ||
+		s.Propose.Fork != "https://gitlab.example.com/acme/catalog/-/forks/new" {
 		t.Errorf("propose %+v", s.Propose)
 	}
 
@@ -83,6 +85,7 @@ func TestCheckSiteRefuses(t *testing.T) {
 		"output flag":      {`{"args": ["--svg-output-file", "x.svg"]}`, "from site.json: args take"},
 		"bad value":        {`{"args": ["--require-base", "maybe"]}`, "args:"},
 		"short max":        {`{"propose": {"max-length": 10}}`, "max-length"},
+		"fork placeholder": {`{"propose": {"fork": "https://x.example/{path}"}}`, "propose.fork"},
 	} {
 		res := CheckSite([]byte(c.json))
 		if res.Site != nil || !strings.Contains(strings.Join(res.Errors, "\n"), c.want) {
@@ -95,8 +98,8 @@ func TestEvaluateFile(t *testing.T) {
 	t.Parallel()
 
 	ok := Evaluate([]byte("# Night Shift\n\n> [!SCHEDULE-STATE] Medium\n> - `22:00` to `06:00` MON-FRI\n"), nil, nil)
-	if ok.File != "night-shift.canned-schedule.md" {
-		t.Errorf("file %q", ok.File)
+	if ok.File != "night-shift.canned-schedule.md" || !strings.HasPrefix(ok.Canonical, "# Night Shift\n") {
+		t.Errorf("file %q, canonical %q", ok.File, ok.Canonical)
 	}
 
 	if bad := Evaluate([]byte("# Night Shift!\n"), nil, nil); bad.File != "" {
@@ -106,3 +109,20 @@ func TestEvaluateFile(t *testing.T) {
 
 // compact drops the encoder's indentation, so tests can look for fragments.
 func compact(s string) string { return strings.Join(strings.Fields(s), "") }
+
+// TestCheckSiteMessages: one clear message per problem, without jsonschema's location prefix or the other branch of
+// update's string-or-object.
+func TestCheckSiteMessages(t *testing.T) {
+	t.Parallel()
+
+	res := CheckSite([]byte(`{"propose": {"update": "http://x.example/edit/{path}?c={content}"}}`))
+	if len(res.Errors) != 1 || res.Errors[0] != "propose.update: must be an https URL with a host" {
+		t.Errorf("template: %q", res.Errors)
+	}
+
+	res = CheckSite([]byte(`{"catalog": {"dir": 7}}`))
+	if len(res.Errors) != 1 || strings.Contains(res.Errors[0], "at '") ||
+		!strings.HasPrefix(res.Errors[0], "catalog.dir: ") {
+		t.Errorf("schema: %q", res.Errors)
+	}
+}

@@ -1236,3 +1236,37 @@ pre.ascii {
         animation: none; /* The steady glow stays. */
     }
 }
+
+/* A self-hosted playground (site.json): its name under the title, its flags and errors in the settings, and the
+   buttons that propose a valid schedule to the catalog. */
+.site-name {
+    margin: 2px 0 0;
+    font-weight: 500;
+    color: var(--accent);
+}
+.site-error {
+    color: var(--error);
+}
+.propose {
+    display: grid;
+    gap: 4px;
+    padding-top: 4px;
+}
+.propose .config-note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+button.primary {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--surface);
+    border-radius: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+}
+button.primary:hover {
+    filter: brightness(1.1);
+}

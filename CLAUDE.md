@@ -586,9 +586,21 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     fragment), `catalog.dir` without `..`, and the flags through `checkLink` (a site may set exactly a link's flags)
     and the CLI's parser. A site with any error isn't used at all; the result carries the defaults (`dir`
     `schedules`, `max-length` 8000, `update` as `{url, prefill}`) and lists rather than nulls. `file` in the
-    evaluate result comes from `schedule.FileName` (`FileStem` plus `FileSuffix`), only for a valid document. Still to
-    build: the page (loading `site.json`, locked site flags, the proposal buttons), the site zip as a release asset,
-    the companion's `playground build`.
+    evaluate result comes from `schedule.FileName` (`FileStem` plus `FileSuffix`), only for a valid document.
+  - **The page (2026-11-21):** `app.js` fetches `site.json` (`cache: no-cache`) beside the WebAssembly, checks it
+    with `checkSite`, and on errors shows them in red under the options and runs without the site. The site's `args`
+    come first in `linked()` (site, preset, link), so the Equivalent CLI flags box shows them and a preset's or link's
+    flags win on the same path; a note counts them, with no Drop button. `name` goes under the title and into the
+    document title. The proposal box under the status line appears only for a valid document with a fitting target:
+    **Propose new schedule** (`create`) or **Propose change** (`update`, when `catalog.names` has the file's stem),
+    and **Open as issue**; a note names the file. A click fills the template (`{path}` keeps its slashes) with the
+    evaluate result's new `canonical` and opens a new tab (`noopener`); without prefill or above `max-length` the
+    schedule goes to the clipboard first and the note says where to paste it. `propose.fork` (a plain https URL)
+    adds "Not a member of the project? Fork it first". The URL rules live in Go (`checkTemplate`), not the schema,
+    so a wrong template gets one clear message (jsonschema's `oneOf` reported both branches). Checked in Chrome
+    against the GitHub demo (change: edit page plus clipboard; new: new-file page prefilled with the canonical form;
+    issue) and with an http `site.json` (refused, page runs without it). Still to build: the site zip as a release
+    asset, the companion's `playground build`.
   - **The page stays in this repo**, not a playground repo of its own. It wraps `internal/web` (trace, highlights,
     `jsonmap`, `htmlpreview`, MyST, the Sphinx kit), which another repo can't import, and its tests (`TestPresets`,
     `TestPalettes`, `TestHighlightInkContrast`, `test:wasm`) check Go and page together. A split would turn the

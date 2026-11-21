@@ -484,10 +484,11 @@ function pressed(group, value) {
 // see internal/web/link.go) and puts them before the page's own, so the page's controls win on the same config path.
 let linkArgs = [];
 
-// The flags the checker gets ahead of the page's own: the selected preset's (presets/<id>.args), then the link's.
-// Both go through the same check, so a preset can only set what a link can.
+// The flags the checker gets ahead of the page's own: a self-hosted playground's (site.json), the selected preset's
+// (presets/<id>.args), then the link's. All go through the same check, so a site or a preset can only set what a
+// link can.
 function linked() {
-    return [...(current?.args || []), ...linkArgs];
+    return [...(site?.args || []), ...(current?.args || []), ...linkArgs];
 }
 
 // The flags that shape the result, only where they differ from the CLI's defaults: the checker, the Sphinx kit and
@@ -570,7 +571,120 @@ function render(res) {
 
     if (!valid) showStatus("err", plural(res.errors, "error") + (res.warnings ? ", " + plural(res.warnings, "warning") : ""));
     else if (res.warnings) showStatus("warn", "Valid, " + plural(res.warnings, "warning"));
-    else showStatus("ok", "Valid: ready to paste into an issue");
+    else showStatus("ok", site?.propose ? "Valid: ready to propose" : "Valid: ready to paste into an issue");
+    renderPropose(res);
+}
+
+// ---- self-hosted playground (site.json) ----------------------------------------------------------------------------
+
+// A team that hosts the page puts site.json next to it: the flags its CI checks with, its catalog, and where a valid
+// schedule is proposed (internal/web/site.go checks it). Only this file sets proposal targets, never the address, so
+// a crafted link can't send a schedule anywhere. The public page has no site.json.
+let site = null;
+
+// loadSite fetches site.json; a missing file is the normal case. Revalidated on every load, so a redeployed setup
+// shows at once.
+async function loadSite() {
+    try {
+        const r = await fetch("site.json", { cache: "no-cache" });
+        return r.ok ? await r.text() : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+// applySite checks the fetched text in Go. A site with errors isn't used at all: half of a setup would check
+// schedules differently from CI without saying so.
+function applySite(raw) {
+    if (raw === null) return;
+    const res = JSON.parse(globalThis.cannedSchedules.checkSite(raw));
+    if (res.errors.length) {
+        const shown = res.errors.slice(0, 3).join("; ") + (res.errors.length > 3 ? "; …" : "");
+        $("site-error").textContent = "site.json has errors, so this playground runs without its setup: " + shown;
+        $("site-error").hidden = false;
+        return;
+    }
+    site = res.site;
+    if (site.name) {
+        $("site-name").textContent = site.name;
+        $("site-name").hidden = false;
+        document.title = site.name + " · " + document.title;
+    }
+    const flags = site.args.filter((a) => a.startsWith("-")).length;
+    $("site-args").hidden = flags === 0;
+    $("site-args-count").textContent = plural(flags, "flag");
+    if (site.propose?.fork) {
+        $("propose-fork-link").href = site.propose.fork;
+        $("propose-fork").hidden = false;
+    }
+}
+
+const SUFFIX = ".canned-schedule.md";
+
+// proposal works out what a button does for the current result: the file's path, whether the catalog has it, and
+// the target (create for a new file, update for an existing one, issue). null when there is no fitting target.
+function proposal(kind, res) {
+    const p = site?.propose;
+    if (!p || !res?.file) return null;
+    const stem = res.file.slice(0, -SUFFIX.length);
+    const exists = site.catalog.names.includes(stem);
+    const path = site.catalog.dir + "/" + res.file;
+    if (kind === "issue") return p.issue ? { url: p.issue, prefill: true, path, exists } : null;
+    if (exists) return p.update ? { ...p.update, path, exists } : null;
+    return p.create ? { url: p.create, prefill: true, path, exists } : null;
+}
+
+function renderPropose(res) {
+    const valid = res.errors === 0 && !!res.file;
+    const file = proposal("file", res);
+    const issue = proposal("issue", res);
+    $("propose").hidden = !site?.propose || !valid || (!file && !issue);
+    if ($("propose").hidden) return;
+    $("propose-file").hidden = !file;
+    $("propose-issue").hidden = !issue;
+    $("propose-file").textContent = file?.exists ? "Propose change" : "Propose new schedule";
+    $("propose-file").title = file ? "Open the catalog's editor with this schedule as " + file.path : "";
+    const where = site.catalog.dir + "/" + res.file;
+    const exists = site.catalog.names.includes(res.file.slice(0, -SUFFIX.length));
+    $("propose-note").textContent = exists
+        ? "The catalog has " + where + (file ? ": this replaces it." : ", and this playground can't propose changes.")
+        : "As " + where + ", named after the schedule's title.";
+}
+
+// fill puts the values into a URL template, URL-encoded; the path keeps its slashes, since a template may use it
+// as part of the URL's path (GitLab's edit page does).
+function fill(template, values) {
+    return template
+        .replaceAll("{path}", encodeURIComponent(values.path).replaceAll("%2F", "/"))
+        .replaceAll("{name}", encodeURIComponent(values.name))
+        .replaceAll("{content}", encodeURIComponent(values.content));
+}
+
+// propose opens the target in a new tab. Without prefill (GitHub's edit page takes none) or when the URL would be
+// too long for the forge, the schedule goes to the clipboard and the page says where to paste it.
+async function propose(kind) {
+    const res = state.last;
+    const t = proposal(kind, res);
+    if (!t) return;
+    const name = JSON.parse(res.json).name;
+    const content = res.canonical;
+    let url = fill(t.url, { path: t.path, name, content: t.prefill ? content : "" });
+    let copy = !t.prefill;
+    if (url.length > site.propose["max-length"]) {
+        url = fill(t.url, { path: t.path, name, content: "" });
+        copy = true;
+    }
+    if (copy) {
+        try {
+            await navigator.clipboard.writeText(content);
+            $("propose-note").textContent =
+                "The schedule is on your clipboard: paste it into the page that just opened, replacing its text.";
+        } catch (_) {
+            $("propose-note").textContent =
+                "Copying wasn't allowed: copy the schedule from the editor and paste it into the page that just opened.";
+        }
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function renderDiagnostics(list) {
@@ -1040,6 +1154,8 @@ function setsPath(list, path) {
 function defaultsSource(path, builtIn) {
     if (setsPath(current?.args || [], path)) return "the preset's";
     if (setsPath(linkArgs, path)) return "the link's";
+    // The site's flags come first, so a preset's or a link's win on the same path.
+    if (setsPath(site?.args || [], path)) return "the playground's";
     return builtIn;
 }
 
@@ -1162,6 +1278,8 @@ function wire() {
     }
     $("copy-flags").addEventListener("click", copyFlags);
     $("drop-link-args").addEventListener("click", dropLinkArgs);
+    $("propose-file").addEventListener("click", () => propose("file"));
+    $("propose-issue").addEventListener("click", () => propose("issue"));
     editor.onChange(debounce(evaluate, 120));
     // Loading a document moves the cursor too; only a cursor in the focused editor is the user's.
     editor.onCursor((line) => {
@@ -1321,14 +1439,16 @@ async function start() {
         const go = new Go();
         // Downloaded by hand (not instantiateStreaming) to show the progress; compiling afterwards costs little next to
         // the download.
-        const [instance] = await Promise.all([
+        const [instance, siteText] = await Promise.all([
             fetchWasm()
                 .then((b) => WebAssembly.instantiate(b, go.importObject))
                 .then((r) => r.instance),
+            loadSite(),
             loadPresets(),
             loadPalettes(),
         ]);
         go.run(instance);
+        applySite(siteText);
         current = presets.find((p) => p.id === state.preset) || presets.find((p) => p.id === DEFAULT_PRESET) || presets[0];
         applyPresetOptions(null, current, queriedControls);
         loadDefaultStates();
