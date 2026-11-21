@@ -13,10 +13,7 @@ const (
 	docsPreview     = "../../docs/office-hours.svg"
 	builtInConfig   = "../../schema/config.json"
 
-	// gitlabLabel sets the label on GitLab, whose templates have no frontmatter. GitLab removes the line when it
-	// stores the issue.
-	gitlabLabel = "/label ~Schedule\n"
-	syntaxLink  = "[Syntax reference](https://github.com/iilei/canned-schedules#syntax)"
+	syntaxLink = "[Syntax reference](https://github.com/iilei/canned-schedules#syntax)"
 )
 
 // TestIssueTemplates keeps the issue templates valid and in step. Contributors learn the syntax from them, so a template
@@ -39,8 +36,9 @@ func TestIssueTemplates(t *testing.T) {
 
 			checkFrontmatter(t, front)
 
-			if readFile(t, gitlabTemplates+name) != body+gitlabLabel {
-				t.Error("the GitLab template must be the GitHub body followed by the label line")
+			// No label line: CI sets the label once the schedule is valid (CLAUDE.md, "Issue trigger and label").
+			if readFile(t, gitlabTemplates+name) != body {
+				t.Error("the GitLab template must be the GitHub body")
 			}
 
 			if !strings.Contains(body, statesHint) {

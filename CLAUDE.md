@@ -380,7 +380,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Consumer example** (`examples/consumer/`): `mise.toml` (the pinned release via the `github:` backend and three
   tasks), `scripts/canned-schedule` (the tasks in POSIX `sh`, also runnable without mise), `canned-schedules.args`
   (flags for every call, one per line; the example sets `--error-unless-alert-pattern` to the five GFM alert types),
-  `.gitignore`, the issue template, `schedules/office-hours.canned-schedule.md` (the GitLab template without its label line, so
+  `.gitignore`, the issue template, `schedules/office-hours.canned-schedule.md` (the GitLab template, so
   it can't drift) and `.github/workflows/schedule-request.yml`. `CANNED_SCHEDULES` overrides the binary,
   `CANNED_SCHEDULES_ARGS` the args file.
   - `schedule:render [file…]` (default: `git ls-files --cached --others --exclude-standard`, else `find`): one CLI
@@ -402,8 +402,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - The issue workflow (step 1 of #38, see "Companion tooling") writes the body to a file from an env var, exactly
     (`printf '%s'`, no added newline), reads `canned-schedules.args` and calls the companion's action, pinned to its
     commit SHA. The action uploads the SVG unzipped (valid requests only) and every file as one zip, then keeps one
-    comment. The workflow runs only for issues with the template's `Schedule` label (until the change in "Issue
-    trigger and label"), one run per issue (`concurrency`
+    comment. The workflow runs on `opened`, `reopened` and `edited` when the body contains `[!SCHEDULE` or the issue
+    has the `Schedule` label, which the action sets and removes (see "Issue trigger and label"), one run per issue
+    (`concurrency`
     with `cancel-in-progress`), with `contents: read` and `issues: write` only (job permissions replace the workflow's,
     so both are listed): it never writes to the repository. `schedule:check` stays as the local task.
   - **mise's `github:` backend** checks a download against the SHA-256 digest the GitHub API records for the asset,
@@ -561,7 +562,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   so in their names and support a dry run. Left for later: `source.md` in the artifact (the body hash and the tool
   version in the marker are decided, see "Issue trigger and label").
   - **Built in the companion (2026-11-08):** `preview render` (the files and comment of `schedule:check`, byte for
-    byte) and `preview post --forge github` (canned-schedules-companion #2, #3).
+    byte, except the comment's marker line, which carries the stamp since companion `v0.2.0`) and `preview post
+    --forge github` (canned-schedules-companion #2, #3).
 - **Previews are CI's job; the playground link is opt-in (decided 2026-11-08).** By default the comment carries the
   report and the text form, and the files stay where the team's workflow puts them, so nobody has to wonder where a
   request's data lands (company restrictions). The bot never links to the public Pages site. A team that hosts the
@@ -631,8 +633,9 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     readers are expected to be members.
   - **Issues from the playground use no issue template:** title `{name}`, body the canonical form. The templates are
     the entry point for people who start on the forge.
-- **Issue trigger and label (decided 2026-11-21), the same on GitHub and GitLab.** Implemented in the companion first;
-  then the templates and the example workflow here drop the label, in one PR with the pin bump.
+- **Issue trigger and label (decided and implemented 2026-11-21), the same on GitHub and GitLab.** In the companion
+  since `v0.2.0` (with core `v0.3.2` for `Result.HasDirectives`); the templates here set no `Schedule` label any
+  more, and the example workflow triggers on the directive or the label.
   - **A check runs when the body contains a schedule directive** (`[!SCHEDULE-`, case-insensitive) **or the issue has
     the label.** On GitHub the workflow's `if:` filters cheaply (`contains()` ignores case for strings); on GitLab the
     companion filters the webhook's events. A title marker was considered and rejected: GitLab templates can't set
@@ -969,7 +972,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     `editor.js` it wraps the plain textarea and `<pre>`, which stay in `index.html` as fallbacks.
   - Versions follow the two-week rule: installed with `npm install --before=<date two weeks back>`.
 - Presets: `web/presets/index.json` lists them (id, label, category), `web/presets/<id>.md` holds the text. `office-hours` is
-  the GitLab office hours template without its label line, copied in by `web:build`, so it never drifts. `TestPresets` (internal/web) requires every
+  the GitLab office hours template, copied in by `web:build`, so it never drifts. `TestPresets` (internal/web) requires every
   preset to evaluate without diagnostics (with its flags and options) and the index and files to match.
   - **Categories and preset flags (decided 2026-11-09)** showcase use cases beyond capacity: the dropdown groups
     presets by `category` (optgroups in order of first appearance: Capacity, Support hours, On-call). With
@@ -1394,12 +1397,11 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   - **The states are a hidden HTML comment,** not an `x-states` META key: `x-*` values reach every schedule's JSON output,
     aren't checked and hold 48 characters at most. The config stays the contract, and an unknown state already fails
     with the configured list.
-  - **GitLab templates end in `/label ~Schedule`,** because they have no frontmatter and the companion's job needs the
-    label; GitLab removes the line when it stores the issue. `TestIssueTemplates` (`internal/cli/templates_test.go`)
-    requires each GitLab template to be the GitHub body plus that line, no diagnostics, the built-in states in the
-    comment and the link. `.rumdl.toml` ignores MD028/MD032 (and MD025 on GitHub) for them, and excludes golden inputs
-    from linting (`mise run lint:md`). Both label lines go once the companion sets the label (see "Issue trigger and
-    label").
+  - **No `Schedule` label in the templates (since 2026-11-21):** CI sets it once the schedule is valid (see "Issue
+    trigger and label"); GitHub's frontmatter keeps `triage`. The GitLab templates ended in `/label ~Schedule` until
+    then. `TestIssueTemplates` (`internal/cli/templates_test.go`) requires each GitLab template to be exactly the
+    GitHub body, no diagnostics, the built-in states in the comment and the link. `.rumdl.toml` ignores MD028/MD032
+    (and MD025 on GitHub) for them, and excludes golden inputs from linting (`mise run lint:md`).
   - **Quote frontmatter values (fixed 2026-11-21):** GitHub silently ignores a template whose frontmatter isn't valid
     YAML; the chooser jumps to a blank issue and no labels are set. `name: Schedule request: office hours` (an
     unquoted `: `) did that to all three, here and in the demo repo, from `eed9610` on. `TestIssueTemplates` now

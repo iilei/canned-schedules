@@ -6,7 +6,7 @@ name: schedule request
 # locally with `mise run schedule:check body.md`. The workflow never writes to the repository.
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, reopened, edited]
 
 permissions:
   contents: read
@@ -17,14 +17,15 @@ concurrency:
 
 jobs:
   check:
-    # The issue templates set this label (.github/ISSUE_TEMPLATE/canned_schedule_*.md).
-    if: contains(github.event.issue.labels.*.name, 'Schedule')
+    # A schedule directive in the body (contains() ignores case), or the label the action keeps up to date: it means
+    # "holds a valid schedule", so an edit that breaks or removes the schedule still runs and takes it off.
+    if: contains(github.event.issue.body, '[!SCHEDULE') || contains(github.event.issue.labels.*.name, 'Schedule')
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     # Job permissions replace the workflow's, so contents: read is repeated for the checkout.
     permissions:
       contents: read
-      issues: write # Posts, updates or deletes the bot's own comment.
+      issues: write # Posts, updates or deletes the bot's own comment, and sets or removes the label.
     steps:
       # Actions are pinned to commit SHAs; the comment names the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,7 +50,7 @@ jobs:
             printf '\n%s\n' "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
-      - uses: iilei/canned-schedules-companion@62ada38b270b6c062e4d2f9bfee8928c50c7e4ce # v0.1.3
+      - uses: iilei/canned-schedules-companion@7755130ba6a349f1eb102e76ac6ae186b33bd159 # v0.2.0
         with:
           body-file: ${{ runner.temp }}/request.md
           args: ${{ steps.flags.outputs.args }}

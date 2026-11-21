@@ -30,8 +30,8 @@ fail() {
 run() { mise run -q "$@"; }
 schedules=schedules/office-hours.canned-schedule
 
-grep -v '^/label ~Schedule$' "$root/.gitlab/issue_templates/canned_schedule_request.md" | cmp -s - "$schedules.md" ||
-	fail "the example schedule must be the GitLab issue template, without its label line"
+cmp -s "$root/.gitlab/issue_templates/canned_schedule_request.md" "$schedules.md" ||
+	fail "the example schedule must be the GitLab issue template"
 for template in "$root"/.github/ISSUE_TEMPLATE/canned_schedule_*.md; do
 	cmp -s ".github/ISSUE_TEMPLATE/${template##*/}" "$template" ||
 		fail "the example's issue template ${template##*/} must be the repo's"
