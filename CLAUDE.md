@@ -1325,6 +1325,14 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   - **Architecture:** a front end producing the same `document` syntax, like the TOML and MyST ideas, so evaluation,
     output and fixtures stay shared. Test: every golden input converted to compact form and back gives the same
     `want.json`.
+  - **A switch on the page** (asked 2026-11-21): Markdown / Compact above the editor, converting the editor content
+    both ways through the canonical writer (`web.Evaluate` returns both forms). "Markdown" rather than "CommonMark":
+    the alert syntax is GFM. Lossy on purpose, like the canonical form: Markdown → compact drops prose, other alerts
+    and links, so the page asks first when there is any (the same check as unsaved edits), and switching back doesn't
+    bring them back. Enabled only while the document has no errors, since conversion needs a parsed schedule; the
+    page's undo restores the previous text. The form shows in the permalink (`?form=compact`) and selects
+    `--input-format` for the checker and the Equivalent CLI flags box. Presets stay Markdown and are converted on
+    load when the switch says compact.
 
 ## Working conventions
 
