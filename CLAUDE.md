@@ -748,8 +748,15 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     and label, "last body edit" is a different field on each forge, a run racing an edit can record the wrong
     order, and a new release or changed args must recheck the same body. The hash leaks nothing (the body is public
     on the issue), and only the bot's own comment counts, so nobody can plant a "skip".
-- **Still open:** what marks a request approved (step 2), catalog versioning (step 3), minimal token scopes, the
-  project's name and the demo repo (`canned-schedules-demo`) for the screen recording.
+- **Promotion, step 2 (decided 2026-11-21, built in the companion):** a label approves an issue that proposes a
+  schedule (`Schedule approved` by default; setting labels takes Triage on GitHub, Reporter on GitLab), and the
+  companion's `promote prepare` / `promote open` turn it into one pull or merge request that adds the issue's text,
+  verbatim apart from line endings, as `catalog-dir/<file name of the H1>` and closes the issue. A text without a
+  valid schedule gets the label taken back. Wrappers: `promote/action.yml` (`issues: labeled`) and
+  `templates/promote.yml` (the issue preview's webhook pipeline). Proposals from the playground skip this step:
+  they arrive as pull or merge requests already.
+- **Still open:** catalog versioning (step 3), minimal token scopes, the project's name and the demo repo
+  (`canned-schedules-demo`) for the screen recording.
 
 ## Stability (decided and implemented 2026-10-25)
 
