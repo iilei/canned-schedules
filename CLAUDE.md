@@ -761,20 +761,26 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   that get published, with their provenance; where they go is the team's choice.
   - **The review attaches its outputs:** when the merge request review posts its stamped comment, it also attaches
     each changed schedule's generated files (`.canned-schedule.json`, the report, `.txt`, `.svg`) to the merge request:
-    the job's artifacts on GitLab, workflow artifacts on GitHub, linked from the comment.
-  - **On merge, a publish action / component takes them:** it finds the review of the merged head commit, downloads
-    those files and puts them under a path set by its inputs, together with the **raw input** (the schedule file as
-    merged) and a **provenance file**.
-  - **Provenance** (the companion's file, not part of the core's output contract): the merge request and its review
-    pipeline or workflow run (URLs, numbers, head SHA), the merge commit, the git author and commit date of the commit
-    that last changed the schedule file, the companion and core versions, and the stamp the review recorded (input
-    digest, args digest). The digests stay out of the canonical JSON (see "No digests"); here they tie the published
+    the job's artifacts on GitLab, workflow artifacts on GitHub, linked from the comment. The review's summary lists
+    each file's **content hash** (SHA-256 of the bytes as reviewed, with its path).
+  - **Content, not commits, ties the published files to the review (decided 2026-11-21):** squash and rebase merges
+    give new commit SHAs, and author and commit dates are whatever a machine said, so neither identifies what was
+    reviewed. On merge, the publish action / component asks the forge which merge request the pushed commit came from
+    (GitHub `GET commits/<sha>/pulls`, GitLab `GET repository/commits/<sha>/merge_requests`, both work after a squash),
+    downloads that merge request's latest review files, and publishes a schedule only when the merged file's content
+    hash equals the reviewed one. It puts them under a path set by its inputs, together with the **raw input** (the
+    schedule file as merged) and a **provenance file**.
+  - **Provenance** (the companion's file, not part of the core's output contract), from the forge's records rather
+    than git metadata: the merge request (URL, number, author, **created at**, merged at, merged by) and its review
+    pipeline or workflow run (URL), the schedule file's path and content hash, the companion and core versions, and the
+    stamp the review recorded (input digest, args digest). The merge commit SHA may be listed for reference, never
+    used for matching. The digests stay out of the canonical JSON (see "No digests"); here they tie the published
     files to the reviewed run.
   - **A user-provided post-fetch script** then runs with the output directory, e.g. to upload to S3 or Artifactory or
     to commit to another repository. It runs only on the default branch after a merge (trusted code) with the job's
     secrets, which the team provides.
-  - **Open:** what happens when the merged file differs from the reviewed one (later commits, a rebase merge; fail, or
-    re-render and say so in the provenance), the artifact retention on GitHub (90 days by default, enough for a
+  - **Open:** what happens when the merged file's content hash matches no review (a change after the last review, a
+    conflict resolved in the merge; fail, or re-render and say so in the provenance), the artifact retention on GitHub (90 days by default, enough for a
     publish that runs at merge), the directory layout and the provenance file's schema, the commands' names
     (`publish fetch` / `publish prepare`, following `<step> <verb>`), and merge requests that change several
     schedules.
