@@ -600,8 +600,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     byte-identical to the signed asset. Keys:
     - `args`: the site's flags in the format of `canned-schedules.args`, the same file the bot uses, so a schedule
       valid in the playground is valid in CI. Checked like `?arg=`, applied like a locked link the reader can't drop.
-    - `catalog`: `dir` (default `schedules`) and `names` (the existing schedules' file names), to choose between a
-      new file and a change.
+    - `catalog`: `dir` (default `schedules`), `names` (the existing schedules' file names; the page matches them by
+      slug and reads each one's form from its suffix) to choose between a new file and a change, and `form` (`markdown`, `compact` or `any`, the default) for new files.
     - `propose`: URL templates `create`, `update` and `issue`, https only, with the placeholders `{path}`, `{content}`
       (the canonical form) and `{name}`, filled with `encodeURIComponent`. `update` may be `{"url": …, "prefill":
       false}`: copy the schedule to the clipboard, then open the page. Above `max-length` (default 8000) the page
@@ -616,6 +616,18 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     spaces become `-`, then `.canned-schedule.md` (`Night Shift` → `night-shift.canned-schedule.md`). The name rule
     already rules out `/`, `..` and everything else. A schedule whose name exists in `catalog.names` gets the `update`
     link, otherwise `create`; a stale list only means the forge reports that the file exists.
+  - **The suffix follows the form (decided 2026-11-21),** once the compact form exists: `night-shift.canned-schedule.md`
+    for Markdown, `night-shift.canned-schedule` for compact, so CI picks `--input-format` from the proposed file's
+    name. Both forms write the same outputs (`night-shift.canned-schedule.json`, …), so one slug must never have two
+    sources:
+    - **Matching is by slug:** a slug in `catalog.names` in either form gets `update`.
+    - **An update keeps the catalog file's form:** the page converts the editor content to that form (the switch's
+      conversion) before filling `{content}`; a change of form is a deliberate rename, never a side effect of the
+      toggle.
+    - **A new file takes `catalog.form`:** `markdown` or `compact` fix the form for the team, whatever the reader's
+      toggle says; `any` follows the toggle.
+    - **CI rejects two sources with one slug** (`schedule:render`, the merge request check), naming both files, so a
+      stale `catalog.names` can't slip one through.
   - **Companion:** `playground build --forge gitlab|github --project … --branch … --catalog-dir … --args …` (a local
     verb, values passed explicitly as everywhere) fetches the pinned core's site zip, checks it against the signed
     checksums and writes `site.json`. An Action subfolder and a GitLab component deploy it to Pages. Redeploy on every
@@ -1333,6 +1345,9 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
     pick it by suffix); the suffix `.canned-schedule`; comments in the file (start without: the "why" lives in the
     issue, MR or commit; `!note` is possible later, compatibly); whether the canonical writer emits compact form for
     catalog files.
+  - **In a catalog:** `<slug>.canned-schedule` next to `<slug>.canned-schedule.md`, never both for one slug (same
+    outputs); see "Self-hosted playground and proposals" for proposals, the slug match and `catalog.form`. The
+    gitignore patterns for outputs stay as they are; the source glob gains `*.canned-schedule`.
   - **Architecture:** a front end producing the same `document` syntax, like the TOML and MyST ideas, so evaluation,
     output and fixtures stay shared. Test: every golden input converted to compact form and back gives the same
     `want.json`.
