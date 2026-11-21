@@ -1344,6 +1344,20 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
     page's undo restores the previous text. The form shows in the permalink (`?form=compact`) and selects
     `--input-format` for the checker and the Equivalent CLI flags box. Presets stay Markdown and are converted on
     load when the switch says compact.
+  - **The compact form in the canonical JSON** (asked 2026-11-21, later): a field with the schedule in normalised
+    compact form, so the output carries its own source. `week` and `transitions` are painted results; the ranges in
+    painting order, which regenerate everything, are only in the source today. Uses: promotion and review from the
+    JSON alone, a readable diff in a catalog, a round trip check (evaluate the field, get the same `base` and `week`).
+    No new exposure: `name`, `summary` and `annotations` already carry everything the text adds apart from ranges.
+    - **Shape:** `source: {"format": "compact", "text": "…"}` rather than a bare string, so a later format or version
+      is a new `format`, not a changed meaning. Optional in the schema (a compatible addition, no new
+      `schema-version`).
+    - **The spelling becomes contract surface,** the reason `digests` and the transitions' `sha` were removed: a
+      change to the canonical writer would change the field. So define it as "evaluates to this output", never as
+      exact bytes; golden fixtures pin the text anyway, and consumers must not hash or compare it byte for byte (the
+      README says so, as for key order).
+    - **Needs the compact form first.** Until then the canonical Markdown could fill the same slot
+      (`"format": "markdown"`), but that is better decided together with the compact form.
 
 ## Working conventions
 
