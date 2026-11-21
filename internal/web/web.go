@@ -43,10 +43,8 @@ type Result struct {
 	SphinxCSS      string `json:"sphinx-css"`
 	// File is the catalog file name derived from the schedule's name (schedule.FileName); absent when the document
 	// has errors. A self-hosted playground proposes the schedule under it.
-	File string `json:"file,omitempty"`
-	// Canonical is the schedule in canonical form (what a proposal carries); absent when the document has errors.
-	Canonical string         `json:"canonical,omitempty"`
-	States    []config.State `json:"states,omitempty"`
+	File   string         `json:"file,omitempty"`
+	States []config.State `json:"states,omitempty"`
 	// Highlights are the SVG areas each source entry paints, in the preview's buckets; the page stripes the ones
 	// under the editor cursor. Absent when the document has errors.
 	Highlights []render.Highlight `json:"highlights,omitempty"`
@@ -74,7 +72,6 @@ func Evaluate(src []byte, link, args []string) Result {
 			opts.Preview.SVGAnnotations = true
 			res.JSON = encode(out)
 			res.File = schedule.FileName(out.Name)
-			res.Canonical = string(must(cli.Canonical(&opts, src)))
 			res.SVG = string(must(cli.SVG(&opts, out, src, generator())))
 			res.ASCII = string(must(cli.ASCII(&opts, out, false)))
 			res.MyST = string(must(cli.MyST(&opts, src)))

@@ -524,7 +524,8 @@ function evaluate() {
     renderFlags();
     let res;
     try {
-        res = JSON.parse(globalThis.cannedSchedules.evaluate(editor.value, args(), linked()));
+        state.src = editor.value; // What this result was checked from: a proposal carries exactly this text.
+        res = JSON.parse(globalThis.cannedSchedules.evaluate(state.src, args(), linked()));
     } catch (err) {
         showStatus("err", "Internal error: " + err);
         return;
@@ -660,14 +661,16 @@ function fill(template, values) {
         .replaceAll("{content}", encodeURIComponent(values.content));
 }
 
-// propose opens the target in a new tab. Without prefill (GitHub's edit page takes none) or when the URL would be
+// propose opens the target in a new tab with the schedule verbatim. Without prefill (GitHub's edit page takes none) or when the URL would be
 // too long for the forge, the schedule goes to the clipboard and the page says where to paste it.
 async function propose(kind) {
     const res = state.last;
     const t = proposal(kind, res);
     if (!t) return;
     const name = JSON.parse(res.json).name;
-    const content = res.canonical;
+    // Verbatim: the text the result was checked from, prose and all, exactly as written (an ASCII preview fence
+    // too, as it stands). Not the editor's current text, which may be ahead of the result the buttons belong to.
+    const content = state.src;
     let url = fill(t.url, { path: t.path, name, content: t.prefill ? content : "" });
     let copy = !t.prefill;
     if (url.length > site.propose["max-length"]) {

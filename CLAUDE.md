@@ -594,10 +594,16 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     document title. The proposal box under the status line appears only for a valid document with a fitting target:
     **Propose new schedule** (`create`) or **Propose change** (`update`, when `catalog.names` has the file's stem),
     and **Open as issue**; a note names the file. A click fills the template (`{path}` keeps its slashes) with the
-    evaluate result's new `canonical` and opens a new tab (`noopener`); without prefill or above `max-length` the
+    text the result was checked from and opens a new tab (`noopener`); without prefill or above `max-length` the
     schedule goes to the clipboard first and the note says where to paste it. `propose.fork` (a plain https URL)
     adds "Not a member of the project? Fork it first". The URL rules live in Go (`checkTemplate`), not the schema,
-    so a wrong template gets one clear message (jsonschema's `oneOf` reported both branches). Checked in Chrome
+    so a wrong template gets one clear message (jsonschema's `oneOf` reported both branches).
+  - **`{content}` is verbatim (decided 2026-11-21):** exactly the text the result was checked from, prose, comments
+    and an ASCII preview fence included as they stand (a text form's fence may be stale; nothing refreshes or strips
+    it). Not the canonical form: it rewrites the author's text, drops the issue's "Why this schedule", and would pick
+    a form for the author once the compact form exists. Normalising catalog files is CI's job (a canonical-form
+    check, later `canned-schedules fmt`). The compact form's conversions (an update keeps the file's form, a new file
+    takes `catalog.form`) are the only exception, and only when the target needs the other form. Checked in Chrome
     against the GitHub demo (change: edit page plus clipboard; new: new-file page prefilled with the canonical form;
     issue) and with an http `site.json` (refused, page runs without it). Still to build: the site zip as a release
     asset, the companion's `playground build`.
@@ -615,7 +621,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     - `catalog`: `dir` (default `schedules`), `names` (the existing schedules' slugs, i.e. file names without
       `.canned-schedule.md`) to choose between a new file and a change, and `form` (`markdown`, `compact` or `any`, the default) for new files.
     - `propose`: URL templates `create`, `update` and `issue`, https only, with the placeholders `{path}`, `{content}`
-      (the canonical form) and `{name}`, filled with `encodeURIComponent`. `update` may be `{"url": …, "prefill":
+      (the schedule verbatim, see below) and `{name}`, filled with `encodeURIComponent`. `update` may be `{"url": …, "prefill":
       false}`: copy the schedule to the clipboard, then open the page. Above `max-length` (default 8000) the page
       copies and opens the empty form instead.
     - optionally a name and footer, so a team's instance doesn't pass itself off as the public page.

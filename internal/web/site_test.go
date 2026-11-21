@@ -98,8 +98,8 @@ func TestEvaluateFile(t *testing.T) {
 	t.Parallel()
 
 	ok := Evaluate([]byte("# Night Shift\n\n> [!SCHEDULE-STATE] Medium\n> - `22:00` to `06:00` MON-FRI\n"), nil, nil)
-	if ok.File != "night-shift.canned-schedule.md" || !strings.HasPrefix(ok.Canonical, "# Night Shift\n") {
-		t.Errorf("file %q, canonical %q", ok.File, ok.Canonical)
+	if ok.File != "night-shift.canned-schedule.md" {
+		t.Errorf("file %q", ok.File)
 	}
 
 	if bad := Evaluate([]byte("# Night Shift!\n"), nil, nil); bad.File != "" {
