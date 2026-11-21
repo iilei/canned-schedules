@@ -20,6 +20,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/cli"
 	"github.com/iilei/canned-schedules/internal/config"
 	"github.com/iilei/canned-schedules/internal/diag"
+	"github.com/iilei/canned-schedules/internal/document"
 	"github.com/iilei/canned-schedules/internal/report"
 	"github.com/iilei/canned-schedules/internal/schedule"
 	"github.com/iilei/canned-schedules/schema"
@@ -90,6 +91,7 @@ type Result struct {
 	diags       diag.List
 	opts        cli.Options
 	preview     bool
+	directives  bool
 }
 
 // Evaluate checks and evaluates the schedule document src; opts may be nil. Problems in the document or in the
@@ -113,6 +115,10 @@ func Evaluate(src []byte, opts *Options) (*Result, error) {
 	out, diags := cli.Evaluate(c.Overrides, c.Schedule, preview, src)
 	r := &Result{opts: c, src: src, diags: diags, preview: opts.Preview != nil, Diagnostics: diagnostics(diags)}
 
+	// The marker count doesn't depend on the options, so a parse without them is enough.
+	parsed, _ := document.Parse(src, document.Options{})
+	r.directives = parsed.Markers > 0
+
 	if out != nil {
 		r.out = out
 
@@ -126,6 +132,13 @@ func Evaluate(src []byte, opts *Options) (*Result, error) {
 
 // Valid reports whether the document has no errors (warnings allowed).
 func (r *Result) Valid() bool { return r.out != nil }
+
+// HasDirectives reports whether the document contains a schedule directive marker ([!SCHEDULE-…]): a top-level one,
+// also with an unknown or missing kind, the old colon form or a misplaced one, as the parser recognises them. Markers
+// in code spans and code blocks don't count. Tools that check arbitrary text, such as every new issue, use it to
+// stay silent on text that isn't meant as a schedule: such text can be valid (a heading and prose make an empty
+// schedule) or invalid (no heading), so Valid can't tell.
+func (r *Result) HasDirectives() bool { return r.directives }
 
 // JSON is the canonical output exactly as the CLI prints it.
 func (r *Result) JSON() ([]byte, error) {

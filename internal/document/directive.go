@@ -40,6 +40,7 @@ func (p *parser) blockquote(bq ast.Node) {
 	kindPos := p.lines.pos(first.Start + m[2])
 
 	if ns, _, ok := strings.Cut(typ, ":"); ok && isNamespace(ns) {
+		p.doc.Markers++
 		p.errorf(kindPos, diag.CodeInvalidMarker, "[!%s]: directives separate the namespace and the kind with a hyphen",
 			typ)
 		p.example("> [!SCHEDULE-STATE] Medium")
@@ -59,6 +60,7 @@ func (p *parser) blockquote(bq ast.Node) {
 	}
 
 	p.markerLines[first.Start] = true
+	p.doc.Markers++
 
 	kind, ok := p.kind(typ, kindName, kindPos)
 	if !ok {

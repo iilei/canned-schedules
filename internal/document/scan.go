@@ -53,6 +53,7 @@ func (p *parser) scanBlock(n ast.Node) {
 
 		for _, m := range directiveLike.FindAllIndex(masked[seg.Start:seg.Stop], -1) {
 			pos := p.lines.pos(seg.Start + m[0] + len("[!"))
+			p.doc.Markers++
 
 			// A marker glued to the block above gets a message that says so and names the culprit line.
 			if top := topLevel(n); top.Kind() == ast.KindBlockquote {

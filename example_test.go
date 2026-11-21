@@ -62,3 +62,22 @@ func ExampleEvaluate_diagnostics() {
 	// error 4 17 invalid-time
 	// schedule.md:4:
 }
+
+// A bot that checks every new issue stays silent on text that isn't meant as a schedule. Valid can't tell: a heading
+// and prose make a valid, empty schedule.
+func ExampleResult_HasDirectives() {
+	for _, body := range []string{
+		"# A question\n\nWhat does `[!SCHEDULE-STATE]` do?\n",
+		"# Office Hours\n\n> [!SCHEDULE-STATE] Medium\n> - `08:00` to `18:00` MON-FRI\n",
+	} {
+		r, err := cs.Evaluate([]byte(body), nil)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(r.Valid(), r.HasDirectives())
+	}
+	// Output:
+	// true false
+	// true true
+}

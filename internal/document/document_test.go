@@ -87,6 +87,10 @@ func TestParseDocument(t *testing.T) {
 		t.Fatalf("base = %+v", doc.Base)
 	}
 
+	if doc.Markers != 3 {
+		t.Errorf("markers = %d, want 3", doc.Markers)
+	}
+
 	if len(doc.States) != 1 || len(doc.States[0].Items) != 1 {
 		t.Fatalf("states = %+v", doc.States)
 	}
