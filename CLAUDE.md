@@ -1078,6 +1078,11 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `"hidden": true`, so it stays out of the dropdown and only opens by link (`?preset=yolo`): the week spells YOLO in
   a 3×5 pixel font. Keep it; it is not dead code. The dropdown replaces the editor content
   (asking first when there are unsaved edits); Reset is disabled until the editor differs from the selected preset.
+  **A link with `#doc=` and no `?preset=` (decided 2026-11-21)**, such as the bot's playground link, gets a
+  "Linked schedule" entry at the top of the dropdown instead of the default preset: no preset's flags or options
+  apply, Reset brings the linked text back, switching to a preset and back to the entry restores it, and Copy link
+  writes the document without `?preset=` (`linkedDoc` in `app.js`; `TestPresets` keeps the id `linked` free). A
+  link with both still shows its preset, since the document is an edit of it.
 - `--svg-theme auto|light|dark` (CLI too): an inline SVG's `prefers-color-scheme` follows the OS, not the page, so
   pages with their own toggle render a fixed palette. SVG rules are scoped under `.canned-schedule` because inline
   SVG styles are global in HTML.

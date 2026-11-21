@@ -95,6 +95,11 @@ func TestPresets(t *testing.T) {
 			t.Errorf("preset %q: ids must be unique, labels and categories set", p.ID)
 		}
 
+		// app.js gives a document linked without ?preset= the dropdown entry "linked" (linkedDoc).
+		if p.ID == "linked" {
+			t.Error(`preset id "linked" is taken by the page's entry for a linked schedule`)
+		}
+
 		listed[p.ID] = true
 
 		path := filepath.Join(presetDir, p.ID+".md")
