@@ -156,5 +156,20 @@ the command.
 
 ## On GitHub
 
-The issue preview runs as the companion's GitHub Action, and `playground build` works for GitHub Pages today. A GitHub
-Action for the playground and the review of pull requests are next.
+The same catalog works on GitHub with the companion's three GitHub Actions (from v0.3.3): the issue preview at the
+repository root, `playground` for GitHub Pages and `review` for pull requests. The
+[companion's README](https://github.com/iilei/canned-schedules-companion#github-pages-playground) has the workflows to
+copy. What differs from GitLab:
+
+- **Pages:** set Settings → Pages → Source to "GitHub Actions". The `playground` action builds and uploads the site,
+  and a second job deploys it with `actions/deploy-pages`, since only a job can name the `github-pages` environment.
+- **No token to create:** the workflow token comments, labels and renames, with `contents: read`,
+  `pull-requests: write` and `issues: write` on the review job. Comments come from `github-actions[bot]`.
+- **Propose change** copies the schedule and opens GitHub's edit page; **Propose new schedule** opens the new-file
+  page filled in, and the review renames GitHub's default title ("Create night-shift.canned-schedule.md").
+- **Pull requests from forks** get a read-only token: their review goes to the job summary, not into a comment.
+- **Protect the default branch** with a ruleset that requires pull requests, so changes from the playground arrive as
+  pull requests rather than commits.
+
+The demo repository [`canned-schedules-demo`](https://github.com/iilei/canned-schedules-demo) runs this setup; its
+playground is at <https://iilei.github.io/canned-schedules-demo/>.
