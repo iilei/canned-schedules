@@ -125,12 +125,12 @@ a merge request, watch the review, merge, reload the playground.
 
 The catalog's files are the source; consumers such as a Terraform module want the rendered outputs, in one place,
 with a record of which review they passed. The companion's **publish** component does that on every push to the
-default branch that changes a schedule (from companion v0.3.5):
+default branch that changes a schedule (from companion v0.3.5; the manifest's checksums, used below, from v0.3.7):
 
 ```yaml
 include:
-  - remote: https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.5/templates/publish.yml
-    integrity: sha256-m6I4JyMqZya8fTwcVkkI7lSi5hbn/NjLYW2RVSJN+eA=
+  - remote: https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.7/templates/publish.yml
+    integrity: sha256-5R6Py7GDsSz9QUtsh9htai2cu6zZ69WX6lBEITNW7r4=
     inputs:
       post-fetch-script: scripts/upload-schedules.sh
 ```
@@ -142,15 +142,15 @@ provenance file: the merge request, who merged it and when, the review and the v
 folder as its argument. The script uploads; its secrets are CI/CD variables. For Artifactory:
 
 ```sh
-# scripts/upload-schedules.sh: every file with its checksums (SHA-256 from the manifest; Artifactory also wants
-# SHA-1 and MD5 from the client, or flags the file) and the schedule's properties.
+# scripts/upload-schedules.sh: every file with its checksums and the schedule's properties. Artifactory flags a
+# file whose client sent no SHA-1 and MD5, so the manifest has them next to the digest.
 set -eu
 cd "$1"
-jq -r '.schedules[] | .artifactory as $p | .files[] | [.path, .digest, $p] | @tsv' manifest.json |
-  while IFS="$(printf '\t')" read -r path digest props; do
+jq -r '.schedules[] | .artifactory as $p | .files[]
+    | [.path, .digest, .checksums.sha1, .checksums.md5, $p] | @tsv' manifest.json |
+  while IFS="$(printf '\t')" read -r path digest sha1 md5 props; do
     curl -fsS -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" -H "X-Checksum-Sha256: ${digest#sha256:}" \
-      -H "X-Checksum-Sha1: $(sha1sum "$path" | cut -d' ' -f1)" -H "X-Checksum-Md5: $(md5sum "$path" | cut -d' ' -f1)" \
-      -T "$path" "$ARTIFACTORY_URL/schedules-local/$path$props"
+      -H "X-Checksum-Sha1: $sha1" -H "X-Checksum-Md5: $md5" -T "$path" "$ARTIFACTORY_URL/schedules-local/$path$props"
   done
 ```
 
