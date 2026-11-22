@@ -130,7 +130,7 @@ default branch that changes a schedule (from companion v0.3.5):
 ```yaml
 include:
   - remote: https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.5/templates/publish.yml
-    integrity: sha256-HyWLHKHjiBbiqVRtutO52F78sALoKv+PduV+eK3lh/I=
+    integrity: sha256-m6I4JyMqZya8fTwcVkkI7lSi5hbn/NjLYW2RVSJN+eA=
     inputs:
       post-fetch-script: scripts/upload-schedules.sh
 ```
