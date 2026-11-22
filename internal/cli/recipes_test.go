@@ -2,27 +2,21 @@ package cli
 
 import (
 	"regexp"
-	"strings"
 	"testing"
 )
 
 const (
-	readmePath = "../../README.md"
+	awsDocs    = "../../docs/aws.md"
 	awsExample = "../../examples/aws/"
 )
 
 var fencedBlock = regexp.MustCompile("(?s)```(hcl|json|bash)\n(.*?)```")
 
-// TestAWSRecipesMatchTheExample keeps the README's recipes identical to examples/aws, which mise run example:aws tests.
+// TestAWSRecipesMatchTheExample keeps the recipes in docs/aws.md identical to examples/aws, which mise run example:aws tests.
 func TestAWSRecipesMatchTheExample(t *testing.T) {
 	t.Parallel()
 
-	_, section, ok := strings.Cut(readFile(t, readmePath), "### AWS Auto Scaling scheduled actions")
-	if !ok {
-		t.Fatal("the README has no AWS section")
-	}
-
-	section, _, _ = strings.Cut(section, "\n## Configuration")
+	section := readFile(t, awsDocs)
 
 	blocks := map[string][]string{}
 	for _, m := range fencedBlock.FindAllStringSubmatch(section, -1) {
@@ -30,7 +24,7 @@ func TestAWSRecipesMatchTheExample(t *testing.T) {
 	}
 
 	if len(blocks["hcl"]) != 2 || len(blocks["json"]) != 1 || len(blocks["bash"]) != 1 {
-		t.Fatalf("unexpected recipes in the README: %d hcl, %d json, %d bash",
+		t.Fatalf("unexpected recipes in docs/aws.md: %d hcl, %d json, %d bash",
 			len(blocks["hcl"]), len(blocks["json"]), len(blocks["bash"]))
 	}
 
@@ -41,7 +35,7 @@ func TestAWSRecipesMatchTheExample(t *testing.T) {
 		"cli/apply-schedule.sh": "#!/usr/bin/env bash\n" + blocks["bash"][0],
 	} {
 		if readFile(t, awsExample+file) != want {
-			t.Errorf("examples/aws/%s differs from the README's recipe", file)
+			t.Errorf("examples/aws/%s differs from the recipe in docs/aws.md", file)
 		}
 	}
 }

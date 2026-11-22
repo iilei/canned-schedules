@@ -73,7 +73,7 @@ Earlier designs were removed on 2026-10-24 after the Go tool replaced them; they
   parser, so rumdl checks generic style only and the CLI checks schedules.
   - rumdl is pinned in `mise.toml` and runs as `lint:md`, part of `mise run check` (so CI runs it); `fmt:md` fixes
     what it can. `.rumdl.toml` ignores MD028/MD032 for schedule documents (adjacent alerts, lists under the marker),
-    MD025 for the GitHub template (frontmatter title), MD036 for the README (the generated flag tables label groups
+    MD025 for the GitHub template (frontmatter title), MD036 for `docs/usage.md` (the generated flag tables label groups
     in bold), and excludes golden inputs and `LICENSE.md` (the licence template, kept verbatim).
   - The proposed `lint-schedule` task is **superseded**: the CLI's txt report already is `path:line:col:
     severity[code]: message`, and `schedule:render` / `schedule:pre-commit` run it over schedule files.
@@ -309,7 +309,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **No id or hash per transition (decided 2026-10-25).** A short `sha` over `{"time","days","state"}` shipped in
   `0.0.1-pre.5` and was removed right after: identity is the consumer's concern (an environment, a prefix, whether
   changed days should replace or update an action), and a field whose meaning could change silently is the riskiest
-  kind of contract. The README's AWS recipes key on `<HHMM>-<days>-<state>` (`2200-FRI_SAT-Minimum`): every fact,
+  kind of contract. The AWS recipes (`docs/aws.md`) key on `<HHMM>-<days>-<state>` (`2200-FRI_SAT-Minimum`): every fact,
   readable, unique within one schedule; changed days give a new name, so the action is replaced (leave the days out
   to update in place). Not unique across schedules: when several share a group or a `for_each` map, the schedule's
   name goes into the key. No hash variant: a readable key carries the same information.
@@ -355,7 +355,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - **Generated files sit next to the source** and are **gitignored by default**, with the pattern limited to the catalog
   folder (`/schedules/*.canned-schedule.json`, `.svg`, `.txt`), so unrelated files are never caught. Exception: an
   SVG that should show on GitHub (README) is committed, with a drift check in CI (render, then `git diff
-  --exit-code`), the same choice the README recipe offers for MyST.
+  --exit-code`), the same choice the docs' recipe offers for MyST.
   - `.canned-schedule.json`: the canonical output.
   - `.canned-schedule.svg`: the week preview, with the canonical source embedded (below).
   - `.canned-schedule.txt`: the **text form**: the canonical Markdown with the ASCII preview in a `~~~text` fence
@@ -441,7 +441,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   `MISE_DISABLE_TOOLS` skipping the pinned release). The release key's public half is committed as
   `release-key.asc` (no email in the user ID, on purpose) and published on `github.com/iilei.gpg`, keys.openpgp.org
   (findable by fingerprint only, since it has no email) and keyserver.ubuntu.com.
-- **AWS example (decided 2026-11-18):** `examples/aws` holds the README's AWS recipes as working files, and
+- **AWS example (decided 2026-11-18):** `examples/aws` holds the AWS recipes of `docs/aws.md` as working files, and
   `TestAWSRecipesMatchTheExample` keeps the two identical. `mise run example:aws` (`examples/test-aws.sh`, checks in
   `examples/aws/test/verify.py`, standard library only) applies them to a local `aws-emulator`: on a free port, telemetry
   off, schedules rendered by this checkout. **It can't reach a real account:** it drops every `AWS_*` variable and config
@@ -1205,7 +1205,29 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   DevTools protocol (headless screenshots with `--timeout` stall the WebAssembly start and prove nothing).
 - Parity: `mise run test:wasm` runs all test suites compiled to WebAssembly under Node (pinned in `mise.toml`), with a
   minimal environment because Go's WebAssembly runner caps command line plus environment at a few KB. CI runs it.
-- Deploy: `.github/workflows/pages.yml` publishes `dist/site` on pushes to `master` (SHA-pinned
+- **Documentation site (decided and built 2026-11-22, the user's request: compact READMEs, docs on Pages with the
+  playground as one page among others):** Sphinx with Furo and MyST (the user's choice over Hugo and MkDocs), sources
+  in `docs/`, built by `mise run docs:build` (`docs/build.sh`) into `dist/docs` with `-W`, so broken references fail.
+  - **The Sphinx kit as an adopter uses it (the user: don't reinvent it):** the build makes the kit with this
+    checkout's CLI (`--sphinx-kit-output-file`), unpacks its `_ext` into `docs/_ext` (gitignored) and loads
+    `canned_schedules` in `conf.py`; `docs/examples.md` lists every non-hidden preset rendered with
+    `--myst-output-file` (with the preset's args) into `docs/_generated/examples/`. No extension of our own: the
+    README's two GitHub alerts are `:::{note}` / `:::{warning}` on the pages.
+  - **Tools:** `docs/requirements.txt`, hash-pinned with `uv pip compile --generate-hashes --exclude-newer <two weeks
+    back>` from `docs/requirements.in` (sphinx 9.1.0, furo 2025.12.19, myst-parser 5.1.0, the kit's checked
+    versions); a virtualenv cached under `~/.cache/canned-schedules/docs-venv`, rebuilt when the file's hash changes.
+  - **Pages layout (the user's choice):** `mise run pages:build` puts the docs at the root, the playground
+    (`dist/site`, unchanged, so the release zip is too) under `playground/`, and the schemas at `schema/<date>/`
+    (their `$id`s). Links shared from the old root (`?preset=`, `?arg=`, `#doc=`, …) go on to `playground/` with
+    everything kept (`docs/_static/legacy-links.js`, start page only). `check.yml` and `pages.yml` run `pages:build`.
+  - **The README** keeps the pitch, the example and its SVG, how to start and a map of the docs; the sections moved
+    verbatim to pages (headings up one level, anchors rewritten to the page that holds them, repo paths as GitHub
+    URLs). The generated references and the AWS recipes moved with their tests (`TestDocsReference`,
+    `TestAWSRecipesMatchTheExample`). Issue templates, `--help`, the kit's README and the page's footer link the
+    docs site; the SVG namespace URI `…#svg-source` stays, being an identifier.
+  - **Open:** the "How it fits together" mermaid diagram shows as code on the site (Sphinx has no mermaid without
+    an extension that loads mermaid.js from a CDN).
+- Deploy: `.github/workflows/pages.yml` publishes `dist/pages` (docs, playground under `playground/`) on pushes to `master` (SHA-pinned
   `upload-pages-artifact`/`deploy-pages`). Live at <https://iilei.github.io/canned-schedules/> since 2026-10-25 (Pages source "GitHub Actions", HTTPS
   enforced).
 - Verified on the first deploy: GitHub Pages serves `app.wasm` gzip-compressed (about 3 MB over the wire for the
@@ -1244,7 +1266,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   without errors); page: **Download MyST** (`myst` in the evaluate result, like the SVG) and
   `cannedSchedules.sphinxKit(markdown, args)`, which returns a `Uint8Array` or an error string and is built on click.
 - **MyST is build output (decided 2026-10-25):** users edit and validate the GFM schedule; docs builds regenerate the
-  MyST from it and never edit it by hand. The README's "From schedule to docs page" recipe shows the CI loop, the
+  MyST from it and never edit it by hand. The "From schedule to docs page" recipe (`docs/sphinx.md`) shows the CI loop, the
   choice between `.gitignore` and a `git diff --exit-code` drift check, and toctree pages.
 - Verified end to end with sphinx 9.1.0, furo 2025.12.19, myst-parser 5.1.0: `sphinx-build -W` clean, screenshots in
   light and dark match the page.
@@ -1341,7 +1363,7 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
    weeks, and what it needed has been folded back in.
 3. **A quiet contract:** no breaking change (no new `schema-version` date) for about a month. Then freeze the date
    with 1.0; after that, breaking changes mean 2.0.
-4. **Verify the README's AWS recipes against AWS**, last (decided 2026-11-08): EC2 Auto Scaling via Terraform and
+4. **Verify the AWS recipes (`docs/aws.md`) against AWS**, last (decided 2026-11-08): EC2 Auto Scaling via Terraform and
    via the CLI, ECS via Application Auto Scaling. They carry an "Unverified against AWS" warning: so far only
    an AWS emulator (`mise run example:aws`) checked them. Remove the warning once a live test passes. Planned as `mise run aws:test` and
    `mise run aws:sweep`, never in regular CI, borrowing from `../convergenci-cli` (`testdata/aws-live/run.sh`):
@@ -1401,7 +1423,7 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   rendered GFM inside Sphinx without validating it.
   - Cost: the binary must be available where the docs are built.
   - The extension compares the tool version with the kit's `VERSION` and warns when they differ.
-  - Until then, the README's "From schedule to docs page" recipe (a CI loop before `sphinx-build`) covers this.
+  - Until then, the "From schedule to docs page" recipe in `docs/sphinx.md` (a CI loop before `sphinx-build`) covers this.
 - **Antora output** (asked 2026-11-09, deferred until a team using Antora asks; about half a day to a day). The
   same role as the Sphinx kit, for AsciiDoc sites:
   - **An AsciiDoc writer** (`internal/asciidoc`, `--asciidoc-output-file`, a page download), walking the document
@@ -1625,7 +1647,7 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
 - **Issue templates (decided 2026-11-18): three short variants that teach by example,** `canned_schedule_request.md`
   (office hours: a base and one range), `canned_schedule_night_shift.md` (crossing midnight) and
   `canned_schedule_friday_peak.md` (two states, the later range wins), in `.github/ISSUE_TEMPLATE/` (with frontmatter),
-  `.gitlab/issue_templates/` and the consumer example. No explanatory text: the rules live in the README's Syntax
+  `.gitlab/issue_templates/` and the consumer example. No explanatory text: the rules live in the docs' Syntax page
   section, linked from each template.
   - **The states are a hidden HTML comment,** not an `x-states` META key: `x-*` values reach every schedule's JSON output,
     aren't checked and hold 48 characters at most. The config stays the contract, and an unknown state already fails
@@ -1646,13 +1668,13 @@ GitLab right after the composite action). Items 2–4 are also the **criteria fo
   They are the spec. Don't regenerate them from the implementation.
 - Generated files (`coverage`, `*coverage.txt`, the binary) are gitignored. Never commit them.
 - **Help and generated reference (decided 2026-10-25):** the flag set's usage strings (`newFlagSet` in
-  `internal/cli`) and `diag.Codes` are the single source for `--help` (`cli.Help`) and for the README's flag tables
-  and diagnostic-code table, which sit between `<!-- generated: … -->` markers. `TestReadmeReference` fails when they
-  are stale; `mise run docs` regenerates them. `flagGroups` orders the flags and names their placeholders and
+  `internal/cli`) and `diag.Codes` are the single source for `--help` (`cli.Help`) and for the docs' flag tables
+  (`docs/usage.md`) and diagnostic-code table (`docs/error-reports.md`), which sit between `<!-- generated: … -->`
+  markers. `TestDocsReference` fails when they are stale; `mise run docs` regenerates them. `flagGroups` orders the flags and names their placeholders and
   defaults; tests require every registered flag there once and every `Code` constant in `diag.Codes` once. `-h`,
   `--help` (also with other arguments) print the help to stdout and exit 0; `--version` is a regular flag. revive's
   `exported` rule is on. `Example` tests exist only for the library at the root (everything else is `internal/`);
-  skipped on purpose: a separate docs site.
+  skipped on purpose: the docs site (see "Documentation site") covers the library in `docs/library.md`.
 - **Examples in messages and docs:** times sit on a 15-minute grid (`6:15`, `21:45`). Never use `23:59`: it reads
   like a recommended end of day, but the end of a range is exclusive and "until midnight" is written `00:00`. The
   `24:00` error says exactly that.

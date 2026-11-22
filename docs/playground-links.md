@@ -6,10 +6,10 @@ catalog's schedule, a project's rules or a teaching example, without anyone sett
 
 ## Two kinds of playground
 
-| Setup                                                                                                          | Where the flags come from                               | Proposal buttons        |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------- |
-| **One catalog's playground**, with a `site.json` that sets `args` ([README](../README.md#your-own-playground)) | `site.json`; they always apply and nobody can drop them | yes, to that catalog    |
-| **A shared playground**, without `site.json` or with one that sets no `args` (the public page is one)          | the link (`?arg=`, `?sample-interval=`, `?states=`)     | only from a `site.json` |
+| Setup                                                                                                                        | Where the flags come from                               | Proposal buttons        |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------- |
+| **One catalog's playground**, with a `site.json` that sets `args` ([Your own playground](playground.md#your-own-playground)) | `site.json`; they always apply and nobody can drop them | yes, to that catalog    |
+| **A shared playground**, without `site.json` or with one that sets no `args` (the public page is one)                        | the link (`?arg=`, `?sample-interval=`, `?states=`)     | only from a `site.json` |
 
 On a catalog's playground, a link adds the schedule, the lock and the look; repeating the site's flags in `?arg=` is
 reported as a conflict (`invalid-flag`), since the site's flags must stay the ones that decide. On a shared playground,

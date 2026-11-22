@@ -1,6 +1,7 @@
 name: pages
 
-# Publishes the browser preflight page (dist/site) to GitHub Pages.
+# Publishes the Pages site (dist/pages): the documentation at the root, the playground under playground/ and the
+# schemas under schema/<date>/.
 # One-time setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
 on:
   push:
@@ -28,11 +29,11 @@ jobs:
         with:
           version: 2026.10.19 # mise itself; pinned, see CLAUDE.md ("Dependabot")
 
-      - run: mise run web:build
+      - run: mise run pages:build
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: dist/site
+          path: dist/pages
 
   deploy:
     needs: build

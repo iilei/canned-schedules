@@ -227,8 +227,8 @@ fi
 '''
 
 [tasks.docs]
-description = "Regenerate the README's generated sections (flag tables, diagnostic codes) from the code"
-run = "UPDATE_DOCS=1 go test ./internal/cli -run TestReadmeReference -count=1"
+description = "Regenerate the docs' generated sections (flag tables in docs/usage.md, diagnostic codes in docs/error-reports.md) from the code"
+run = "UPDATE_DOCS=1 go test ./internal/cli -run TestDocsReference -count=1"
 
 [tasks."web:build"]
 description = "Build the browser preflight page (WebAssembly) into dist/site"
@@ -261,6 +261,31 @@ if [ -d schema/archive ]; then cp -R schema/archive/. "$out/schema/"; fi
 node editor/stamp-assets.mjs "$out"
 echo "built $out ($(du -sh "$out" | cut -f1))"
 '''
+
+[tasks."docs:build"]
+description = "Build the documentation site into dist/docs: Sphinx, Furo and MyST (hash-pinned) with this checkout's Sphinx kit"
+run = "sh docs/build.sh"
+
+[tasks."pages:build"]
+description = "Assemble the GitHub Pages site in dist/pages: the docs at the root, the playground under playground/, the schemas under schema/"
+depends = ["web:build", "docs:build"]
+run = '''
+set -eu
+rm -rf dist/pages
+cp -R dist/docs dist/pages
+cp -R dist/site dist/pages/playground
+# The schemas stay at their published $id URLs (schema/<date>/), at the site's root.
+mv dist/pages/playground/schema dist/pages/schema
+echo "built dist/pages ($(du -sh dist/pages | cut -f1))"
+'''
+
+[tasks."pages:serve"]
+description = "Build and serve the Pages site on http://127.0.0.1:<port> (default 8080)"
+depends = ["pages:build"]
+usage = '''
+flag "-p --port <port>" env="PORT" default="8080" help="Port to listen on (localhost only)"
+'''
+run = 'python3 -m http.server --bind 127.0.0.1 --directory dist/pages "$usage_port"'
 
 [tasks."site:zip"]
 description = "Pack the preflight page as dist/site-zip/canned-schedules-site_<version>.zip, the release asset teams host"

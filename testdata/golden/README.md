@@ -105,7 +105,7 @@ styles. The namespace is fixed in code: `SCHEDULE` only.
 ## Notes
 
 - `valid/weekday-whitespace` has **trailing spaces on purpose** (after `SAT, SUN`). Don't let editors strip them.
-- Diagnostic codes: see [the table in the main README](../../README.md#diagnostic-codes), generated from
+- Diagnostic codes: see [the table in the main README](../../docs/error-reports.md#diagnostic-codes), generated from
   `diag.Codes`.
 
 ## Undecided: no fixtures yet

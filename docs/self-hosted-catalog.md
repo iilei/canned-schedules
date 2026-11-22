@@ -56,7 +56,7 @@ review all read it. A good start rejects alert types that aren't GitHub's or Git
 ```
 
 Name every file after its schedule's title (`# Office Hours` → `office-hours.canned-schedule.md`); the review checks
-that. The core's [`examples/consumer`](../examples/consumer) has the issue templates and local tasks to copy.
+that. The core's [`examples/consumer`](https://github.com/iilei/canned-schedules/tree/master/examples/consumer) has the issue templates and local tasks to copy.
 
 ## 2. Protect the default branch
 
@@ -196,7 +196,7 @@ A GitLab in Docker works for a trial, with a few adjustments:
 
 The playground is a static page: download `canned-schedules-site_<version>.zip` from a
 [canned-schedules release](https://github.com/iilei/canned-schedules/releases), check it against the signed
-`checksums.txt`, unzip it and add a `site.json` (see "Your own playground" in the [README](../README.md#your-own-playground)).
+`checksums.txt`, unzip it and add a `site.json` (see "Your own playground" in the [README](playground.md#your-own-playground)).
 Any static host serves it. The companion's `playground build` writes that `site.json` for you, and its README shows
 the command.
 

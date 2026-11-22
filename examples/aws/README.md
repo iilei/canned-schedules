@@ -1,7 +1,7 @@
 # Canned schedules on AWS
 
 Working versions of the recipes in the main README's
-[AWS section](../../README.md#aws-auto-scaling-scheduled-actions): an imaginary service whose capacity follows a schedule.
+[AWS section](../../docs/aws.md): an imaginary service whose capacity follows a schedule.
 
 | Path                          | What it does                                                 |
 | ----------------------------- | ------------------------------------------------------------ |
