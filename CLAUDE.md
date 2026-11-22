@@ -757,41 +757,43 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   they arrive as pull or merge requests already.
 - **Catalog versioning is git (decided 2026-11-21):** a catalog file's history is its commits, reviewed in merge
   requests; canned-schedules adds no version scheme. A consumer pins a commit or tag, and rolling back is a revert.
-- **Step 3, publishing (designed 2026-11-21 and 2026-11-22, not built):** the outputs a merge request was reviewed
-  with are the ones that get published, with their provenance; where they go is the team's choice.
+- **Step 3, publishing (designed 2026-11-21 and 2026-11-22, being built):** what a merged merge request changed in the
+  catalog gets published, rendered by trusted code and tied to its review by digest, with its provenance; where it
+  goes is the team's choice.
   - **Digests, as Docker writes them (decided 2026-11-22):** every hash in this step is a *digest* with its algorithm,
     `sha256:<64 hex>`, in the review's summary, the provenance, the manifest and the templates' `{digest}`. The prefix
     lets the algorithm change later as a new value rather than a changed meaning.
-  - **The review attaches its outputs:** when the merge request review posts its stamped comment, it also attaches
-    each changed schedule's generated files (`.canned-schedule.json`, the report, `.txt`, `.svg`) to the merge request:
-    the job's artifacts on GitLab, workflow artifacts on GitHub, linked from the comment. The review's summary lists
-    each file's **digest** (of the bytes as reviewed, with its path).
-  - **Content, not commits, ties the published files to the review (decided 2026-11-21):** squash and rebase merges
-    give new commit SHAs, and author and commit dates are whatever a machine said, so neither identifies what was
-    reviewed. On merge, the publish action / component asks the forge which merge request the pushed commit came from
-    (GitHub `GET commits/<sha>/pulls`, GitLab `GET repository/commits/<sha>/merge_requests`, both work after a squash),
-    downloads that merge request's latest review files, and uses a schedule's reviewed files when the merged file's
-    digest equals the reviewed one. It puts them under a path set by its inputs, together with the **raw input** (the
-    schedule file as merged) and a **provenance file**.
-  - **Re-rendered when the content differs or the files are gone (decided 2026-11-21, 2026-11-22):** after a rebase
-    or any edit after the last review (including a conflict resolved in the merge), and when the review's files have
-    expired (GitHub keeps workflow artifacts 90 days by default, GitLab as `expire_in` says), the merged file is
-    rendered again with the args file of the commit being published (the branch the merge request targeted, as it is
-    after the merge). The provenance says so: `rendered` is `review` or `publish`, with the reason (`changed`,
-    `expired`) and both digests (reviewed, merged) when they differ. A file that no longer renders without errors
-    fails the publish (the review on the merge request showed it valid, so something changed after it).
+  - **The review vouches by digest only (decided 2026-11-22, revising "the review attaches its outputs"):** its stamped
+    comment records each changed schedule file's **digest** (of the bytes as reviewed, with its path). It attaches no
+    outputs for publishing: they would come from the merge request's own pipeline, which the merge request can change,
+    so reusing them could publish crafted files under a correct-looking provenance (and their retention stops
+    mattering).
+  - **Content, not commits, ties the publish to the review (decided 2026-11-21):** squash and rebase merges give new
+    commit SHAs, and author and commit dates are whatever a machine said, so neither identifies what was reviewed. On
+    merge, the publish action / component asks the forge which merge request the pushed commit came from (GitHub
+    `GET commits/<sha>/pulls`, GitLab `GET repository/commits/<sha>/merge_requests`, both work after a squash) and
+    reads the digests from that merge request's newest review comment by the bot.
+  - **Always rendered from the raw input (decided 2026-11-22):** the publish job, which runs trusted code, renders
+    every changed schedule from the file as merged with the args file of the commit being published (the branch the
+    merge request targeted, as it is after the merge), and puts the outputs under a path set by its inputs, together
+    with the **raw input** and a **provenance file**. A file that doesn't render without errors fails the publish.
+  - **A differing digest is a loud signal, not a block (decided 2026-11-22):** after a rebase, an edit after the last
+    review, a conflict resolved in the merge, a file the review didn't cover or a merge request without a review, the
+    schedule is published anyway with `reviewed: false` and a reason (`changed`, `not-reviewed`, `no-review`), and
+    the publish posts a note on the merged merge request naming the file and both digests. Blocking was rejected:
+    after the merge, git and the published files would disagree until someone re-ran it.
   - **Provenance** (the companion's file, not part of the core's output contract), from the forge's records rather
-    than git metadata: the merge request (URL, number, author, **created at**, merged at, merged by) and its review
-    pipeline or workflow run (URL), the schedule file's path and digest, the companion and core versions, and the
-    stamp the review recorded (input digest, args digest). The merge commit SHA may be listed for reference, never
-    used for matching. The digests stay out of the canonical JSON (see "No digests"); here they tie the published
-    files to the reviewed run.
+    than git metadata: the merge request (URL, number, title, author, **created at**, merged at, merged by, target
+    branch), the schedule file's path and digest, the review (its comment's URL, the reviewed digest, whether they
+    match and why not), the companion and core versions with the digest of the flags, and every output's digest. The
+    merge commit SHA may be listed for reference, never used for matching. The digests stay out of the canonical JSON
+    (see "No digests"); here they tie the published files to the review.
   - **One schedule is the unit, never the merge request (decided 2026-11-22),** so one schedule or many give the same
     structure:
     - **The path template names one schedule's folder** and is applied once per changed schedule; merge request
       variables have the same value for each.
     - **Files keep their catalog names:** `<slug>.canned-schedule.md` (the raw input), `.json`, `.svg`, `.txt`, plus
-      `<slug>.canned-schedule.provenance.json` and the metadata files, so a consumer sees the names git shows, and
+      `<slug>.canned-schedule.provenance.json`, so a consumer sees the names git shows, and
       they stay unique when a template leaves the slug out.
     - **`manifest.json` at the output root always holds a list,** `{"schedules": [ … ]}` (folder, files, digest,
       metadata per entry); one schedule is a list of one, a merge request without schedule changes an empty list.
@@ -799,8 +801,8 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   - **Templates for the path and the metadata (decided 2026-11-22):** the same `{…}` placeholders as `site.json`, and
     every variable is allowed in both: schedule (`name`, `slug`, `path`, `digest`), merge request (`mr`, `title`,
     `author`, `merged-by`, `created-at`, `merged-at`, `merged-date`; times from the forge, UTC), origin (`forge`,
-    `host`, `project`, `branch`) and run (`rendered`, `review-run`, `tool-version`, `core-version`). Values print in
-    full (`{mr}` unpadded, `{digest}` with its prefix).
+    `host`, `project`, `branch`) and run (`tool-version`, `core-version`), plus `reviewed` (`true`/`false`). Values
+    print in full (`{mr}` unpadded, `{digest}` with its prefix).
     - **Helpers, chained with `|`:** `toLower`, `toUpper`, `reverseByDotDelim` (`gitlab.example.com` →
       `com.example.gitlab`) and `truncate N` (the first N characters, prefix included: `{digest | truncate 19}` is
       `sha256:` plus 12 hex). Nothing else: padding, replacing and the like are the post-fetch script's (`sed`).
@@ -811,20 +813,20 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     - **Two schedules writing one file fail the run,** naming both and the path; `--force-overwrite` (input
       `force-overwrite`) opts out. The check covers the file paths of every manifest entry.
     - **Metadata:** an input with one `key=value` per line, the same template language, with a default set when
-      empty. Values can be user-typed (names, titles), so the companion encodes them, not the script: per schedule
-      `metadata.json` (a string map), an Artifactory form (escaped `;key=value` matrix parameters for the PUT URL,
-      also `jf rt upload --target-props`) and an S3 form (`aws s3 cp --metadata`, or `x-amz-meta-*` headers; lowercase
-      keys, 2 KB in total, non-ASCII refused or encoded). The manifest carries them, so the post-fetch script only
-      passes strings on.
-  - **Commands (decided 2026-11-22):** `publish fetch --forge …` (forge, read-only: finds the merge request and
-    downloads its review files) and `publish prepare` (local: compares digests, renders again where needed, writes the
-    layout, provenance, metadata and manifest). The wrapper then runs the post-fetch script.
+      empty. Values can be user-typed (names, titles), so the companion encodes them, not the script: each manifest
+      entry has the map, an Artifactory form (percent-encoded `;key=value` matrix parameters for the PUT URL) and an
+      S3 form (`aws s3 cp --metadata`, or `x-amz-meta-*` headers; lowercase keys, 2 KB in total, non-ASCII RFC 2047
+      encoded), so the post-fetch script only passes strings on.
+  - **Commands (decided 2026-11-22):** `publish fetch --forge …` (forge, read-only: finds the merge request and reads
+    its review's digests) and `publish prepare` (local: renders, compares digests, writes the layout, provenance,
+    metadata and manifest); a forge verb posts the note for a differing digest. The wrapper then runs the post-fetch
+    script.
   - **A user-provided post-fetch script** then runs with the output directory, e.g. to upload to S3 or Artifactory or
     to commit to another repository. It runs only on pushes to the branch the merge request targeted (trusted code)
     with the job's secrets, which the team provides. Example scripts for Artifactory and S3 belong in the docs; a
     local Artifactory OSS in Docker serves as the GitLab test target.
-  - **Open:** the provenance file's and the manifest's exact fields and whether they get JSON Schemas, and the default
-    metadata keys.
+  - **Built so far:** the companion's `publish prepare` (see its CLAUDE.md for the fields, the default metadata keys
+    and the version field that stands in for a JSON Schema until a consumer relies on the shape).
 - **Still open:** minimal token scopes, the project's name and the demo repo (`canned-schedules-demo`) for the screen
   recording.
 
