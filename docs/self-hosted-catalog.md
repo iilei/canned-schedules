@@ -95,7 +95,7 @@ include:
     integrity: sha256-3CF1y1zQo117XM/wMfLIFP67pmNeQduvaHIktpFzQnI=
 ```
 
-GitLab refuses an included file that doesn't match its `integrity`. The companion's README lists every input; take the
+GitLab refuses an included file that doesn't match its `integrity`. The [companion's docs](https://iilei.github.io/canned-schedules-companion/gitlab.html) list every input; take the
 tag and hashes of its newest release from there. The issue preview takes its flags as an input, while the playground
 and the review read `canned-schedules.args` from the repository. The review reads it **from the target branch**, so
 a merge request can't loosen its own check.
@@ -155,7 +155,7 @@ jq -r '.schedules[] | .artifactory as $p | .files[]
 ```
 
 The job runs in the component's `image` input, so pick one with the script's tools (`curl` and `jq` here, the AWS CLI
-for S3; the companion's README has an S3 loop).
+for S3; the companion's docs have [upload scripts](https://iilei.github.io/canned-schedules-companion/publishing.html) for both).
 
 **Published is always what was merged.** Every schedule is rendered again from the file as merged, with the
 `canned-schedules.args` of the merged commit. The review vouched for each file by its digest (a SHA-256 of its bytes,
@@ -204,7 +204,7 @@ the command.
 
 The same catalog works on GitHub with the companion's GitHub Actions (from v0.3.3; `publish` from v0.3.5): the issue preview at the
 repository root, `playground` for GitHub Pages and `review` for pull requests. The
-[companion's README](https://github.com/iilei/canned-schedules-companion#github-pages-playground) has the workflows to
+[companion's docs](https://iilei.github.io/canned-schedules-companion/github.html#github-pages-playground) have the workflows to
 copy. What differs from GitLab:
 
 - **Pages:** set Settings → Pages → Source to "GitHub Actions". The `playground` action builds and uploads the site,
