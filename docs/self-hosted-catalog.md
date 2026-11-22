@@ -168,6 +168,8 @@ to the default branch, without a merge request, fails the job and publishes noth
 
 - **`site.json` is as public as the Pages site.** It holds no secrets, but it lists your schedules' names. For a
   private catalog, set the Pages visibility to project members (Settings > General > Visibility > Pages).
+- **Links for your readers:** `?lock=true#doc=…` opens a schedule with the controls locked, for example to edit a
+  catalog file; [Links into your playground](playground-links.md) has the parameters and a script that builds them.
 - **Readers who aren't members** need a fork before GitLab opens the new-file and edit pages for them. Set the
   playground input `fork: true` to show them a link to the fork page.
 - **Merge requests from forks** run their pipelines in the fork, without `CANNED_SCHEDULES_TOKEN`. Let the project run

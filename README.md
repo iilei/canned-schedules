@@ -158,6 +158,9 @@ a schedule the catalog already has, and **Open as issue** opens a new issue. Mer
 Only `site.json` sets proposal targets, never the page's address, so a link can't send a schedule anywhere else. A
 `site.json` with errors is ignored as a whole, and the page says why. The public page has none.
 
+**[Links into your playground](docs/playground-links.md)** shows how to hand out links that open a schedule with a
+project's flags, locked, on a catalog's playground or on one playground shared by many projects.
+
 `site.json` is as public as the Pages site: it holds no secrets, but it does list the catalog's schedules. For a
 private catalog, restrict who can see the Pages site (GitLab Pages can be limited to project members; on GitHub it
 depends on the plan). Regenerate `site.json` on every deploy, so `catalog.names` stays current.
