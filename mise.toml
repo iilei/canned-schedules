@@ -266,6 +266,10 @@ echo "built $out ($(du -sh "$out" | cut -f1))"
 description = "Build the documentation site into dist/docs: Sphinx, Furo and MyST (hash-pinned) with this checkout's Sphinx kit"
 run = "sh docs/build.sh"
 
+[tasks."docs:diagrams"]
+description = "Render the docs' mermaid diagrams (docs/diagrams/*.mmd) to light and dark SVGs with mermaid.ink; commit them"
+run = "sh docs/diagrams/render.sh"
+
 [tasks."pages:build"]
 description = "Assemble the GitHub Pages site in dist/pages: the docs at the root, the playground under playground/, the schemas under schema/"
 depends = ["web:build", "docs:build"]

@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -148,6 +151,31 @@ func checkFrontmatter(t *testing.T, front string) {
 			strings.ContainsRune("&*!|>%@`{", rune(value[0])) ||
 			strings.HasPrefix(value, "- ") || strings.HasPrefix(value, "? ") {
 			t.Errorf("frontmatter line %q: quote the value, YAML would not read it as plain text", line)
+		}
+	}
+}
+
+// TestDiagramsAreRendered keeps the docs' diagrams in step with their sources: each docs/diagrams/<name>.mmd has a
+// light and a dark SVG whose first line names the source's digest. Render them again with: mise run docs:diagrams.
+func TestDiagramsAreRendered(t *testing.T) {
+	t.Parallel()
+
+	sources, err := filepath.Glob("../../docs/diagrams/*.mmd")
+	if err != nil || len(sources) == 0 {
+		t.Fatalf("no diagrams in docs/diagrams (%v)", err)
+	}
+
+	for _, src := range sources {
+		sum := sha256.Sum256([]byte(readFile(t, src)))
+		want := filepath.Base(src) + " sha256:" + hex.EncodeToString(sum[:]) + ","
+		name := strings.TrimSuffix(src, ".mmd")
+
+		for _, theme := range []string{"light", "dark"} {
+			first, _, _ := strings.Cut(readFile(t, name+"-"+theme+".svg"), "\n")
+			if !strings.Contains(first, want) {
+				t.Errorf("%s-%s.svg wasn't rendered from the current %s; run: mise run docs:diagrams",
+					filepath.Base(name), theme, filepath.Base(src))
+			}
 		}
 	}
 }
