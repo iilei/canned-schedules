@@ -62,8 +62,9 @@ jobs:
       # as the CLI.
       - run: mise run test:wasm
 
-      # The preflight page builds (WebAssembly, static files).
-      - run: mise run web:build
+      # The Pages site builds: the playground (WebAssembly, static files) and the documentation, with Sphinx's
+      # warnings as errors, so a broken link or reference fails the pull request.
+      - run: mise run pages:build
 
       # The consumer example (examples/consumer): its tasks against a copy of the issue template, with the binary
       # built from this commit.

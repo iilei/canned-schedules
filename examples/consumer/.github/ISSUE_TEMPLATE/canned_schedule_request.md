@@ -22,4 +22,4 @@ assignees: ""
 
 <!-- Describe the workload and why these hours fit it. -->
 
-[Syntax reference](https://github.com/iilei/canned-schedules#syntax)
+[Syntax reference](https://iilei.github.io/canned-schedules/syntax.html)

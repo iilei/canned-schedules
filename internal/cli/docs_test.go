@@ -10,9 +10,7 @@ import (
 	"github.com/iilei/canned-schedules/internal/diag"
 )
 
-const readme = "../../README.md"
-
-// TestFlagDocsCoverFlagSet keeps --help and the README complete: every registered flag appears exactly once in
+// TestFlagDocsCoverFlagSet keeps --help and the docs complete: every registered flag appears exactly once in
 // flagGroups, with a usage string.
 func TestFlagDocsCoverFlagSet(t *testing.T) {
 	t.Parallel()
@@ -69,40 +67,40 @@ func TestHelpFlags(t *testing.T) {
 	}
 }
 
-// TestReadmeReference keeps the README's generated sections (the flag tables and the diagnostic codes) in sync with
-// the code. Regenerate them with: mise run docs (UPDATE_DOCS=1 go test ./internal/cli -run TestReadmeReference).
-func TestReadmeReference(t *testing.T) {
+// TestDocsReference keeps the docs' generated sections (the flag tables in docs/usage.md and the diagnostic codes in
+// docs/error-reports.md) in sync with the code. Regenerate them with: mise run docs (UPDATE_DOCS=1 go test
+// ./internal/cli -run TestDocsReference).
+func TestDocsReference(t *testing.T) {
 	t.Parallel()
 
-	current := readFile(t, readme)
-	want := current
-
-	for _, s := range []struct{ name, body string }{
-		{"flags", flagTables()},
-		{"codes", codeTable()},
+	for _, s := range []struct{ file, name, body string }{
+		{"../../docs/usage.md", "flags", flagTables()},
+		{"../../docs/error-reports.md", "codes", codeTable()},
 	} {
+		current := readFile(t, s.file)
+
 		section := regexp.MustCompile(`(?s)(<!-- generated: ` + s.name + ` [^\n]*-->\n).*?(<!-- end generated -->)`)
-		if !section.MatchString(want) {
-			t.Fatalf("the README has no generated %q section", s.name)
+		if !section.MatchString(current) {
+			t.Fatalf("%s has no generated %q section", s.file, s.name)
 		}
 
-		want = section.ReplaceAllStringFunc(want, func(m string) string {
+		want := section.ReplaceAllStringFunc(current, func(m string) string {
 			sub := section.FindStringSubmatch(m)
 
 			return sub[1] + s.body + sub[2]
 		})
-	}
 
-	if want == current {
-		return
-	}
+		if want == current {
+			continue
+		}
 
-	if os.Getenv("UPDATE_DOCS") == "" {
-		t.Fatal("the README's generated sections are stale; run: mise run docs")
-	}
+		if os.Getenv("UPDATE_DOCS") == "" {
+			t.Fatalf("the generated %q section of %s is stale; run: mise run docs", s.name, s.file)
+		}
 
-	if err := os.WriteFile(readme, []byte(want), 0o600); err != nil {
-		t.Fatal(err)
+		if err := os.WriteFile(s.file, []byte(want), 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
@@ -152,7 +150,7 @@ func codeTable() string {
 	return table([]string{"Code", "Severity", "Meaning"}, rows)
 }
 
-// table renders a Markdown table with padded columns, like the hand-written tables in the README.
+// table renders a Markdown table with padded columns, like the hand-written tables in the docs.
 func table(header []string, rows [][]string) string {
 	width := make([]int, len(header))
 	for _, r := range append([][]string{header}, rows...) {

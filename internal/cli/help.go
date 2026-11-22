@@ -147,7 +147,7 @@ func Help(w io.Writer) error {
 	}
 
 	b.WriteString("\nExit codes: 0 valid, 1 errors in the document or a flag value,\n" +
-		"2 unusable command line or environment.\nDocumentation: https://github.com/iilei/canned-schedules#readme\n")
+		"2 unusable command line or environment.\nDocumentation: https://iilei.github.io/canned-schedules/\n")
 
 	_, err := io.WriteString(w, b.String())
 

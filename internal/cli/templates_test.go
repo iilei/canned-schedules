@@ -13,7 +13,7 @@ const (
 	docsPreview     = "../../docs/office-hours.svg"
 	builtInConfig   = "../../schema/config.json"
 
-	syntaxLink = "[Syntax reference](https://github.com/iilei/canned-schedules#syntax)"
+	syntaxLink = "[Syntax reference](https://iilei.github.io/canned-schedules/syntax.html)"
 )
 
 // TestIssueTemplates keeps the issue templates valid and in step. Contributors learn the syntax from them, so a template
