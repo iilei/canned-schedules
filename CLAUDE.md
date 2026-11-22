@@ -1229,8 +1229,14 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     system's `prefers-color-scheme`, not Furo's `data-theme`, so a dark Furo on a light system showed a bright week.
     The build renders it twice (`--svg-theme light|dark` into `docs/_generated/`) and the page shows Furo's
     `only-light` / `only-dark` image; the README keeps `docs/office-hours.svg` (theme auto) for GitHub.
-  - **Open:** the "How it fits together" mermaid diagram shows as code on the site (Sphinx has no mermaid without
-    an extension that loads mermaid.js from a CDN).
+  - **Mermaid diagrams, rendered once and committed (decided 2026-11-22, the user's choice):** a renderer of our own
+    (mermaid-cli: about 200 npm packages, 484 MB, plus Chrome) was too heavy, and rendering on every build would make
+    it depend on a service. `docs/diagrams/<name>.mmd` is the source; `mise run docs:diagrams`
+    (`docs/diagrams/render.sh`) asks mermaid.ink for `<name>-light.svg` and `<name>-dark.svg` (theme `default` and
+    `dark`), each starting with a comment holding the source's digest, and they are committed. The docs build and CI
+    need neither network nor dependencies; `TestDiagramsAreRendered` fails when a `.mmd` changed and its SVGs weren't
+    rendered again. Pages show them with `only-light` / `only-dark`; readers load nothing from mermaid.ink. The
+    service only sees the diagrams, which are public in the repository anyway.
 - Deploy: `.github/workflows/pages.yml` publishes `dist/pages` (docs, playground under `playground/`) on pushes to `master` (SHA-pinned
   `upload-pages-artifact`/`deploy-pages`). Live at <https://iilei.github.io/canned-schedules/> since 2026-10-25 (Pages source "GitHub Actions", HTTPS
   enforced).

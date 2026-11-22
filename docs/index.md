@@ -56,31 +56,15 @@ the label when it is missing.
 
 Schedules are proposed as issues, kept in a catalog repo, published as versions, and consumed by pinned version:
 
-```mermaid
-flowchart TB
-  subgraph propose["1 · Propose"]
-    direction LR
-    issue["Issue from the template:<br/>a Markdown request"] --> check["Issue workflow: companion action<br/>one comment with report and preview"]
-  end
-  subgraph catalog["2 · Catalog repo"]
-    direction LR
-    pr["Pull request adds<br/>schedules/name.canned-schedule.md"] --> ci["CI: schedule:render<br/>.json · .svg · .txt"]
-  end
-  subgraph publish["3 · Publish a version"]
-    direction LR
-    release["Git tag + release assets"]
-    artifactory["Artifactory<br/>generic repository"]
-  end
-  subgraph consume["4 · Consume a pinned version"]
-    direction LR
-    capacity[/"capacity.json<br/>state id → capacity"/] --> infra["Terraform or AWS CLI<br/>ASG and ECS scheduled actions"]
-    docs["Docs<br/>Sphinx kit, SVG previews"]
-  end
-  check -->|approved| pr
-  ci --> release & artifactory
-  release & artifactory --> infra
-  release --> docs
-```
+:::{image} diagrams/fits-together-light.svg
+:alt: Schedules are proposed as issues, kept in a catalog repo, published as versions and consumed by pinned version
+:class: only-light
+:::
+
+:::{image} diagrams/fits-together-dark.svg
+:alt: Schedules are proposed as issues, kept in a catalog repo, published as versions and consumed by pinned version
+:class: only-dark
+:::
 
 1. **Propose:** someone opens an issue from the template, or proposes the schedule from a team's playground. The
    issue workflow checks the proposal and keeps one comment with the report and, for a valid schedule, the preview.

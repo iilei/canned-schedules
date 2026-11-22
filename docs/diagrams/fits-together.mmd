@@ -1,0 +1,23 @@
+flowchart TB
+  subgraph propose["1 · Propose"]
+    direction LR
+    issue["Issue from the template:<br/>a Markdown request"] --> check["Issue workflow: companion action<br/>one comment with report and preview"]
+  end
+  subgraph catalog["2 · Catalog repo"]
+    direction LR
+    pr["Pull request adds<br/>schedules/name.canned-schedule.md"] --> ci["CI: schedule:render<br/>.json · .svg · .txt"]
+  end
+  subgraph publish["3 · Publish a version"]
+    direction LR
+    release["Git tag + release assets"]
+    artifactory["Artifactory<br/>generic repository"]
+  end
+  subgraph consume["4 · Consume a pinned version"]
+    direction LR
+    capacity[/"capacity.json<br/>state id → capacity"/] --> infra["Terraform or AWS CLI<br/>ASG and ECS scheduled actions"]
+    docs["Docs<br/>Sphinx kit, SVG previews"]
+  end
+  check -->|approved| pr
+  ci --> release & artifactory
+  release & artifactory --> infra
+  release --> docs
