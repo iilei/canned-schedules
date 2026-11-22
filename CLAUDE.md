@@ -757,7 +757,7 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
   they arrive as pull or merge requests already.
 - **Catalog versioning is git (decided 2026-11-21):** a catalog file's history is its commits, reviewed in merge
   requests; canned-schedules adds no version scheme. A consumer pins a commit or tag, and rolling back is a revert.
-- **Step 3, publishing (designed 2026-11-21 and 2026-11-22, being built):** what a merged merge request changed in the
+- **Step 3, publishing (designed 2026-11-21 and 2026-11-22, built 2026-11-22):** what a merged merge request changed in the
   catalog gets published, rendered by trusted code and tied to its review by digest, with its provenance; where it
   goes is the team's choice.
   - **Digests, as Docker writes them (decided 2026-11-22):** every hash in this step is a *digest* with its algorithm,
@@ -825,8 +825,13 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     to commit to another repository. It runs only on pushes to the branch the merge request targeted (trusted code)
     with the job's secrets, which the team provides. Example scripts for Artifactory and S3 belong in the docs; a
     local Artifactory OSS in Docker serves as the GitLab test target.
-  - **Built so far:** the companion's `publish prepare` (see its CLAUDE.md for the fields, the default metadata keys
-    and the version field that stands in for a JSON Schema until a consumer relies on the shape).
+  - **Built (2026-11-22), in the companion:** the review's digest block, `publish fetch`, `publish prepare`, `publish
+    post`, the template helper `afterLast` and `{{`/`}}` escapes (the default path became
+    `{slug}/{mr}-{digest | afterLast ":" | truncate 12}`: Windows refuses `:` in file names), the GitLab component
+    `templates/publish.yml` and the action `publish/action.yml` (see its CLAUDE.md for fields, default metadata keys
+    and the version field that stands in for a JSON Schema). The component ran end to end on the local GitLab against
+    the local Artifactory (reviewed, changed after the review, direct push); the S3 form against a local S3 emulator.
+    `docs/self-hosted-catalog.md` step 7 documents it, from companion v0.3.5.
 - **Still open:** minimal token scopes, the project's name and the demo repo (`canned-schedules-demo`) for the screen
   recording.
 

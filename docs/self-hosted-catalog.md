@@ -7,8 +7,9 @@ one up on **GitLab**, step by step, with released building blocks only:
 
 - [canned-schedules](https://github.com/iilei/canned-schedules) checks and renders schedules. Every release attaches
   the playground as `canned-schedules-site_<version>.zip`.
-- [canned-schedules-companion](https://github.com/iilei/canned-schedules-companion) brings three GitLab CI/CD
-  components: the **issue preview**, the **playground on GitLab Pages** and the **merge request review**.
+- [canned-schedules-companion](https://github.com/iilei/canned-schedules-companion) brings four GitLab CI/CD
+  components: the **issue preview**, the **playground on GitLab Pages**, the **merge request review** and, optionally,
+  **publishing** the merged schedules.
 
 At the end, the flow looks like this:
 
@@ -20,7 +21,7 @@ At the end, the flow looks like this:
 3. The review job checks the change, posts one note with the report and the week, sets the `Schedule` label and
    renames the merge request from "Add new file" to "Schedule: Night Shift".
 4. You merge. The next pipeline republishes the playground, which now knows the schedule and offers **Propose change**
-   for it.
+   for it, and, if you set it up, publishes the schedule's outputs to your artifact store.
 
 People who start on GitLab instead open an issue from a template, and the issue preview answers there.
 
@@ -120,6 +121,47 @@ usually a unique domain per project (`https://<project>-<hash>.<pages domain>/`)
 Open it and walk through the flow from the top: draft a schedule, **Propose new schedule**, commit to a new branch with
 a merge request, watch the review, merge, reload the playground.
 
+## 7. Publish what you merge (optional)
+
+The catalog's files are the source; consumers such as a Terraform module want the rendered outputs, in one place,
+with a record of which review they passed. The companion's **publish** component does that on every push to the
+default branch that changes a schedule (from companion v0.3.5):
+
+```yaml
+include:
+  - remote: https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.5/templates/publish.yml
+    integrity: sha256-HyWLHKHjiBbiqVRtutO52F78sALoKv+PduV+eK3lh/I=
+    inputs:
+      post-fetch-script: scripts/upload-schedules.sh
+```
+
+For each changed schedule it writes one folder, named by the `path-template` input (by default
+`<slug>/<merge request>-<12 hex of the digest>`), with the file as merged, its JSON, SVG and text form, and a
+provenance file: the merge request, who merged it and when, the review and the versions that rendered it.
+`manifest.json` lists them all, with their metadata ready for Artifactory or S3. Then it runs your script with the
+folder as its argument. The script uploads; its secrets are CI/CD variables. For Artifactory:
+
+```sh
+# scripts/upload-schedules.sh: every file with its checksum and the schedule's properties.
+set -eu
+cd "$1"
+jq -r '.schedules[] | .artifactory as $p | .files[] | [.path, .digest, $p] | @tsv' manifest.json |
+  while IFS="$(printf '\t')" read -r path digest props; do
+    curl -fsS -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" -H "X-Checksum-Sha256: ${digest#sha256:}" -T "$path" \
+      "$ARTIFACTORY_URL/schedules-local/$path$props"
+  done
+```
+
+The job runs in the component's `image` input, so pick one with the script's tools (`curl` and `jq` here, the AWS CLI
+for S3; the companion's README has an S3 loop).
+
+**Published is always what was merged.** Every schedule is rendered again from the file as merged, with the
+`canned-schedules.args` of the merged commit. The review vouched for each file by its digest (a SHA-256 of its bytes,
+written in the review note); when the merged file has another digest, because someone pushed after the review with
+the pipeline skipped or a conflict was resolved in the merge, the schedule is still published, marked
+`reviewed: false` with the reason, and a note on the merge request lists the file with both digests. A push straight
+to the default branch, without a merge request, fails the job and publishes nothing: one more reason for step 2.
+
 ## Things to know
 
 - **`site.json` is as public as the Pages site.** It holds no secrets, but it lists your schedules' names. For a
@@ -156,7 +198,7 @@ the command.
 
 ## On GitHub
 
-The same catalog works on GitHub with the companion's three GitHub Actions (from v0.3.3): the issue preview at the
+The same catalog works on GitHub with the companion's GitHub Actions (from v0.3.3; `publish` from v0.3.5): the issue preview at the
 repository root, `playground` for GitHub Pages and `review` for pull requests. The
 [companion's README](https://github.com/iilei/canned-schedules-companion#github-pages-playground) has the workflows to
 copy. What differs from GitLab:
@@ -170,6 +212,8 @@ copy. What differs from GitLab:
 - **Pull requests from forks** get a read-only token: their review goes to the job summary, not into a comment.
 - **Protect the default branch** with a ruleset that requires pull requests, so changes from the playground arrive as
   pull requests rather than commits.
+- **Publishing** is the `publish` action, on `push` to the default branch with `pull-requests: read` and
+  `issues: write`; the post-fetch script's secrets go in the `env` of the step that uses it.
 
 The demo repository [`canned-schedules-demo`](https://github.com/iilei/canned-schedules-demo) runs this setup; its
 playground is at <https://iilei.github.io/canned-schedules-demo/>. Follow
