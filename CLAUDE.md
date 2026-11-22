@@ -1225,6 +1225,10 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     URLs). The generated references and the AWS recipes moved with their tests (`TestDocsReference`,
     `TestAWSRecipesMatchTheExample`). Issue templates, `--help`, the kit's README and the page's footer link the
     docs site; the SVG namespace URI `…#svg-source` stays, being an identifier.
+  - **The start page's week follows Furo's theme switch (fixed 2026-11-22):** an SVG in an `<img>` only sees the
+    system's `prefers-color-scheme`, not Furo's `data-theme`, so a dark Furo on a light system showed a bright week.
+    The build renders it twice (`--svg-theme light|dark` into `docs/_generated/`) and the page shows Furo's
+    `only-light` / `only-dark` image; the README keeps `docs/office-hours.svg` (theme auto) for GitHub.
   - **Open:** the "How it fits together" mermaid diagram shows as code on the site (Sphinx has no mermaid without
     an extension that loads mermaid.js from a CDN).
 - Deploy: `.github/workflows/pages.yml` publishes `dist/pages` (docs, playground under `playground/`) on pushes to `master` (SHA-pinned

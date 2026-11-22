@@ -24,6 +24,14 @@ rm -rf docs/_ext docs/_generated
 "$venv/bin/python" -I -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' "$work/kit.zip" "$work"
 cp -R "$work/canned-schedules-sphinx-kit/_ext" docs/_ext
 
+# The start page's week, once per theme: an SVG in an <img> follows the system's colour scheme, not Furo's theme
+# switch, so the page shows the one for the theme Furo is in (the classes only-light and only-dark).
+mkdir -p docs/_generated
+for theme in light dark; do
+  "$cs" --svg-theme "$theme" --svg-output-file "docs/_generated/office-hours-$theme.svg" \
+    .gitlab/issue_templates/canned_schedule_request.md > /dev/null
+done
+
 # The examples: every preset the playground lists, as MyST, checked with the preset's own flags.
 mkdir -p docs/_generated/examples
 "$venv/bin/python" -I -c '

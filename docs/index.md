@@ -29,7 +29,15 @@ see [Stability](stability.md) for how changes are announced.
 > - `08:00` to `18:00` MON-FRI
 ```
 
-![Preview of the Office Hours schedule](office-hours.svg)
+:::{image} _generated/office-hours-light.svg
+:alt: Preview of the Office Hours schedule
+:class: only-light
+:::
+
+:::{image} _generated/office-hours-dark.svg
+:alt: Preview of the Office Hours schedule
+:class: only-dark
+:::
 
 Read it as: the base state is `Off`, and `Medium` applies on weekdays from 08:00 to 18:00.
 
