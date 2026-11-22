@@ -125,12 +125,12 @@ a merge request, watch the review, merge, reload the playground.
 
 The catalog's files are the source; consumers such as a Terraform module want the rendered outputs, in one place,
 with a record of which review they passed. The companion's **publish** component does that on every push to the
-default branch that changes a schedule (from companion v0.3.5; the manifest's checksums, used below, from v0.3.7):
+default branch that changes a schedule (from companion v0.3.5; the upload scripts below from v0.3.8):
 
 ```yaml
 include:
-  - remote: https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.7/templates/publish.yml
-    integrity: sha256-5R6Py7GDsSz9QUtsh9htai2cu6zZ69WX6lBEITNW7r4=
+  - remote: https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.8/templates/publish.yml
+    integrity: sha256-5woxUGdXNDn9PfqMPiQK3YIQaN5aI6HpS1S4pHGUtKg=
     inputs:
       post-fetch-script: scripts/upload-schedules.sh
 ```
@@ -139,23 +139,24 @@ For each changed schedule it writes one folder, named by the `path-template` inp
 `<slug>/<merge request>-<12 hex of the digest>`), with the file as merged, its JSON, SVG and text form, and a
 provenance file: the merge request, who merged it and when, the review and the versions that rendered it.
 `manifest.json` lists them all, with their metadata ready for Artifactory or S3. Then it runs your script with the
-folder as its argument. The script uploads; its secrets are CI/CD variables. For Artifactory:
+folder as its argument.
+
+The companion ships the script: copy the [upload script](https://iilei.github.io/canned-schedules-companion/publishing.html)
+for Artifactory (or S3) from the release you pin into your repository. It runs with your secrets, so it belongs under
+your own review:
 
 ```sh
-# scripts/upload-schedules.sh: every file with its checksums and the schedule's properties. Artifactory flags a
-# file whose client sent no SHA-1 and MD5, so the manifest has them next to the digest.
-set -eu
-cd "$1"
-jq -r '.schedules[] | .artifactory as $p | .files[]
-    | [.path, .digest, .checksums.sha1, .checksums.md5, $p] | @tsv' manifest.json |
-  while IFS="$(printf '\t')" read -r path digest sha1 md5 props; do
-    curl -fsS -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" -H "X-Checksum-Sha256: ${digest#sha256:}" \
-      -H "X-Checksum-Sha1: $sha1" -H "X-Checksum-Md5: $md5" -T "$path" "$ARTIFACTORY_URL/schedules-local/$path$props"
-  done
+curl -fsSLo scripts/upload-schedules.sh https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.8/publish/upload-artifactory.sh
 ```
 
-The job runs in the component's `image` input, so pick one with the script's tools (`curl` and `jq` here, the AWS CLI
-for S3; the companion's docs have [upload scripts](https://iilei.github.io/canned-schedules-companion/publishing.html) for both).
+It uploads every file with its three checksums (Artifactory verifies each upload) and the schedule's metadata as
+properties, and it never overwrites: a file already there with the same content is skipped, so a rerun passes, and
+one with other content fails. That suits a repository that keeps artifacts immutable. Set the CI/CD variables
+`ARTIFACTORY_URL` (e.g. `https://acme.jfrog.io/artifactory`), `ARTIFACTORY_REPO` and `ARTIFACTORY_TOKEN` (masked;
+or `ARTIFACTORY_USER` and `ARTIFACTORY_PASSWORD`), and optionally `ARTIFACTORY_PATH` for a folder in the repository.
+Consumers find a schedule's newest publish by its properties (`schedule`, `merged-at`), for example with an AQL
+query. The job's `image` input (Alpine by default) gets `curl` and `jq` from the script; for S3, pick an image with
+the AWS CLI.
 
 **Published is always what was merged.** Every schedule is rendered again from the file as merged, with the
 `canned-schedules.args` of the merged commit. The review vouched for each file by its digest (a SHA-256 of its bytes,
