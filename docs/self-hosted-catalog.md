@@ -142,13 +142,15 @@ provenance file: the merge request, who merged it and when, the review and the v
 folder as its argument. The script uploads; its secrets are CI/CD variables. For Artifactory:
 
 ```sh
-# scripts/upload-schedules.sh: every file with its checksum and the schedule's properties.
+# scripts/upload-schedules.sh: every file with its checksums (SHA-256 from the manifest; Artifactory also wants
+# SHA-1 and MD5 from the client, or flags the file) and the schedule's properties.
 set -eu
 cd "$1"
 jq -r '.schedules[] | .artifactory as $p | .files[] | [.path, .digest, $p] | @tsv' manifest.json |
   while IFS="$(printf '\t')" read -r path digest props; do
-    curl -fsS -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" -H "X-Checksum-Sha256: ${digest#sha256:}" -T "$path" \
-      "$ARTIFACTORY_URL/schedules-local/$path$props"
+    curl -fsS -u "$ARTIFACTORY_USER:$ARTIFACTORY_TOKEN" -H "X-Checksum-Sha256: ${digest#sha256:}" \
+      -H "X-Checksum-Sha1: $(sha1sum "$path" | cut -d' ' -f1)" -H "X-Checksum-Md5: $(md5sum "$path" | cut -d' ' -f1)" \
+      -T "$path" "$ARTIFACTORY_URL/schedules-local/$path$props"
   done
 ```
 
