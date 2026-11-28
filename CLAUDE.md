@@ -832,7 +832,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     and the version field that stands in for a JSON Schema). The component ran end to end on the local GitLab against
     the local Artifactory (reviewed, changed after the review, direct push); the S3 form against a local S3 emulator.
     `docs/self-hosted-catalog.md` step 7 documents it, from companion v0.3.5.
-- **Still open:** minimal token scopes, the project's name and the demo repo (`canned-schedules-demo`) for the screen
+- **Minimal token scopes (decided and tested 2026-11-28):** in the companion's CLAUDE.md and its
+  `docs/permissions.md`. GitLab: issue preview and publishing Planner, review and promotion Developer, and a
+  `token-variable` input per component so a team can split them. GitHub: a pull request's comments and labels need
+  `pull-requests: write` (`issues: write` alone is 403), so review and publishing take `contents: read` plus
+  `pull-requests: write`; publishing's earlier `pull-requests: read` plus `issues: write` couldn't post its note.
+- **Still open:** the project's name and the demo repo (`canned-schedules-demo`) for the screen
   recording.
 
 ## Stability (decided and implemented 2026-10-25)

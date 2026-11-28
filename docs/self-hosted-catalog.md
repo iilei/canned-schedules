@@ -69,7 +69,9 @@ merge requests, and the review sees every one of them.
 
 Under Settings > Access tokens, create a **project access token** with the `api` scope and the **Developer** role. The
 role can't be changed later (GitLab refuses to change a project bot's role), and labelling and renaming merge requests
-needs Developer. Store the token as the CI/CD variable `CANNED_SCHEDULES_TOKEN`, masked.
+needs Developer. Store the token as the CI/CD variable `CANNED_SCHEDULES_TOKEN`, masked. The issue preview and
+publishing need only Planner; the companion's
+[Tokens and permissions](https://iilei.github.io/canned-schedules-companion/permissions.html) lists every step's role.
 
 Before it expires, **rotate** the token and store the new value: rotation keeps the bot user, so it goes on updating its
 own notes. A new token is a new bot, which can't edit the old bot's notes.
@@ -210,15 +212,16 @@ copy. What differs from GitLab:
 
 - **Pages:** set Settings → Pages → Source to "GitHub Actions". The `playground` action builds and uploads the site,
   and a second job deploys it with `actions/deploy-pages`, since only a job can name the `github-pages` environment.
-- **No token to create:** the workflow token comments, labels and renames, with `contents: read`,
-  `pull-requests: write` and `issues: write` on the review job. Comments come from `github-actions[bot]`.
+- **No token to create:** the workflow token comments, labels and renames, with `contents: read` and
+  `pull-requests: write` on the review job (a pull request's comments and labels need `pull-requests: write`;
+  `issues: write` alone is refused). Comments come from `github-actions[bot]`.
 - **Propose change** copies the schedule and opens GitHub's edit page; **Propose new schedule** opens the new-file
   page filled in, and the review renames GitHub's default title ("Create night-shift.canned-schedule.md").
 - **Pull requests from forks** get a read-only token: their review goes to the job summary, not into a comment.
 - **Protect the default branch** with a ruleset that requires pull requests, so changes from the playground arrive as
   pull requests rather than commits.
-- **Publishing** is the `publish` action, on `push` to the default branch with `pull-requests: read` and
-  `issues: write`; the post-fetch script's secrets go in the `env` of the step that uses it.
+- **Publishing** is the `publish` action, on `push` to the default branch with `contents: read` and
+  `pull-requests: write` (for the note); the post-fetch script's secrets go in the `env` of the step that uses it.
 
 The demo repository [`canned-schedules-demo`](https://github.com/iilei/canned-schedules-demo) runs this setup; its
 playground is at <https://iilei.github.io/canned-schedules-demo/>. Follow
