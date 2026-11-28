@@ -1239,6 +1239,12 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
     URLs). The generated references and the AWS recipes moved with their tests (`TestDocsReference`,
     `TestAWSRecipesMatchTheExample`). Issue templates, `--help`, the kit's README and the page's footer link the
     docs site; the SVG namespace URI `…#svg-source` stays, being an identifier.
+  - **Fonts, accents and highlighting as in the companion's docs (decided 2026-11-28):** both sites look alike.
+    `docs/_static/fonts.css`, `theme.css`, `fonts/` and `docs/_templates/base.html` are copies of the companion's
+    (Source Serif 4 Black for headings, Inter for text, Noto Sans Mono for code, self-hosted Fontsource subsets with
+    their OFL licences; the Noto files are the same bytes as `web/fonts`), and `conf.py` sets the same Furo variables
+    (the playground's teal and violet) and Pygments `a11y-light` / `a11y-dark`. Change both repos together. The
+    schedule admonitions keep the Sphinx kit's Ubuntu fonts, as an adopter's site shows them.
   - **The start page's week follows Furo's theme switch (fixed 2026-11-22):** an SVG in an `<img>` only sees the
     system's `prefers-color-scheme`, not Furo's `data-theme`, so a dark Furo on a light system showed a bright week.
     The build renders it twice (`--svg-theme light|dark` into `docs/_generated/`) and the page shows Furo's
