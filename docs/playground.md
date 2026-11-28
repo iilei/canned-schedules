@@ -19,7 +19,8 @@ shows). A status bar under the editor explains it with the
 [paint trace](previews.md#paint-trace), including ranges that have no effect. It is published from `master` at **<https://iilei.github.io/canned-schedules/>**; locally:
 
 ```sh
-mise run web:serve      # builds dist/site and serves it on http://127.0.0.1:8080 (--port to change)
+# Builds dist/site and serves it on http://127.0.0.1:8080 (--port to change).
+mise run web:serve
 ```
 
 ## Your own playground

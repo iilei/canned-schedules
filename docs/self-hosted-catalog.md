@@ -148,7 +148,8 @@ for Artifactory (or S3) from the release you pin into your repository. It runs w
 your own review:
 
 ```sh
-curl -fsSLo scripts/upload-schedules.sh https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.8/publish/upload-artifactory.sh
+curl -fsSLo scripts/upload-schedules.sh \
+  https://raw.githubusercontent.com/iilei/canned-schedules-companion/refs/tags/v0.3.8/publish/upload-artifactory.sh
 ```
 
 It uploads every file with its three checksums (Artifactory verifies each upload) and the schedule's metadata as

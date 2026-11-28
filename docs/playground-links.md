@@ -64,9 +64,10 @@ their own parameters. It needs `jq`.
 
 ```sh
 #!/bin/sh
-# playground-link BASE_URL [ARGS_FILE] [SCHEDULE_FILE]: prints a locked link to a playground that checks the schedule
-# with a project's flags. ARGS_FILE is a canned-schedules.args (one argument per line; blank lines and # comments
-# skipped); leave it out (or pass "") for a playground whose site.json already sets the flags.
+# playground-link BASE_URL [ARGS_FILE] [SCHEDULE_FILE]: prints a locked link to a
+# playground that checks the schedule with a project's flags. ARGS_FILE is a
+# canned-schedules.args (one argument per line; blank lines and # comments skipped); leave
+# it out (or pass "") for a playground whose site.json already sets the flags.
 set -eu
 base=$1 args=${2:-} doc=${3:-}
 q=lock=true
@@ -101,9 +102,11 @@ printf '%s\n' "$url"
 
 ```sh
 # A project's rules and a schedule, on a shared playground:
-playground-link https://schedules.example.com canned-schedules.args schedules/night-shift.canned-schedule.md
+playground-link https://schedules.example.com canned-schedules.args \
+  schedules/night-shift.canned-schedule.md
 # A catalog's playground already has the flags: only the schedule and the lock.
-playground-link https://catalog.pages.example.com "" schedules/office-hours.canned-schedule.md
+playground-link https://catalog.pages.example.com "" \
+  schedules/office-hours.canned-schedule.md
 ```
 
 Checked against the public page: a link from an args file with an alert pattern, `--sample-interval 15` and

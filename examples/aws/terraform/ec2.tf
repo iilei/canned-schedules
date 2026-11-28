@@ -1,7 +1,10 @@
 locals {
   schedule = jsondecode(file("${path.module}/office-hours.canned-schedule.json"))
   capacity = jsondecode(file("${path.module}/capacity.json"))
-  transitions = { for t in local.schedule.transitions : "${replace(t.time, ":", "")}-${join("_", t.days)}-${t.state}" => t }
+  transitions = {
+    for t in local.schedule.transitions :
+    "${replace(t.time, ":", "")}-${join("_", t.days)}-${t.state}" => t
+  }
 }
 
 resource "aws_autoscaling_schedule" "office_hours" {

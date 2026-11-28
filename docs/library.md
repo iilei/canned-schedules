@@ -7,7 +7,8 @@ and the SVG of a stored `.canned-schedule.json`. It never touches the network or
 
 ```go
 r, err := cannedschedules.Evaluate(src, &cannedschedules.Options{
-	Preview: &cannedschedules.PreviewOptions{}, // plan previews, as the CLI's preview flags do
+	// Plan previews, as the CLI's preview flags do.
+	Preview: &cannedschedules.PreviewOptions{},
 })
 if err != nil {
 	return err // unusable options only; document problems are r.Diagnostics
