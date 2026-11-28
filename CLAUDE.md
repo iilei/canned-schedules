@@ -1186,6 +1186,15 @@ Draft files (validated with `mise exec -- jsonschema validate`): `schema/config.
 - Fonts: Ubuntu + Ubuntu Mono, **self-hosted** in `assets/fonts` (embedded by `assets/embed.go` for the Sphinx kit,
   copied to `dist/site/fonts` by `web:build`; Ubuntu Font Licence, `UFL.txt`): no requests to Google
   (a German court treated Google Fonts loading as a privacy violation), works offline.
+  - **The page's code font is Noto Sans Mono (decided 2026-11-28, as in the companion's docs):** the editor, `pre`,
+    `code` and the diagnostics use `--mono`, now Noto Sans Mono (the Latin and Latin Extended subsets of
+    `@fontsource-variable/noto-sans-mono` 5.3.0, variable weight, SIL OFL). It sits in `web/fonts`, not `assets/fonts`,
+    so neither the binary nor the Sphinx kit embeds it; `web:build` merges both folders into `fonts/`. The week's
+    SVG names it first (`Noto Sans Mono, Ubuntu Mono, 'Courier New', …`), so on the page it matches the editor and
+    elsewhere it shows where installed. Its layout reserves about 0.6 em per character (`charW` 7.5 at 12px,
+    `headerCharW`, `titleCharW`), which Noto's 0.6 em cells fit, and Ubuntu Mono's 0.5 em ones underfill. The Sphinx
+    kit still ships only Ubuntu (Mono), so Sphinx sites show Noto only where it is installed. Ubuntu stays the text
+    font; colours unchanged.
   - Ubuntu Mono has **no braille glyphs** and narrow cells (0.5 em); fallback fonts draw braille wider, so braille rows
     overshot the ruler. The ASCII tab therefore always uses `Schedule Braille Mono` (for every preset): a renamed subset (ASCII,
     Latin-1, Braille Patterns, no OpenType features, 16 KB) of Cascadia Mono 2407.24, where every glyph has one width.

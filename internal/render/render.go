@@ -26,7 +26,7 @@ const (
 
 // Layout in pixels. The day grid matches the old CUE/gomplate renderer: 24 px per hour, 576 px per day.
 const (
-	fontFamily = "Ubuntu Mono, 'Courier New', Courier, monospace"
+	fontFamily = "Noto Sans Mono, Ubuntu Mono, 'Courier New', Courier, monospace"
 
 	margin       = 4
 	labelW       = 48

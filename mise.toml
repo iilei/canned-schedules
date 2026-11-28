@@ -240,7 +240,9 @@ out=dist/site
 rm -rf "$out"
 mkdir -p "$out"
 cp -R web/. "$out/"
-cp -R assets/fonts "$out/fonts"
+# The page's own fonts (web/fonts: Noto Sans Mono) and the ones shared with the Sphinx kit (assets/fonts), in one folder.
+mkdir -p "$out/fonts"
+cp -R assets/fonts/. "$out/fonts/"
 # The editor (CodeMirror 6) is bundled from editor/ with the versions locked in editor/package-lock.json.
 npm ci --prefix editor --silent
 node editor/build.mjs "$out"
