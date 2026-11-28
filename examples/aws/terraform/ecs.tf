@@ -5,7 +5,8 @@ resource "aws_appautoscaling_target" "app" {
   min_capacity       = local.capacity[local.schedule.base].min
   max_capacity       = local.capacity[local.schedule.base].max
 
-  # The scheduled actions move min and max; without this, every apply would reset them to the base state's values.
+  # The scheduled actions move min and max; without this, every apply would reset them to
+  # the base state's values.
   lifecycle {
     ignore_changes = [min_capacity, max_capacity]
   }

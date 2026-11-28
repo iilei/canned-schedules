@@ -12,7 +12,8 @@ use, in one of three shapes:
   [`templates/markdown-gfm.tmpl`](https://github.com/iilei/canned-schedules/blob/master/templates/markdown-gfm.tmpl), ready to paste into an issue comment.
 
 ```sh
-./canned-schedules --error-report-template markdown-gfm --error-output-file report.md schedule.md
+./canned-schedules --error-report-template markdown-gfm --error-output-file report.md \
+  schedule.md
 ```
 
 There is exactly one built-in template. For your own layout, write the JSON report and render it yourself, for

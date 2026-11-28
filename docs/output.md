@@ -31,7 +31,12 @@
     }
   ],
   "occurrences": [
-    {"dow": "MON", "time": "08:00", "state": "Medium", "cron": {"posix": "0 8 * * 1", "aws": "0 8 ? * MON *"}},
+    {
+      "dow": "MON",
+      "time": "08:00",
+      "state": "Medium",
+      "cron": {"posix": "0 8 * * 1", "aws": "0 8 ? * MON *"}
+    },
     "…"
   ],
   "warnings": []
